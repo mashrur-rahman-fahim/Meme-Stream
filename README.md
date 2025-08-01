@@ -1,5 +1,7 @@
 # MemeStreamApi
 
+![ERD](MemeStreamApi/assets/MemeStream.png)
+
 This is a minimal ASP.NET Core Web API project with Swagger/OpenAPI support.
 
 ## Prerequisites

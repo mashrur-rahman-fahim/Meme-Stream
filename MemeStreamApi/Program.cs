@@ -1,3 +1,7 @@
+using MemeStreamApi.data;
+using Microsoft.EntityFrameworkCore;
+using DotNetEnv;
+Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,9 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
+builder.Services.AddDbContext<MemeStreamDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("MemeStreamDb")));
 
 var app = builder.Build();
 
+app.MapControllers();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

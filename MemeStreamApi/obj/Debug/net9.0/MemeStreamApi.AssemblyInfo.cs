@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MemeStreamApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3f3c70c9a7953419e9949e793efc79f27c1343d3")]
 [assembly: System.Reflection.AssemblyProductAttribute("MemeStreamApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MemeStreamApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
