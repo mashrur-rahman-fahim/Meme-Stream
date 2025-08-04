@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using MemeStreamApi.data;
+using MemeStreamApi.Migrations;
 using MemeStreamApi.model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,20 +20,59 @@ namespace MemeStreamApi.controller
         {
             this._context = context;
         }
+        public class PostDto
+        {
+            public required string Content { get; set; }= string.Empty;
+            public required string Image { get; set; }= string.Empty;
+        }
         [Authorize]
         [HttpPost("create")]
-        public IActionResult CreatePost(Post post)
+        public IActionResult CreatePost([FromBody] PostDto postDto)
         {
+            Console.WriteLine("CreatePost called");
+            var post = new Post
+            {
+                Content = postDto.Content,
+                Image = postDto.Image
+            };
+
             try
             {
+
+
+                // Debug: Check if user is authenticated
+                Console.WriteLine($"User authenticated: {User.Identity?.IsAuthenticated}");
+                Console.WriteLine($"Claims count: {User.Claims.Count()}");
+
+                foreach (var claim in User.Claims)
+                {
+                    Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+                }
+
+                var UserIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(UserIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                int UserId = int.Parse(UserIdClaim);
+                post.UserId = UserId;
+                post.CreatedAt = DateTime.UtcNow;
+                var user = _context.Users.FirstOrDefault(u => u.Id == UserId);
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+                post.User = user;
                 _context.Posts.Add(post);
                 _context.SaveChanges();
                 return Ok(post);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error in CreatePost: {ex.Message}");
                 return BadRequest("Error creating post.");
             }
+
 
         }
         [HttpGet("get/{id}")]

@@ -14,7 +14,6 @@ export const LoginPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        withCredentials: true, // Include credentials for CORS requests
       });
       console.log("Login successful:", res.data);
       localStorage.setItem("token", res.data.token); // Store the token in localStorage
