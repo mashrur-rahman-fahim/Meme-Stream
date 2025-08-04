@@ -75,12 +75,18 @@ namespace MemeStreamApi.controller
 
 
         }
+        [Authorize]
         [HttpGet("get/{id}")]
         public IActionResult GetPost(int id)
         {
             try
             {
-                var post = _context.Posts.FirstOrDefault(p => p.Id == id);
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                var post = _context.Posts.FirstOrDefault(p => p.Id == id && p.UserId == int.Parse(userIdClaim));
                 if (post == null)
                 {
                     return NotFound("Post not found.");

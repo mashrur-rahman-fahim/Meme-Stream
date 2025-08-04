@@ -18,6 +18,8 @@ namespace MemeStreamApi.data
         public DbSet<User> Users { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<SharedPost> SharedPosts { get; set; }
+
+        public DbSet<Reaction> Reactions { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
