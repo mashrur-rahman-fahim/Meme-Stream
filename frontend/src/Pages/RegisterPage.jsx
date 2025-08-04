@@ -1,4 +1,5 @@
 import React from 'react'
+import api from '../utils/axios';
 
 export const RegisterPage = () => {
     const [formData, setFormData] = React.useState({
@@ -15,7 +16,6 @@ export const RegisterPage = () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                withCredentials: true, // Include credentials for CORS requests
             });
             console.log("Registration successful:", res.data);
             localStorage.setItem("token", res.data.token); // Store the token in localStorage
@@ -39,8 +39,8 @@ export const RegisterPage = () => {
           onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
         />
         <input
-          type="email"
-          placeholder="text"
+          type="text"
+          placeholder="email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
         />

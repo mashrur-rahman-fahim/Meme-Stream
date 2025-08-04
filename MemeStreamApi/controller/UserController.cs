@@ -27,10 +27,10 @@ namespace MemeStreamApi.controller
         }
         public class RegisterDto
         {
-            public string Name { get; set; }
-            public string Bio { get; set; }
-            public string Email { get; set; }
-            public string Password { get; set; }
+            public required string Name { get; set; }
+            public required string Bio { get; set; }
+            public required string Email { get; set; }
+            public required string Password { get; set; }
             public string Image { get; set; } = string.Empty;
         }
         [HttpPost("register")]
@@ -56,6 +56,10 @@ namespace MemeStreamApi.controller
                 {
                     return BadRequest("Email already exists.");
                 }
+                
+                _context.Users.Add(user);
+                _context.SaveChanges(); // Save first to get the ID
+                
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -72,8 +76,6 @@ namespace MemeStreamApi.controller
                 );
                 var Token = new JwtSecurityTokenHandler().WriteToken(token);
 
-                _context.Users.Add(user);
-                _context.SaveChanges();
                 transaction.Commit();
                 return Ok(new { Token = Token, User = user });
             }
@@ -86,8 +88,8 @@ namespace MemeStreamApi.controller
         
         public class LoginDto
         {
-            public string Email { get; set; }
-            public string Password { get; set; }
+            public required string Email { get; set; }
+            public required string Password { get; set; }
         }
 
         [HttpPost("login")]
