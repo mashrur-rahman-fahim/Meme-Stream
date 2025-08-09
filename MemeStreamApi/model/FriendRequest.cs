@@ -21,6 +21,6 @@ namespace MemeStreamApi.model
             Rejected
         }
         public RequestStatus Status { get; set; } = RequestStatus.Pending;
-        
+     
     }
 }

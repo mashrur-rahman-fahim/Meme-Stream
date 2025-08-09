@@ -6,12 +6,13 @@ using MemeStreamApi.data;
 using MemeStreamApi.model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MemeStreamApi.controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class FriendRequestController
+    public class FriendRequestController:ControllerBase
     {
         private readonly MemeStreamDbContext _context;
         public FriendRequestController(MemeStreamDbContext context)
@@ -20,12 +21,12 @@ namespace MemeStreamApi.controller
         }
         public class FriendRequestDto
         {
-            public int SenderId { get; set; }
+           
             public int ReceiverId { get; set; }
         }
         [Authorize]
-        [HttpPost("create")]
-        public IActionResult CreateFriendRequest([FromBody] FriendRequestDto friendRequestDto){
+        [HttpPost("send")]
+        public IActionResult SendFriendRequest([FromBody] FriendRequestDto friendRequestDto){
             try{
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userIdClaim))
@@ -33,10 +34,19 @@ namespace MemeStreamApi.controller
                     return Unauthorized("User ID claim not found.");
                 }
                 var userId = int.Parse(userIdClaim);
+                if (userId == friendRequestDto.ReceiverId)
+                {
+                    return BadRequest("You cannot send a friend request to yourself.");
+                }
                 var receiver = _context.Users.FirstOrDefault(u => u.Id == friendRequestDto.ReceiverId);
                 if (receiver == null)
                 {
                     return NotFound("Receiver not found.");
+                }
+                var existingFriendRequest = _context.FriendRequests.FirstOrDefault(fr => fr.SenderId == userId && fr.ReceiverId == friendRequestDto.ReceiverId);
+                if (existingFriendRequest != null)
+                {
+                    return BadRequest("Friend request already exists.");
                 }
                 var friendRequest = new FriendRequest{
                     SenderId = userId,
@@ -48,8 +58,8 @@ namespace MemeStreamApi.controller
                 return Ok(friendRequest);
             }
             catch (Exception ex){
-                Console.WriteLine($"Error in CreateFriendRequest: {ex.Message}");
-                return BadRequest("Error creating friend request.");
+                Console.WriteLine($"Error in SendFriendRequest: {ex.Message}");
+                return BadRequest("Error sending friend request.");
             }
         }
         [Authorize]
@@ -71,6 +81,7 @@ namespace MemeStreamApi.controller
             }
         }
         [Authorize]
+        [HttpPut("accept/{id}")]
         public IActionResult AcceptFriendRequest(int id){
             try{
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;

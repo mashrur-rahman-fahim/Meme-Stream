@@ -17,10 +17,11 @@ namespace MemeStreamApi.data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Post> Posts { get; set; }
-        public DbSet<SharedPost> SharedPosts { get; set; }
+        public DbSet<SharedPosts> SharedPosts { get; set; }
         public DbSet<FriendRequest> FriendRequests { get; set; }
         public DbSet<Reaction> Reactions { get; set; }
         public DbSet<Comment> Comments { get; set; }
+
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -9,11 +9,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
+
 namespace MemeStreamApi.controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ReactionController
+    public class ReactionController:ControllerBase
     {
         private readonly MemeStreamDbContext _context;
         public ReactionController(MemeStreamDbContext context)

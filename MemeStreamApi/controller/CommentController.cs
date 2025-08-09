@@ -12,7 +12,7 @@ namespace MemeStreamApi.controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CommentController
+    public class CommentController:ControllerBase
     {
         private readonly MemeStreamDbContext _context;
         public CommentController(MemeStreamDbContext context)

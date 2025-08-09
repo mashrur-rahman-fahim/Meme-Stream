@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MemeStreamApi.model;
 
-namespace MemeStreamApi.controller
+namespace MemeStreamApi.model
 {
-    public class SharedPost
+    public class SharedPosts
     {
         public int Id { get; set; }
         public int PostId { get; set; }
@@ -14,6 +13,6 @@ namespace MemeStreamApi.controller
         public int UserId { get; set; }
         public User User { get; set; }
         public DateTime SharedAt { get; set; }
-        
+   
     }
 }

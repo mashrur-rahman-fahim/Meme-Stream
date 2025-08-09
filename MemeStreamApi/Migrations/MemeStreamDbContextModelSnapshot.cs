@@ -22,7 +22,7 @@ namespace MemeStreamApi.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("MemeStreamApi.controller.SharedPost", b =>
+            modelBuilder.Entity("MemeStreamApi.model.Comment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -30,11 +30,15 @@ namespace MemeStreamApi.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("PostId")
                         .HasColumnType("integer");
-
-                    b.Property<DateTime>("SharedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -45,7 +49,36 @@ namespace MemeStreamApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("SharedPosts");
+                    b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("MemeStreamApi.model.FriendRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ReceiverId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("FriendRequests");
                 });
 
             modelBuilder.Entity("MemeStreamApi.model.Post", b =>
@@ -85,19 +118,51 @@ namespace MemeStreamApi.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("PostId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("UserId");
+
                     b.ToTable("Reactions");
+                });
+
+            modelBuilder.Entity("MemeStreamApi.model.SharedPosts", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SharedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SharedPosts");
                 });
 
             modelBuilder.Entity("MemeStreamApi.model.User", b =>
@@ -139,7 +204,7 @@ namespace MemeStreamApi.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("MemeStreamApi.controller.SharedPost", b =>
+            modelBuilder.Entity("MemeStreamApi.model.Comment", b =>
                 {
                     b.HasOne("MemeStreamApi.model.Post", "Post")
                         .WithMany()
@@ -158,6 +223,25 @@ namespace MemeStreamApi.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("MemeStreamApi.model.FriendRequest", b =>
+                {
+                    b.HasOne("MemeStreamApi.model.User", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MemeStreamApi.model.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("MemeStreamApi.model.Post", b =>
                 {
                     b.HasOne("MemeStreamApi.model.User", "User")
@@ -165,6 +249,44 @@ namespace MemeStreamApi.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MemeStreamApi.model.Reaction", b =>
+                {
+                    b.HasOne("MemeStreamApi.model.Post", "Post")
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MemeStreamApi.model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MemeStreamApi.model.SharedPosts", b =>
+                {
+                    b.HasOne("MemeStreamApi.model.Post", "Post")
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MemeStreamApi.model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
 
                     b.Navigation("User");
                 });
