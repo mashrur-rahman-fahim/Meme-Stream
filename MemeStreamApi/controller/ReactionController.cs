@@ -23,7 +23,7 @@ namespace MemeStreamApi.controller
         public class ReactionDto
         {
             public int PostId { get; set; }
-            public string Type { get; set; } = string.Empty;
+            public Reaction.ReactionType Type { get; set; } = Reaction.ReactionType.Like;
         }
         [Authorize]
         [HttpPost("create")]
@@ -67,6 +67,7 @@ namespace MemeStreamApi.controller
                 }
                 _context.Reactions.Remove(reaction);
                 _context.SaveChanges();
+                return Ok("Reaction deleted successfully.");
             }
             catch (Exception ex){
                 Console.WriteLine($"Error in DeleteReaction: {ex.Message}");
@@ -88,7 +89,7 @@ namespace MemeStreamApi.controller
         
         [Authorize]
         [HttpPut("update/{id}")]
-        public class IActionResult UpdateReaction(int id, [FromBody] ReactionDto reactionDto){
+        public IActionResult UpdateReaction(int id, [FromBody] ReactionDto reactionDto){
             try{
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userIdClaim))
