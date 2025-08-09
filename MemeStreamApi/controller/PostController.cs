@@ -41,13 +41,9 @@ namespace MemeStreamApi.controller
 
 
                 // Debug: Check if user is authenticated
-                Console.WriteLine($"User authenticated: {User.Identity?.IsAuthenticated}");
-                Console.WriteLine($"Claims count: {User.Claims.Count()}");
+               
 
-                foreach (var claim in User.Claims)
-                {
-                    Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
-                }
+               
 
                 var UserIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(UserIdClaim))
