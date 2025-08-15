@@ -178,7 +178,7 @@ namespace MemeStreamApi.controller
             {
                 return BadRequest(ex.Message);
             }
-        }
+        }    
         [Authorize]
         [HttpPut("profile")]
         public IActionResult UpdateProfile(User updatedUser)
@@ -199,12 +199,37 @@ namespace MemeStreamApi.controller
                 user.Name = updatedUser.Name;
                 user.Bio = updatedUser.Bio;
                 user.Email = updatedUser.Email;
+                
                 if (!string.IsNullOrEmpty(updatedUser.Image))
                 {
                     user.Image = updatedUser.Image;
                 }
                 _context.SaveChanges();
                 return Ok("Profile updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [Authorize]
+        [HttpGet("profile")]
+        public IActionResult GetProfile()
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                int userId = int.Parse(userIdClaim);
+                var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+                return Ok(user);
             }
             catch (Exception ex)
             {

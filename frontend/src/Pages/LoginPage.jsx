@@ -5,7 +5,7 @@ import { VerifyContext } from "../../context/create_verify_context.jsx";
 
 
 export const LoginPage = () => {
-  const {isVerified, verifyUser, setIsVerified} = useContext(VerifyContext);
+  const {isVerified, verifyUser, loading} = useContext(VerifyContext);
   const navigate = useNavigate();
   const [formData, setFormData] = React.useState({
     email: "",
@@ -15,10 +15,10 @@ export const LoginPage = () => {
     verifyUser();
   }, [verifyUser]);
   useEffect(() => {
-    if(isVerified){
+    if(isVerified && !loading){
       navigate('/');
     }
-  }, [isVerified, navigate]);
+  }, [isVerified, navigate, loading]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Form submitted:", formData);
@@ -31,7 +31,7 @@ export const LoginPage = () => {
       console.log("Login successful:", res.data);
 
       localStorage.setItem("token", res.data.token); // Store the token in localStorage
-      setIsVerified(true);
+     
       navigate('/');
     } catch (error) {
       console.error("Login failed:", error);

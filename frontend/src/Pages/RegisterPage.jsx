@@ -1,14 +1,29 @@
-import React from 'react'
+import React, { useContext, useEffect } from 'react'
 import api from '../utils/axios';
+import { useNavigate } from 'react-router-dom';
+import { VerifyContext } from '../../context/create_verify_context';
 
 export const RegisterPage = () => {
-    const [formData, setFormData] = React.useState({
+  const navigate = useNavigate();
+  
+  const {isVerified, verifyUser,loading} = useContext(VerifyContext);
+    
+  
+  const [formData, setFormData] = React.useState({
         email: "",
         password: "",
         name: "",
         bio: "",
         image: ""
     });
+    useEffect(()=>{
+      verifyUser();
+    },[verifyUser])
+    useEffect(()=>{
+      if(isVerified && !loading){
+        navigate('/');
+      }
+    },[isVerified, navigate, loading])
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -19,6 +34,7 @@ export const RegisterPage = () => {
             });
             console.log("Registration successful:", res.data);
             localStorage.setItem("token", res.data.token); // Store the token in localStorage
+            navigate('/');
         } catch (error) {
             console.error("Registration failed:", error);
         }

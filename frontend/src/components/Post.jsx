@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import api from '../utils/axios';
 
-export const PostPage = () => {
+export const Post = () => {
     const [FormData,setFormData]=useState({
         content: "",
         image: ""
