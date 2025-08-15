@@ -1,0 +1,231 @@
+### MemeStream API - Meme Detector Tests
+
+### Test 1: English Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "This is fine. Everything is fine. 🔥",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 2: Spanish Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "Cuando terminas de estudiar y te das cuenta de que no entendiste nada 😅",
+  "language": "Spanish",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 3: French Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "Moi à 3h du matin: *mange du fromage* 🧀",
+  "language": "French",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 4: German Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "Ich wenn ich um 3 Uhr morgens aufwache und Hunger habe: *isst Brot* 🍞",
+  "language": "German",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 5: Japanese Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "深夜3時に目が覚めてお腹が空いた時: *パンを食べる* 🍞",
+  "language": "Japanese",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 6: Korean Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "새벽 3시에 깨어나서 배고플 때: *빵을 먹는다* 🍞",
+  "language": "Korean",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 7: Italian Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "Io alle 3 del mattino quando ho fame: *mangio pane* 🍞",
+  "language": "Italian",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 8: Portuguese Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "Eu às 3 da manhã quando estou com fome: *como pão* 🍞",
+  "language": "Portuguese",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 9: Russian Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "Я в 3 часа ночи когда хочу есть: *ем хлеб* 🍞",
+  "language": "Russian",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 10: Arabic Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "أنا الساعة 3 صباحاً عندما أشعر بالجوع: *آكل خبز* 🍞",
+  "language": "Arabic",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 11: Hindi Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "मैं रात 3 बजे जब भूख लगती है: *रोटी खाता हूं* 🍞",
+  "language": "Hindi",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 12: Chinese Meme Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "我凌晨3点饿的时候: *吃面包* 🍞",
+  "language": "Chinese",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 13: Classic Internet Meme
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "One does not simply walk into Mordor",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 14: Modern Internet Slang
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "POV: You're reading this and realizing it's a test",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 15: Sarcastic Text
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "Oh great, another meeting that could have been an email",
+  "includeSentiment": true,
+  "includeHumorScore": true,
+  "includeMemeReferences": true,
+  "includeCulturalContext": true
+}
+
+### Test 16: Language Detection Test
+POST {{baseUrl}}/api/MemeDetector/detect-language
+Content-Type: application/json
+
+"Bonjour, comment allez-vous aujourd'hui?"
+
+### Test 17: Language Detection Test 2
+POST {{baseUrl}}/api/MemeDetector/detect-language
+Content-Type: application/json
+
+"Hola, ¿cómo estás hoy?"
+
+### Test 18: Language Detection Test 3
+POST {{baseUrl}}/api/MemeDetector/detect-language
+Content-Type: application/json
+
+"こんにちは、今日はどうですか？"
+
+### Test 19: Minimal Analysis Request
+POST {{baseUrl}}/api/MemeDetector/analyze-text
+Content-Type: application/json
+
+{
+  "text": "LOL",
+  "includeSentiment": false,
+  "includeHumorScore": true,
+  "includeMemeReferences": false,
+  "includeCulturalContext": false
+}
+
+### Test 20: API Test Endpoint
+POST {{baseUrl}}/api/MemeDetector/test
+Content-Type: application/json
+
+{}
+
+### Variables
+@baseUrl = https://localhost:7001

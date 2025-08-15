@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using MemeStreamApi.services;
 Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 var key= Env.GetString("Jwt__Key");
@@ -68,8 +69,12 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 builder.Services.AddDbContext<MemeStreamDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("MemeStreamDb")));
+
+// Register meme detection service
+builder.Services.AddScoped<IMemeDetectionService, MemeDetectionService>();
 
 
 builder.Services.AddCors(options =>
