@@ -12,7 +12,6 @@ export const Post = () => {
             const response = await api.post('/Post/create', FormData,{
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Include token in headers
                 },
 
             });
