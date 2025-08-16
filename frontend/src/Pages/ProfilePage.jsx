@@ -24,11 +24,7 @@ export const ProfilePage = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await api.get("/User/profile", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const res = await api.get("/User/profile");
         setUser(res.data);
         console.log(res.data);
       } catch (error) {
@@ -38,22 +34,14 @@ export const ProfilePage = () => {
     fetchUser();
   }, []);
   const handleDelete = async () => {
-    await api.delete("/User/delete", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    await api.delete("/User/delete");
     localStorage.removeItem("token");
     navigate("/Login");
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.put("/User/profile", user, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      await api.put("/User/profile", user);
       console.log("Profile updated successfully");
     } catch (error) {
       console.log(error);
