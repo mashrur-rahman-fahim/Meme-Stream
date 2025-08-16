@@ -155,7 +155,7 @@ namespace MemeStreamApi.controller
         }
         [Authorize]
         [HttpDelete("delete")]
-        public IActionResult DeleteUser(string email)
+        public IActionResult DeleteUser()
         {
             try
             {
