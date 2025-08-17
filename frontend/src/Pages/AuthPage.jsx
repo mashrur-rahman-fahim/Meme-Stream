@@ -27,14 +27,18 @@ export const AuthPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/User/login", {
-        email: formData.email,
-        password: formData.password,
-      }, {
-        headers: {
-          "Content-Type": "application/json",
+      const res = await api.post(
+        "/User/login",
+        {
+          email: formData.email,
+          password: formData.password,
         },
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
       localStorage.setItem("token", res.data.token);
       navigate("/");
     } catch (error) {
@@ -49,15 +53,19 @@ export const AuthPage = () => {
       return;
     }
     try {
-      const res = await api.post("/User/register", {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-      }, {
-        headers: {
-          "Content-Type": "application/json",
+      const res = await api.post(
+        "/User/register",
+        {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
         },
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
       localStorage.setItem("token", res.data.token);
       navigate("/");
     } catch (error) {
@@ -65,34 +73,58 @@ export const AuthPage = () => {
     }
   };
 
-  const backgroundStyle = {
-    backgroundImage: `url(${isLogin ? "/login-bg.jpg" : "/register-bg.jpg"})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    transition: "background-image 0.5s ease-in-out",
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 transition-all duration-500 p-4" style={backgroundStyle}>
-      <div className="card w-full max-w-md bg-base-100 bg-opacity-80 shadow-xl backdrop-blur-md">
-        <div className="card-body">
-          {/* Branding Section */}
+    <div className="min-h-screen w-full bg-base-200 md:relative md:overflow-x-hidden flex flex-col md:flex-row">
+      {/* Form Panel: Now scrollable on desktop if content overflows */}
+      <div
+        className={`w-full md:w-1/2 flex justify-center p-8 order-1 bg-base-100 
+                   md:absolute md:top-0 md:h-full md:overflow-y-auto
+                   transition-all duration-700 ease-in-out
+                   ${isLogin ? "md:left-0" : "md:left-1/2"}`}
+      >
+        <div className="w-full max-w-md my-auto"> {/* Added my-auto for vertical centering when content fits */}
           <div className="text-center mb-4">
-            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">MemeStream</h1>
-            <p className="mt-2 text-lg font-medium text-base-content">Your Daily Dose of Memes.</p>
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              MemeStream
+            </h1>
+            <p className="mt-2 text-lg font-medium text-base-content">
+              Your Daily Dose of Memes.
+            </p>
           </div>
 
           <div className="tabs tabs-boxed grid grid-cols-2 mb-6">
-            <a className={`tab tab-lg ${isLogin ? "tab-active" : ""}`} onClick={() => setIsLogin(true)}>Login</a>
-            <a className={`tab tab-lg ${!isLogin ? "tab-active" : ""}`} onClick={() => setIsLogin(false)}>Register</a>
+            <a
+              className={`tab tab-lg ${isLogin ? "tab-active" : ""}`}
+              onClick={() => setIsLogin(true)}
+            >
+              Login
+            </a>
+            <a
+              className={`tab tab-lg ${!isLogin ? "tab-active" : ""}`}
+              onClick={() => setIsLogin(false)}
+            >
+              Register
+            </a>
           </div>
 
           <div className="px-2">
-            <form onSubmit={isLogin ? handleLogin : handleRegister} className="overflow-hidden relative">
+            <form
+              onSubmit={isLogin ? handleLogin : handleRegister}
+              className="overflow-hidden relative"
+              style={{ minHeight: "350px" }}
+            >
               {/* Login Form */}
-              <div className={`transition-all duration-500 ease-in-out ${isLogin ? "opacity-100 transform translate-x-0" : "opacity-0 transform -translate-x-full absolute"}`}>
+              <div
+                className={`transition-all duration-500 ease-in-out ${
+                  isLogin
+                    ? "opacity-100 transform translate-x-0"
+                    : "opacity-0 transform -translate-x-full absolute"
+                }`}
+              >
                 <div className="space-y-4">
-                  <h2 className="text-2xl font-bold text-center">Welcome Back!</h2>
+                  <h2 className="text-2xl font-bold text-center">
+                    Welcome Back!
+                  </h2>
                   <div className="form-control">
                     <label className="label">
                       <span className="label-text">Email</span>
@@ -102,7 +134,9 @@ export const AuthPage = () => {
                       placeholder="email@example.com"
                       className="input input-bordered"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -115,21 +149,33 @@ export const AuthPage = () => {
                       placeholder="********"
                       className="input input-bordered"
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
                       required
                     />
                   </div>
                   <div className="form-control mt-6">
-                    <button className="btn btn-primary" type="submit">Login</button>
+                    <button className="btn btn-primary" type="submit">
+                      Login
+                    </button>
                   </div>
                 </div>
               </div>
 
               {/* Register Form */}
-              <div className={`transition-all duration-500 ease-in-out ${!isLogin ? "opacity-100 transform translate-x-0" : "opacity-0 transform translate-x-full absolute"}`}>
+              <div
+                className={`transition-all duration-500 ease-in-out ${
+                  !isLogin
+                    ? "opacity-100 transform translate-x-0"
+                    : "opacity-0 transform translate-x-full absolute"
+                }`}
+              >
                 <div className="space-y-4">
-                  <h2 className="text-2xl font-bold text-center">Join the Funniest Community!</h2>
-                  <div className="form-control">
+                  <h2 className="text-2xl font-bold text-center">
+                    Join the Funniest Community!
+                  </h2>
+                   <div className="form-control">
                     <label className="label">
                       <span className="label-text">Name</span>
                     </label>
@@ -138,7 +184,9 @@ export const AuthPage = () => {
                       placeholder="Your Meme Alias"
                       className="input input-bordered"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       required={!isLogin}
                     />
                   </div>
@@ -151,7 +199,9 @@ export const AuthPage = () => {
                       placeholder="email@example.com"
                       className="input input-bordered"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       required={!isLogin}
                     />
                   </div>
@@ -164,7 +214,9 @@ export const AuthPage = () => {
                       placeholder="Create a Secure Password"
                       className="input input-bordered"
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
                       required={!isLogin}
                     />
                   </div>
@@ -177,12 +229,19 @@ export const AuthPage = () => {
                       placeholder="Confirm Your Password"
                       className="input input-bordered"
                       value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
                       required={!isLogin}
                     />
                   </div>
                   <div className="form-control mt-6">
-                    <button className="btn btn-primary" type="submit">Create Account</button>
+                    <button className="btn btn-primary" type="submit">
+                      Create Account
+                    </button>
                   </div>
                 </div>
               </div>
@@ -191,12 +250,40 @@ export const AuthPage = () => {
           <div className="text-center mt-6">
             <p className="text-sm">
               {isLogin ? "Don't have an account? " : "Already a member? "}
-              <a href="#" className="link link-primary" onClick={(e) => { e.preventDefault(); setIsLogin(!isLogin); }}>
+              <a
+                href="#"
+                className="link link-primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsLogin(!isLogin);
+                }}
+              >
                 {isLogin ? "Register now" : "Login here"}
               </a>
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Image Panel: No changes needed here */}
+      <div
+        className={`w-full md:w-1/2 h-64 md:h-screen order-0 md:order-none relative 
+                   md:absolute md:top-0
+                   transition-all duration-700 ease-in-out
+                   ${isLogin ? "md:left-1/2" : "md:left-0"}`}
+      >
+        <div
+          className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${
+            isLogin ? "opacity-100" : "opacity-0"
+          }`}
+          style={{ backgroundImage: `url('/login-bg.jpg')` }}
+        />
+        <div
+          className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${
+            !isLogin ? "opacity-100" : "opacity-0"
+          }`}
+          style={{ backgroundImage: `url('/register-bg.jpg')` }}
+        />
       </div>
     </div>
   );
