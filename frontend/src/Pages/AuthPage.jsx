@@ -25,6 +25,7 @@ export const AuthPage = () => {
   }, [isVerified, navigate, loading]);
 
   const handleLogin = async (e) => {
+    console.log("Logging in user...");
     e.preventDefault();
     try {
       const res = await api.post(
@@ -47,6 +48,7 @@ export const AuthPage = () => {
   };
 
   const handleRegister = async (e) => {
+    console.log("Registering user...");
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       console.error("Passwords do not match");
@@ -75,14 +77,13 @@ export const AuthPage = () => {
 
   return (
     <div className="min-h-screen w-full bg-base-200 md:relative md:overflow-x-hidden flex flex-col md:flex-row">
-      {/* Form Panel: Now scrollable on desktop if content overflows */}
       <div
         className={`w-full md:w-1/2 flex justify-center p-8 order-1 bg-base-100 
                    md:absolute md:top-0 md:h-full md:overflow-y-auto
                    transition-all duration-700 ease-in-out
                    ${isLogin ? "md:left-0" : "md:left-1/2"}`}
       >
-        <div className="w-full max-w-md my-auto"> {/* Added my-auto for vertical centering when content fits */}
+        <div className="w-full max-w-md my-auto">
           <div className="text-center mb-4">
             <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               MemeStream
@@ -115,11 +116,10 @@ export const AuthPage = () => {
             >
               {/* Login Form */}
               <div
-                className={`transition-all duration-500 ease-in-out ${
-                  isLogin
+                className={`transition-all duration-500 ease-in-out ${isLogin
                     ? "opacity-100 transform translate-x-0"
                     : "opacity-0 transform -translate-x-full absolute"
-                }`}
+                  }`}
               >
                 <div className="space-y-4">
                   <h2 className="text-2xl font-bold text-center">
@@ -132,7 +132,7 @@ export const AuthPage = () => {
                     <input
                       type="email"
                       placeholder="email@example.com"
-                      className="input input-bordered"
+                      className="input input-bordered focus:border-secondary focus:outline-none"
                       value={formData.email}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
@@ -147,7 +147,7 @@ export const AuthPage = () => {
                     <input
                       type="password"
                       placeholder="********"
-                      className="input input-bordered"
+                      className="input input-bordered focus:border-secondary focus:outline-none"
                       value={formData.password}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
@@ -165,24 +165,23 @@ export const AuthPage = () => {
 
               {/* Register Form */}
               <div
-                className={`transition-all duration-500 ease-in-out ${
-                  !isLogin
+                className={`transition-all duration-500 ease-in-out ${!isLogin
                     ? "opacity-100 transform translate-x-0"
                     : "opacity-0 transform translate-x-full absolute"
-                }`}
+                  }`}
               >
                 <div className="space-y-4">
                   <h2 className="text-2xl font-bold text-center">
                     Join the Funniest Community!
                   </h2>
-                   <div className="form-control">
+                  <div className="form-control">
                     <label className="label">
                       <span className="label-text">Name</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Your Meme Alias"
-                      className="input input-bordered"
+                      placeholder="Your Profile Name"
+                      className="input input-bordered focus:border-secondary focus:outline-none"
                       value={formData.name}
                       onChange={(e) =>
                         setFormData({ ...formData, name: e.target.value })
@@ -197,7 +196,7 @@ export const AuthPage = () => {
                     <input
                       type="email"
                       placeholder="email@example.com"
-                      className="input input-bordered"
+                      className="input input-bordered focus:border-secondary focus:outline-none"
                       value={formData.email}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
@@ -212,7 +211,7 @@ export const AuthPage = () => {
                     <input
                       type="password"
                       placeholder="Create a Secure Password"
-                      className="input input-bordered"
+                      className="input input-bordered focus:border-secondary focus:outline-none"
                       value={formData.password}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
@@ -227,7 +226,7 @@ export const AuthPage = () => {
                     <input
                       type="password"
                       placeholder="Confirm Your Password"
-                      className="input input-bordered"
+                      className="input input-bordered focus:border-secondary focus:outline-none"
                       value={formData.confirmPassword}
                       onChange={(e) =>
                         setFormData({
@@ -265,7 +264,7 @@ export const AuthPage = () => {
         </div>
       </div>
 
-      {/* Image Panel: No changes needed here */}
+      {/* Image Panel */}
       <div
         className={`w-full md:w-1/2 h-64 md:h-screen order-0 md:order-none relative 
                    md:absolute md:top-0
@@ -273,15 +272,13 @@ export const AuthPage = () => {
                    ${isLogin ? "md:left-1/2" : "md:left-0"}`}
       >
         <div
-          className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${
-            isLogin ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${isLogin ? "opacity-100" : "opacity-0"
+            }`}
           style={{ backgroundImage: `url('/login-bg.jpg')` }}
         />
         <div
-          className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${
-            !isLogin ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${!isLogin ? "opacity-100" : "opacity-0"
+            }`}
           style={{ backgroundImage: `url('/register-bg.jpg')` }}
         />
       </div>
