@@ -78,7 +78,7 @@ export const AuthPage = () => {
         <div className="card-body">
           {/* Branding Section */}
           <div className="text-center mb-4">
-            <h1 className="text-4xl font-extrabold text-primary">MemeStream</h1>
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">MemeStream</h1>
             <p className="mt-2 text-lg font-medium text-base-content">Your Daily Dose of Memes.</p>
           </div>
 
