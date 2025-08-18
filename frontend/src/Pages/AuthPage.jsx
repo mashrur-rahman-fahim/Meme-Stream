@@ -18,7 +18,7 @@ export const AuthPage = () => {
 
   useEffect(() => {
     verifyUser();
-  }, [verifyUser]);
+  }, []);
 
   useEffect(() => {
     if (isVerified && !loading) {
