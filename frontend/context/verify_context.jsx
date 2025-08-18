@@ -13,7 +13,6 @@ export const VerifyProvider = ({children}) => {
             await api.get("/Verification/verify", {
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem('token')}`
                 },
             });
             setIsVerified(true);
