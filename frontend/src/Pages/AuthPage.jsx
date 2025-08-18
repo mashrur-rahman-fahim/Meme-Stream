@@ -7,6 +7,7 @@ export const AuthPage = () => {
   const { isVerified, verifyUser, loading } = useContext(VerifyContext);
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
+  const [formError, setFormError] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -27,6 +28,7 @@ export const AuthPage = () => {
   const handleLogin = async (e) => {
     console.log("Logging in user...");
     e.preventDefault();
+    setFormError(null);
     try {
       const res = await api.post(
         "/User/login",
@@ -43,6 +45,8 @@ export const AuthPage = () => {
       localStorage.setItem("token", res.data.token);
       navigate("/");
     } catch (error) {
+      const message = error.response?.data?.message || "Incorrect email or password. Please try again.";
+      setFormError(message);
       console.error("Login failed:", error);
     }
   };
@@ -50,8 +54,9 @@ export const AuthPage = () => {
   const handleRegister = async (e) => {
     console.log("Registering user...");
     e.preventDefault();
+    setFormError(null);
     if (formData.password !== formData.confirmPassword) {
-      console.error("Passwords do not match");
+      setFormError("Passwords do not match. Please try again.");
       return;
     }
     try {
@@ -71,6 +76,8 @@ export const AuthPage = () => {
       localStorage.setItem("token", res.data.token);
       navigate("/");
     } catch (error) {
+      const message = error.response?.data?.message || "Registration failed. The email may already be in use.";
+      setFormError(message);
       console.error("Registration failed:", error);
     }
   };
@@ -96,13 +103,13 @@ export const AuthPage = () => {
           <div className="tabs tabs-boxed grid grid-cols-2 mb-6">
             <a
               className={`tab tab-lg ${isLogin ? "tab-active" : ""}`}
-              onClick={() => setIsLogin(true)}
+              onClick={() => { setIsLogin(true); setFormError(null); }}
             >
               Login
             </a>
             <a
               className={`tab tab-lg ${!isLogin ? "tab-active" : ""}`}
-              onClick={() => setIsLogin(false)}
+              onClick={() => { setIsLogin(false); setFormError(null); }}
             >
               Register
             </a>
@@ -117,8 +124,8 @@ export const AuthPage = () => {
               {/* Login Form */}
               <div
                 className={`transition-all duration-500 ease-in-out ${isLogin
-                    ? "opacity-100 transform translate-x-0"
-                    : "opacity-0 transform -translate-x-full absolute"
+                  ? "opacity-100 transform translate-x-0"
+                  : "opacity-0 transform -translate-x-full absolute"
                   }`}
               >
                 <div className="space-y-4">
@@ -132,7 +139,7 @@ export const AuthPage = () => {
                     <input
                       type="email"
                       placeholder="email@example.com"
-                      className="input input-bordered focus:border-secondary focus:outline-none"
+                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
                       value={formData.email}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
@@ -146,15 +153,23 @@ export const AuthPage = () => {
                     </label>
                     <input
                       type="password"
-                      placeholder="********"
-                      className="input input-bordered focus:border-secondary focus:outline-none"
+                      placeholder="Enter Your Password"
+                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
                       value={formData.password}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
+                      minLength={8}
                       required
                     />
                   </div>
+                  {/* Login Error Alert */}
+                  {formError && (
+                    <div role="alert" className="alert alert-error text-sm p-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <span>{formError}</span>
+                    </div>
+                  )}
                   <div className="form-control mt-6">
                     <button className="btn btn-primary" type="submit">
                       Login
@@ -166,8 +181,8 @@ export const AuthPage = () => {
               {/* Register Form */}
               <div
                 className={`transition-all duration-500 ease-in-out ${!isLogin
-                    ? "opacity-100 transform translate-x-0"
-                    : "opacity-0 transform translate-x-full absolute"
+                  ? "opacity-100 transform translate-x-0"
+                  : "opacity-0 transform translate-x-full absolute"
                   }`}
               >
                 <div className="space-y-4">
@@ -181,11 +196,13 @@ export const AuthPage = () => {
                     <input
                       type="text"
                       placeholder="Your Profile Name"
-                      className="input input-bordered focus:border-secondary focus:outline-none"
+                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
                       value={formData.name}
                       onChange={(e) =>
                         setFormData({ ...formData, name: e.target.value })
                       }
+                      minLength={2}
+                      maxLength={30}
                       required={!isLogin}
                     />
                   </div>
@@ -196,7 +213,7 @@ export const AuthPage = () => {
                     <input
                       type="email"
                       placeholder="email@example.com"
-                      className="input input-bordered focus:border-secondary focus:outline-none"
+                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
                       value={formData.email}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
@@ -211,11 +228,12 @@ export const AuthPage = () => {
                     <input
                       type="password"
                       placeholder="Create a Secure Password"
-                      className="input input-bordered focus:border-secondary focus:outline-none"
+                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
                       value={formData.password}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
+                      minLength={8}
                       required={!isLogin}
                     />
                   </div>
@@ -226,7 +244,7 @@ export const AuthPage = () => {
                     <input
                       type="password"
                       placeholder="Confirm Your Password"
-                      className="input input-bordered focus:border-secondary focus:outline-none"
+                      className="input input-bordered focus:border-primary focus:outline-none"
                       value={formData.confirmPassword}
                       onChange={(e) =>
                         setFormData({
@@ -237,6 +255,13 @@ export const AuthPage = () => {
                       required={!isLogin}
                     />
                   </div>
+                  {/* Register Error Alert */}
+                  {formError && (
+                    <div role="alert" className="alert alert-error text-sm p-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <span>{formError}</span>
+                    </div>
+                  )}
                   <div className="form-control mt-6">
                     <button className="btn btn-primary" type="submit">
                       Create Account
