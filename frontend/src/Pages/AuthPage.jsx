@@ -8,6 +8,7 @@ export const AuthPage = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formError, setFormError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,10 +26,19 @@ export const AuthPage = () => {
     }
   }, [isVerified, navigate, loading]);
 
+
+  const handleValidation = (e) => {
+    const { name, validationMessage } = e.target;
+    setFieldErrors(prevErrors => ({ ...prevErrors, [name]: validationMessage }));
+  };
+
   const handleLogin = async (e) => {
-    console.log("Logging in user...");
     e.preventDefault();
     setFormError(null);
+
+    if (!e.target.checkValidity()) {
+      return;
+    }
     try {
       const res = await api.post(
         "/User/login",
@@ -52,9 +62,13 @@ export const AuthPage = () => {
   };
 
   const handleRegister = async (e) => {
-    console.log("Registering user...");
     e.preventDefault();
     setFormError(null);
+
+    if (!e.target.checkValidity()) {
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setFormError("Passwords do not match. Please try again.");
       return;
@@ -117,6 +131,7 @@ export const AuthPage = () => {
 
           <div className="px-2">
             <form
+              noValidate
               onSubmit={isLogin ? handleLogin : handleRegister}
               className="overflow-hidden relative"
               style={{ minHeight: "350px" }}
@@ -138,14 +153,23 @@ export const AuthPage = () => {
                     </label>
                     <input
                       type="email"
-                      placeholder="email@example.com"
-                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
+                      name="email"
+                      placeholder="Enter Your Registered Email"
+                      className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.email ? 'border-error' : ''}`}
                       value={formData.email}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
+                      onBlur={handleValidation}
+                      onInvalid={handleValidation}
                       required
                     />
+                    {/* Validation Error */}
+                    {fieldErrors.email && (
+                      <div className="label">
+                         <span className="label-text-alt text-error text-xs">{fieldErrors.email}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="form-control">
                     <label className="label">
@@ -153,15 +177,24 @@ export const AuthPage = () => {
                     </label>
                     <input
                       type="password"
+                      name="password"
                       placeholder="Enter Your Password"
-                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
+                      className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.password ? 'border-error' : ''}`}
                       value={formData.password}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
                       minLength={8}
+                      onBlur={handleValidation}
+                      onInvalid={handleValidation}
                       required
                     />
+                    {/* Validation Error */}
+                    {fieldErrors.password && (
+                      <div className="label">
+                         <span className="label-text-alt text-error text-xs">{fieldErrors.password}</span>
+                      </div>
+                    )}
                   </div>
                   {/* Login Error Alert */}
                   {formError && (
@@ -195,16 +228,25 @@ export const AuthPage = () => {
                     </label>
                     <input
                       type="text"
+                      name="name"
                       placeholder="Your Profile Name"
-                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
+                      className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.name ? 'border-error' : ''}`}
                       value={formData.name}
                       onChange={(e) =>
                         setFormData({ ...formData, name: e.target.value })
                       }
                       minLength={2}
                       maxLength={30}
+                      onBlur={handleValidation}
+                      onInvalid={handleValidation}
                       required={!isLogin}
                     />
+                    {/* Validation Error */}
+                    {fieldErrors.name && (
+                      <div className="label">
+                         <span className="label-text-alt text-error text-xs">{fieldErrors.name}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="form-control">
                     <label className="label">
@@ -212,14 +254,23 @@ export const AuthPage = () => {
                     </label>
                     <input
                       type="email"
-                      placeholder="email@example.com"
-                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
+                      name="email"
+                      placeholder="Enter a Valid Email"
+                      className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.email ? 'border-error' : ''}`}
                       value={formData.email}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
+                      onBlur={handleValidation}
+                      onInvalid={handleValidation}
                       required={!isLogin}
                     />
+                    {/* Validation Error */}
+                    {fieldErrors.email && (
+                      <div className="label">
+                         <span className="label-text-alt text-error text-xs">{fieldErrors.email}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="form-control">
                     <label className="label">
@@ -227,15 +278,24 @@ export const AuthPage = () => {
                     </label>
                     <input
                       type="password"
+                      name="password"
                       placeholder="Create a Secure Password"
-                      className="input input-bordered focus:border-primary focus:outline-none [&:not(:placeholder-shown)]:invalid:border-error"
+                      className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.password ? 'border-error' : ''}`}
                       value={formData.password}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
                       minLength={8}
+                      onBlur={handleValidation}
+                      onInvalid={handleValidation}
                       required={!isLogin}
                     />
+                    {/* Validation Error */}
+                    {fieldErrors.password && (
+                      <div className="label">
+                         <span className="label-text-alt text-error text-xs">{fieldErrors.password}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="form-control">
                     <label className="label">
