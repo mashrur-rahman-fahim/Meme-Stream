@@ -133,8 +133,8 @@ export const AuthPage = () => {
             <form
               noValidate
               onSubmit={isLogin ? handleLogin : handleRegister}
-              className="overflow-hidden relative"
-              style={{ minHeight: "350px" }}
+              className={`overflow-hidden relative ${isLogin ? 'min-h-[300px]' : 'min-h-[350px]'
+                }`}
             >
               {/* Login Form */}
               <div
@@ -167,7 +167,7 @@ export const AuthPage = () => {
                     {/* Validation Error */}
                     {fieldErrors.email && (
                       <div className="label">
-                         <span className="label-text-alt text-error text-xs">{fieldErrors.email}</span>
+                        <span className="label-text-alt text-error text-xs">{fieldErrors.email}</span>
                       </div>
                     )}
                   </div>
@@ -192,7 +192,7 @@ export const AuthPage = () => {
                     {/* Validation Error */}
                     {fieldErrors.password && (
                       <div className="label">
-                         <span className="label-text-alt text-error text-xs">{fieldErrors.password}</span>
+                        <span className="label-text-alt text-error text-xs">{fieldErrors.password}</span>
                       </div>
                     )}
                   </div>
@@ -244,7 +244,7 @@ export const AuthPage = () => {
                     {/* Validation Error */}
                     {fieldErrors.name && (
                       <div className="label">
-                         <span className="label-text-alt text-error text-xs">{fieldErrors.name}</span>
+                        <span className="label-text-alt text-error text-xs">{fieldErrors.name}</span>
                       </div>
                     )}
                   </div>
@@ -268,7 +268,7 @@ export const AuthPage = () => {
                     {/* Validation Error */}
                     {fieldErrors.email && (
                       <div className="label">
-                         <span className="label-text-alt text-error text-xs">{fieldErrors.email}</span>
+                        <span className="label-text-alt text-error text-xs">{fieldErrors.email}</span>
                       </div>
                     )}
                   </div>
@@ -293,7 +293,7 @@ export const AuthPage = () => {
                     {/* Validation Error */}
                     {fieldErrors.password && (
                       <div className="label">
-                         <span className="label-text-alt text-error text-xs">{fieldErrors.password}</span>
+                        <span className="label-text-alt text-error text-xs">{fieldErrors.password}</span>
                       </div>
                     )}
                   </div>
