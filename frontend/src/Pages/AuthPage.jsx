@@ -55,7 +55,7 @@ export const AuthPage = () => {
       localStorage.setItem("token", res.data.token);
       navigate("/");
     } catch (error) {
-      const message = error.response?.data?.message || "Incorrect email or password. Please try again.";
+      const message = error?.response?.data || "Incorrect email or password. Please try again.";
       setFormError(message);
       console.error("Login failed:", error);
     }
@@ -70,7 +70,7 @@ export const AuthPage = () => {
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setFormError("Passwords do not match. Please try again.");
+      setFormError("Passwords do not match.");
       return;
     }
     try {
@@ -90,7 +90,7 @@ export const AuthPage = () => {
       localStorage.setItem("token", res.data.token);
       navigate("/");
     } catch (error) {
-      const message = error.response?.data?.message || "Registration failed. The email may already be in use.";
+      const message = error?.response?.data || "Registration failed. The email may already be in use.";
       setFormError(message);
       console.error("Registration failed:", error);
     }
