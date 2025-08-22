@@ -22,12 +22,23 @@ namespace MemeStreamApi.data
         public DbSet<Reaction> Reactions { get; set; }
         public DbSet<Comment> Comments { get; set; }
 
-        
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<ChatGroup> ChatGroups { get; set; }
+        public DbSet<ChatGroupMember> ChatGroupMembers { get; set; }
+        public DbSet<MessageReaction> MessageReactions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
+                .IsUnique();
+
+            
+            modelBuilder.Entity<ChatGroupMember>()
+                .HasIndex(cgm => new { cgm.GroupId, cgm.UserId })
                 .IsUnique();
         }
     }
