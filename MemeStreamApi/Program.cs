@@ -6,11 +6,22 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using MemeStreamApi.services;
+using MemeStreamApi.hubs;
+using Microsoft.AspNetCore.SignalR;
+
 Env.Load();
 var builder = WebApplication.CreateBuilder(args);
-var key= Env.GetString("Jwt__Key");
+var key = Env.GetString("Jwt__Key");
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+// Add SignalR service
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+});
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -18,7 +29,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 { 
-    options.TokenValidationParameters=new TokenValidationParameters
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
@@ -27,6 +38,22 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = Env.GetString("Jwt__Issuer"),
         ValidAudience = Env.GetString("Jwt__Audience"),
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+    };
+    
+    // Add this for SignalR JWT authentication
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -68,6 +95,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddDbContext<MemeStreamDbContext>(options =>
@@ -76,21 +104,20 @@ builder.Services.AddDbContext<MemeStreamDbContext>(options =>
 // Register meme detection service
 builder.Services.AddScoped<IMemeDetectionService, MemeDetectionService>();
 
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins("http://localhost:5173") // Your React app's URL
+            .WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:3001") // Your React app's URL + common dev ports
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
 });
+
 var app = builder.Build();
+
 app.UseCors("AllowFrontend");
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -99,9 +126,13 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Map SignalR hub BEFORE controllers
+app.MapHub<ChatHub>("/chatHub");
+app.MapControllers();
+
 // app.UseHttpsRedirection();
 
-
-
 app.Run();
-
