@@ -112,6 +112,10 @@ namespace MemeStreamApi.controller
                 {
                     return Unauthorized("Invalid email or password.");
                 }
+                if (!user.IsEmailVerified)
+                {
+                    return BadRequest("Email not verified. Please check your email for verification.");
+                }
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),

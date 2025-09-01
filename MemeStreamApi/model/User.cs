@@ -16,11 +16,11 @@ namespace MemeStreamApi.model
         public required string Password { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
-        // public bool IsEmailVerified { get; set; } = false;
-        // public string? EmailVerificationToken { get; set; } 
-        // public DateTime? EmailVerificationTokenExpiresAt { get; set; }
-        // public string? ResetPasswordToken { get; set; }
-        // public DateTime? ResetPasswordTokenExpiresAt { get; set; }
+        public bool IsEmailVerified { get; set; } = false;
+        public string? EmailVerificationToken { get; set; } 
+        public DateTime? EmailVerificationTokenExpiresAt { get; set; }
+        public string? ResetPasswordToken { get; set; }
+        public DateTime? ResetPasswordTokenExpiresAt { get; set; }
        
  
         

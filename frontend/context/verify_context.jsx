@@ -1,4 +1,4 @@
-import {  useState } from "react";
+import {  useEffect, useState } from "react";
 import api from "../src/utils/axios";
 import { VerifyContext } from "./create_verify_context";
 
@@ -10,14 +10,16 @@ export const VerifyProvider = ({children}) => {
     const verifyUser = async () => {
         try {
             setLoading(true);
-            await api.get("/Verification/verify", {
+            const res = await api.get("/Verification/verify", {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${localStorage.getItem('token')}`
                 },
             });
-            setIsVerified(true);
-            console.log("User verified");
+            if(res.status===200){
+            setIsVerified(true);}
+            
+         
         } catch (error) {
             console.error("Error verifying user:", error);
         }
@@ -25,8 +27,32 @@ export const VerifyProvider = ({children}) => {
             setLoading(false);
         }
     }
+    const checkEmailVerified = async (email) => {
+        try {
+           
+
+            const res = await api.get(`/Verification/email-check?email=${email}`, {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            return res.data.email_verified;
+        } catch (error) {
+            console.error("Error checking email verification:", error);
+            return false;
+        }
+       
+
+    }
+    const logout = () => {
+        localStorage.removeItem('token');
+        setIsVerified(false);
+    }
+        useEffect(()=>{
+        verifyUser();
+    },[])
     return (
-        <VerifyContext.Provider value={{isVerified, verifyUser, loading}}>
+        <VerifyContext.Provider value={{isVerified, checkEmailVerified, verifyUser, loading, logout}}>
             {children}
         </VerifyContext.Provider>
     )
