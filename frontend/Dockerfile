@@ -1,41 +1,33 @@
-# Use Node.js 20 (LTS) as the base image
-FROM node:20-alpine AS base
+# Multi-stage build for React + Vite application
+FROM node:20-alpine AS builder
 
-# Install dependencies only when needed
-FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
+
+# Install dependencies
 RUN npm ci
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Copy all source code
 COPY . .
 
-# Build argument for API URL
+# Build argument for API URL (can be set during build)
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Build the application
 RUN npm run build
 
-# Production image, copy all the files and run the app
-FROM nginx:alpine AS runner
-WORKDIR /usr/share/nginx/html
+# Production stage with Nginx
+FROM nginx:alpine
 
-# Remove default nginx static assets
-RUN rm -rf ./*
-
-# Copy built application from builder stage
-COPY --from=builder /app/dist .
-
-# Copy nginx configuration
+# Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy built app from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
