@@ -6,7 +6,7 @@ import { VerifyContext } from "../../context/create_verify_context";
 export const RegisterPage = () => {
   const navigate = useNavigate();
 
-  const { isVerified, verifyUser, loading, checkEmailVerified } =
+  const { isVerified, verifyUser, loading } =
     useContext(VerifyContext);
 
   const [formData, setFormData] = React.useState({
