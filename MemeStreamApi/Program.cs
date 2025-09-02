@@ -90,6 +90,23 @@ builder.Services.AddCors(options =>
             .AllowCredentials());
 });
 var app = builder.Build();
+
+// Auto-run migrations on startup (for production deployment)
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<MemeStreamDbContext>();
+    try
+    {
+        dbContext.Database.Migrate();
+        Console.WriteLine("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error applying migrations: {ex.Message}");
+        // Don't throw - let the app start even if migrations fail
+    }
+}
+
 app.UseCors("AllowFrontend");
 
 // Add health check endpoint
