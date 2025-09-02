@@ -27,26 +27,6 @@ Thumbs.db
 .git/
 .gitignore
 
-# Documentation
-README.md
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# Build output
-dist/
-build/
-
-# Development files
-src/
-public/
-*.config.js
-*.config.ts
-
-# Git
-.git
-.gitignore
-
 # Docker
 Dockerfile*
 .dockerignore
