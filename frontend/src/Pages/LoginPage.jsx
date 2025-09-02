@@ -5,7 +5,7 @@ import { VerifyContext } from "../../context/create_verify_context.jsx";
 
 
 export const LoginPage = () => {
-  const {isVerified, verifyUser, loading} = useContext(VerifyContext);
+  const {isVerified, verifyUser, loading, checkEmailVerified} = useContext(VerifyContext);
   const navigate = useNavigate();
   const [formData, setFormData] = React.useState({
     email: "",
@@ -13,27 +13,42 @@ export const LoginPage = () => {
   });
   useEffect(() => {
     verifyUser();
-  }, [verifyUser]);
+  }, []);
   useEffect(() => {
     if(isVerified && !loading){
       navigate('/');
     }
-  }, [isVerified, navigate, loading]);
+    
+
+  }, [ navigate, loading, isVerified]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Form submitted:", formData);
     try {
+       const res1= await checkEmailVerified(formData.email);
+
+      
+      if(!res1){
+       const res = await api.post("/Email/send-verification", {to: formData.email})
+        if(res.status === 200){
+          alert("Email not verified. Verification email sent. Please verify your email before logging in.");
+        }
+        return;
+      }
       const res = await api.post("/User/login", formData, {
         headers: {
           "Content-Type": "application/json",
         },
       });
-      console.log("Login successful:", res.data);
-
-      localStorage.setItem("token", res.data.token); // Store the token in localStorage
+      localStorage.setItem("token", res.data.token);
+      await verifyUser();
+      navigate("/");
      
-      navigate('/');
+
     } catch (error) {
+      
+
+    
       console.error("Login failed:", error);
     }
   };

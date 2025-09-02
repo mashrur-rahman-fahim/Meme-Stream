@@ -36,12 +36,36 @@ namespace MemeStreamApi.controller
                 {
                     return NotFound("User not found.");
                 }
-                return Ok("user verified successfully");
+
+                var email_verified = user.IsEmailVerified;
+                if (!email_verified)
+                {
+                    return Unauthorized(new { message = "Email not verified" });
+                }
+                return Ok(new {message="user verified successfully"});
             }
             catch (Exception ex)
             {
                 
-                return BadRequest("Error verifying user.");
+                return BadRequest(new {message="Error verifying user."});
+            }
+        }
+        [HttpGet("email-check")]
+        public IActionResult isEmailVerified([FromQuery] string email)
+        {
+            try
+            {
+                var user=_context.Users.FirstOrDefault(u=>u.Email==email);
+                if(user==null)
+                {
+                    return NotFound("User not found.");
+                }
+                return Ok(new { email_verified = user.IsEmailVerified });
+            }
+            catch (Exception ex)
+            {
+                
+                return BadRequest("Error verifying email.");
             }
         }
     }

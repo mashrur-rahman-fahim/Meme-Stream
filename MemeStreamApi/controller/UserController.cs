@@ -12,6 +12,7 @@ using MemeStreamApi.model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using MemeStreamApi.services;
 
 namespace MemeStreamApi.controller
 {
@@ -21,9 +22,11 @@ namespace MemeStreamApi.controller
     public class UserController : ControllerBase
     {
         private readonly MemeStreamDbContext _context;
-        public UserController(MemeStreamDbContext context)
+        private readonly IEmailService _emailService;
+        public UserController(MemeStreamDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
         public class RegisterDto
         {
@@ -34,7 +37,7 @@ namespace MemeStreamApi.controller
             public string Image { get; set; } = string.Empty;
         }
         [HttpPost("register")]
-        public IActionResult CreateUser([FromBody] RegisterDto registerDto)
+        public async Task<IActionResult> CreateUser([FromBody] RegisterDto registerDto)
         {
             if (registerDto == null)
             {
@@ -75,6 +78,7 @@ namespace MemeStreamApi.controller
                     signingCredentials: creds
                 );
                 var Token = new JwtSecurityTokenHandler().WriteToken(token);
+                await _emailService.SendWelcomeEmailAsync(user.Email, user.Name);
 
                 transaction.Commit();
                 return Ok(new { Token = Token, User = user });
@@ -107,6 +111,10 @@ namespace MemeStreamApi.controller
                 if (user == null || !BCrypt.Net.BCrypt.Verify(login.Password, user.Password))
                 {
                     return Unauthorized("Invalid email or password.");
+                }
+                if (!user.IsEmailVerified)
+                {
+                    return BadRequest("Email not verified. Please check your email for verification.");
                 }
                 var claims = new[]
                 {
