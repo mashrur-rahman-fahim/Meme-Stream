@@ -68,6 +68,23 @@ namespace MemeStreamApi.services
             await SendEmailAsync(to, subject, body, true);
 
         }
+        public async Task SendPasswordResetEmailAsync(string to, string token)
+        {
+            var subject = "Reset Your Password - MemeStream";
+            var resetLink = $"{Env.GetString("FRONTEND_URL")}/reset-password?token={token}";
+            var body = $@"
+                <html>
+                <body>
+                    <h2>Reset Your Password</h2>
+                    <p>Please click the link below to reset your password:</p>
+                    <a href='{resetLink}'>Reset Password</a>
+                    <p>If you did not request a password reset, please ignore this email.</p>
+                    <p>Best regards,<br>The MemeStream Team</p>
+                </body>
+                </html>";
+
+            await SendEmailAsync(to, subject, body, true);
+        }
 
 
 

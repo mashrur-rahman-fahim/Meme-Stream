@@ -10,6 +10,6 @@ namespace MemeStreamApi.services
         Task SendEmailAsync(string to, string subject, string body,bool isHtml=false);
         Task SendWelcomeEmailAsync(string to, string userName);
         Task SendVerificationEmailAsync(string to, string token);
-        // Task SendPasswordResetEmailAsync(string to, string token);
+        Task SendPasswordResetEmailAsync(string to, string token);
     }
 }
