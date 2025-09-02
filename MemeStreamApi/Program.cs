@@ -81,15 +81,37 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddCors(options =>
 {
+    var frontendUrl = Env.GetString("FRONTEND_URL") ?? "http://localhost:5173";
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins("http://localhost:5173") // Your React app's URL
+            .WithOrigins(frontendUrl, "http://localhost:5173") // Production and development URLs
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
 });
 var app = builder.Build();
+
+// Auto-run migrations on startup (for production deployment)
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<MemeStreamDbContext>();
+    try
+    {
+        dbContext.Database.Migrate();
+        Console.WriteLine("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error applying migrations: {ex.Message}");
+        // Don't throw - let the app start even if migrations fail
+    }
+}
+
 app.UseCors("AllowFrontend");
+
+// Add health check endpoint
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -1,0 +1,52 @@
+services:
+  # Backend API Service
+  - type: web
+    name: memestream-backend
+    runtime: docker
+    plan: free
+    rootDir: MemeStreamApi
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__MemeStreamDb
+        sync: false # This will be set manually in Render dashboard
+      - key: Jwt__Key
+        sync: false # Set manually for security
+      - key: Jwt__Issuer
+        sync: false # Will be your backend URL
+      - key: Jwt__Audience
+        sync: false # Will be your frontend URL
+      - key: GEMINI_API_KEY
+        sync: false # Set manually
+      - key: MODEL_NAME
+        value: gemini-1.5-flash
+      - key: SENDER_NAME
+        value: MemeStream
+      - key: SENDER_EMAIL
+        sync: false # Set manually
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USERNAME
+        sync: false # Set manually
+      - key: SMTP_PASSWORD
+        sync: false # Set manually
+      - key: FRONTEND_URL
+        sync: false # Will be your frontend URL
+
+  # Frontend Service
+  - type: web
+    name: memestream-frontend
+    runtime: docker
+    plan: free
+    rootDir: frontend
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    buildCommand: ""
+    dockerContext: ./frontend
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false # Will be your backend URL + /api
