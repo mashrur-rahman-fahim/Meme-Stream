@@ -36,7 +36,7 @@ export const ProfilePage = () => {
   const handleDelete = async () => {
     await api.delete("/User/delete");
     localStorage.removeItem("token");
-    navigate("/Login");
+    navigate("/auth");
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
