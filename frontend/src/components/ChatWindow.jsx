@@ -42,6 +42,8 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
           id: m.id,
           senderId: m.senderId,
           msg: m.content,
+          fileName: m.fileName,
+          filePath: m.filePath,
           sentAt: m.sentAt,
           editedAt: m.editedAt,
           isDeleted: m.isDeleted,
@@ -170,6 +172,40 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
     if (receiverId) sendTypingStatus(receiverId, false);
   };
 
+  // ✅ File upload handler
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    if (receiverId) formData.append("receiverId", receiverId);
+    if (groupName) formData.append("groupId", groupName.replace("group-", ""));
+
+    try {
+      const res = await axios.post("http://localhost:5216/api/chat/upload", formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // ✅ Append file message to chat
+      setChatLog((prev) => [
+        ...prev,
+        {
+          id: res.data.id,
+          senderId: res.data.senderId,
+          fileName: res.data.fileName,
+          filePath: res.data.filePath,
+          sentAt: res.data.sentAt,
+        },
+      ]);
+
+      toast.success(`File sent: ${res.data.fileName}`);
+    } catch (err) {
+      toast.error("Upload failed");
+      console.error(err);
+    }
+  };
+
   return (
     <div className="p-4 bg-base-200 rounded shadow w-full max-w-md">
       <div className="overflow-y-auto h-64 mb-2 border border-base-300 rounded px-2 py-1">
@@ -184,7 +220,22 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
                   isSender ? "bg-blue-500 text-white" : "bg-gray-200 text-black"
                 }`}
               >
-                <div>{entry.msg}</div>
+                {entry.msg && <div>{entry.msg}</div>}
+
+                {/* ✅ File download link */}
+                {entry.filePath && (
+                  <div className="mt-2">
+                    <a
+                      href={`http://localhost:5216/${entry.filePath}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      📎 {entry.fileName}
+                    </a>
+                  </div>
+                )}
+
                 <div className="text-xs text-right opacity-70 mt-1">
                   {new Date(entry.sentAt).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -194,6 +245,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
                     <span className="ml-2 italic opacity-50">(edited)</span>
                   )}
                 </div>
+
                 {reactions[entry.id]?.length > 0 && (
                   <div className="flex gap-1 mt-1 text-sm">
                     {reactions[entry.id].map((r, i) => (
@@ -201,6 +253,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
                     ))}
                   </div>
                 )}
+
                 {!entry.isDeleted && (
                   <div className="flex gap-2 mt-1">
                     {["👍", "😂", "❤️"].map((emoji) => (
@@ -241,6 +294,14 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
           <div className="text-xs text-gray-500 italic mt-1">Typing...</div>
         )}
       </div>
+
+      {/* ✅ File Input */}
+      <input
+        type="file"
+        onChange={handleFileUpload}
+        className="file-input file-input-bordered w-full mb-2"
+      />
+
       <textarea
         className="textarea textarea-bordered w-full mb-2"
         value={message}
@@ -255,3 +316,4 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
 };
 
 export default ChatWindow;
+
