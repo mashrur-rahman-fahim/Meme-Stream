@@ -9,18 +9,19 @@ const ChatSidebar = () => {
 
   useEffect(() => {
     const fetchFriends = async () => {
-      const res = await axios.get("http://localhost:5216/api/friends", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setFriends(res.data);
-    };
-
-    const fetchGroups = async () => {
-      const res = await axios.get("http://localhost:5216/api/chat/mygroups", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setGroups(res.data);
-    };
+        const res = await axios.get("http://localhost:5216/api/ChatSidebar/friends", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFriends(res.data);
+      };
+      
+      const fetchGroups = async () => {
+        const res = await axios.get("http://localhost:5216/api/ChatSidebar/groups", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setGroups(res.data);
+      };
+      
 
     fetchFriends();
     fetchGroups();

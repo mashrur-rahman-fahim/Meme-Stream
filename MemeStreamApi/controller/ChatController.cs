@@ -86,4 +86,39 @@ public class ChatController : ControllerBase
 
         return Ok(messages);
     }
+
+    [HttpGet("group/{groupId}/members")]
+    public async Task<IActionResult> GetGroupMembers(int groupId)
+    {
+        var members = await _context.GroupMemberships
+            .Where(gm => gm.GroupId == groupId)
+            .Select(gm => new { gm.User.Id, gm.User.Name })
+            .ToListAsync();
+
+        return Ok(members);
+    }
+
+    [HttpDelete("group/{groupId}/remove/{userId}")]
+    public async Task<IActionResult> RemoveUserFromGroup(int groupId, int userId)
+    {
+        var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+        var group = await _context.Groups.FindAsync(groupId);
+        if (group == null || group.CreatedById != currentUserId)
+            return Unauthorized("Only the group creator can remove members.");
+
+        var membership = await _context.GroupMemberships
+            .FirstOrDefaultAsync(gm => gm.GroupId == groupId && gm.UserId == userId);
+
+        if (membership == null)
+            return NotFound("User not in group.");
+
+        _context.GroupMemberships.Remove(membership);
+        await _context.SaveChangesAsync();
+
+        return Ok("User removed.");
+    }
+
+
+
 }
