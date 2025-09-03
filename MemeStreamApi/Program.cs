@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using MemeStreamApi.services;
+using Microsoft.AspNetCore.SignalR;
 
 Env.Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -92,6 +93,8 @@ builder.Services.AddDbContext<MemeStreamDbContext>(options =>
 builder.Services.AddScoped<IMemeDetectionService, MemeDetectionService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
+
 
 
 
@@ -131,6 +134,8 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ChatHub>("/chathub");
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
