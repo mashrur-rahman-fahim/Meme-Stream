@@ -9,6 +9,7 @@ import {
   reactToMessage,
   editMessage,
   deleteMessage,
+  markMessageAsRead,
 } from "../services/signalRService";
 import { ChatContext } from "../../context/ChatContext";
 import toast from "react-hot-toast";
@@ -19,6 +20,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   const [chatLog, setChatLog] = useState([]);
   const [otherTyping, setOtherTyping] = useState(false);
   const [reactions, setReactions] = useState({});
+  const [readMap, setReadMap] = useState({}); // ✅ NEW: Read receipts
   const { incrementUnread, clearUnread } = useContext(ChatContext);
   const [searchParams] = useSearchParams();
   const anchorMessageId = parseInt(searchParams.get("msg"));
@@ -123,6 +125,14 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         );
       });
 
+      // ✅ NEW: Listen for read receipts
+      conn.on("ReceiveReadReceipt", (messageId, userId) => {
+        setReadMap((prev) => ({
+          ...prev,
+          [messageId]: [...(prev[messageId] || []), userId],
+        }));
+      });
+
       const waitUntilConnected = () =>
         new Promise((resolve) => {
           const check = () => {
@@ -144,6 +154,15 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
     fetchHistory();
     initConnection();
   }, [token, receiverId, groupName]);
+
+  // ✅ Trigger marking messages as read
+  useEffect(() => {
+    chatLog.forEach((msg) => {
+      if (msg.senderId !== currentUserId) {
+        markMessageAsRead(msg.id);
+      }
+    });
+  }, [chatLog]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -187,7 +206,6 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // ✅ Append file message to chat
       setChatLog((prev) => [
         ...prev,
         {
@@ -222,7 +240,6 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
               >
                 {entry.msg && <div>{entry.msg}</div>}
 
-                {/* ✅ File download link */}
                 {entry.filePath && (
                   <div className="mt-2">
                     <a
@@ -286,6 +303,17 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
                     )}
                   </div>
                 )}
+
+                {/* ✅ Read Receipt (Seen) */}
+                {isSender && readMap[entry.id]?.length > 0 && (
+                  <div className="text-xs text-right text-green-500 mt-1">
+                    {groupName ? (
+                      <span title={readMap[entry.id].join(", ")}>Seen by {readMap[entry.id].length}</span>
+                    ) : (
+                      readMap[entry.id].includes(receiverId) && "Seen"
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -316,4 +344,3 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
 };
 
 export default ChatWindow;
-
