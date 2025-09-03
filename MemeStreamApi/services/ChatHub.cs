@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.SignalR;
 using MemeStreamApi.data;
 using MemeStreamApi.model;
 using System.Collections.Concurrent;
+using Microsoft.EntityFrameworkCore;
+
 
 public class ChatHub : Hub
 {
@@ -141,6 +143,30 @@ public class ChatHub : Hub
 
         await Clients.All.SendAsync("ReceiveMessageDelete", messageId);
     }
+
+    public async Task MarkAsRead(int messageId)
+    {
+        var userId = int.Parse(Context.UserIdentifier);
+
+        var alreadySeen = await _context.MessageReadReceipts
+            .AnyAsync(r => r.MessageId == messageId && r.UserId == userId);
+
+        if (!alreadySeen)
+        {
+            var receipt = new MessageReadReceipt
+            {
+                MessageId = messageId,
+                UserId = userId,
+                SeenAt = DateTime.UtcNow
+            };
+
+            _context.MessageReadReceipts.Add(receipt);
+            await _context.SaveChangesAsync();
+
+            await Clients.All.SendAsync("ReceiveReadReceipt", messageId, userId);
+        }
+    }
+
 
 
 }
