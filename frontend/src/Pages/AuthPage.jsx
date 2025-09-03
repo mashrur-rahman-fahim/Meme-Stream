@@ -10,6 +10,7 @@ export const AuthPage = () => {
   const [formError, setFormError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -36,10 +37,13 @@ export const AuthPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setFormError(null);
+    setFormSuccess(null);
 
     if (!e.target.checkValidity()) {
       return;
     }
+
+    setIsSubmitting(true);
     try {
       const isEmailVerified = await checkEmailVerified(formData.email);
       if (!isEmailVerified) {
@@ -71,6 +75,8 @@ export const AuthPage = () => {
       const message = error?.response?.data || "Incorrect email or password. Please try again.";
       setFormError(message);
       console.error("Login failed:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -86,6 +92,8 @@ export const AuthPage = () => {
       setFormError("Passwords do not match.");
       return;
     }
+
+    setIsSubmitting(true);
     try {
       await api.post(
         "/User/register",
@@ -113,6 +121,8 @@ export const AuthPage = () => {
       const message = error?.response?.data || "Registration failed. The email may already be in use.";
       setFormError(message);
       console.error("Registration failed:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -232,8 +242,12 @@ export const AuthPage = () => {
                     </div>
                   )}
                   <div className="form-control mt-6">
-                    <button className="btn btn-primary" type="submit">
-                      Login
+                    <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <span className="loading loading-bars loading-lg"></span>
+                      ) : (
+                        "Login"
+                      )}
                     </button>
                   </div>
                 </div>
@@ -351,8 +365,12 @@ export const AuthPage = () => {
                     </div>
                   )}
                   <div className="form-control mt-6">
-                    <button className="btn btn-primary" type="submit">
-                      Create Account
+                    <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <span className="loading loading-bars loading-lg"></span>
+                      ) : (
+                        "Create Account"
+                      )}
                     </button>
                   </div>
                 </div>
