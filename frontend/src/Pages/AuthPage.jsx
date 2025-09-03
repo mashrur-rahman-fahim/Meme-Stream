@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import api from "../utils/axios.js";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context.jsx";
 
 export const AuthPage = () => {
@@ -377,21 +377,10 @@ export const AuthPage = () => {
               </div>
             </form>
           </div>
+          {isLogin && 
           <div className="text-center mt-6">
-            <p className="text-sm">
-              {isLogin ? "Don't have an account? " : "Already a member? "}
-              <a
-                href="#"
-                className="link link-primary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsLogin(!isLogin);
-                }}
-              >
-                {isLogin ? "Register now" : "Login here"}
-              </a>
-            </p>
-          </div>
+              <p>Forgot your password? <Link to="/forgot-password" className="link link-primary">Reset it here</Link></p>
+          </div>}
         </div>
       </div>
 
