@@ -21,6 +21,10 @@ namespace MemeStreamApi.model
 
         public bool IsRead { get; set; } = false;
 
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? EditedAt { get; set; }
+
+
         [ForeignKey("SenderId")]
         public User Sender { get; set; }
 

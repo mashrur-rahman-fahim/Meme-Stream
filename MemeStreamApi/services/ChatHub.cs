@@ -114,4 +114,33 @@ public class ChatHub : Hub
         await Clients.All.SendAsync("ReceiveReaction", messageId, userId, emoji);
     }
 
+    public async Task EditMessage(int messageId, string newContent)
+    {
+        var userId = int.Parse(Context.UserIdentifier);
+        var message = await _context.Messages.FindAsync(messageId);
+
+        if (message == null || message.SenderId != userId) return;
+
+        message.Content = newContent;
+        message.EditedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        await Clients.All.SendAsync("ReceiveMessageEdit", messageId, newContent, message.EditedAt);
+    }
+
+    public async Task DeleteMessage(int messageId)
+    {
+        var userId = int.Parse(Context.UserIdentifier);
+        var message = await _context.Messages.FindAsync(messageId);
+
+        if (message == null || message.SenderId != userId) return;
+
+        message.IsDeleted = true;
+        await _context.SaveChangesAsync();
+
+        await Clients.All.SendAsync("ReceiveMessageDelete", messageId);
+    }
+
+
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import axios from "axios";
 import {
   startSignalRConnection,
@@ -6,17 +6,24 @@ import {
   sendGroupMessage,
   joinGroup,
   sendTypingStatus,
+  reactToMessage,
+  editMessage,
+  deleteMessage,
 } from "../services/signalRService";
 import { ChatContext } from "../../context/ChatContext";
 import toast from "react-hot-toast";
+import { useSearchParams } from "react-router-dom";
 
 const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   const [message, setMessage] = useState("");
   const [chatLog, setChatLog] = useState([]);
   const [otherTyping, setOtherTyping] = useState(false);
+  const [reactions, setReactions] = useState({});
   const { incrementUnread, clearUnread } = useContext(ChatContext);
-
-  const ding = new Audio("/sounds/ding.mp3"); // optional sound file
+  const [searchParams] = useSearchParams();
+  const anchorMessageId = parseInt(searchParams.get("msg"));
+  const scrollRef = useRef(null);
+  const ding = new Audio("/sounds/ding.mp3");
 
   useEffect(() => {
     const key = receiverId || `group-${groupName}`;
@@ -32,9 +39,12 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
           }
         );
         const history = res.data.map((m) => ({
+          id: m.id,
           senderId: m.senderId,
           msg: m.content,
           sentAt: m.sentAt,
+          editedAt: m.editedAt,
+          isDeleted: m.isDeleted,
         }));
         setChatLog(history);
       } catch (err) {
@@ -48,13 +58,23 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         (senderId, msg) => {
           setChatLog((prev) => [
             ...prev,
-            { senderId, msg, sentAt: new Date().toISOString() },
+            {
+              id: Date.now(),
+              senderId,
+              msg,
+              sentAt: new Date().toISOString(),
+            },
           ]);
         },
         (senderId, msg) => {
           setChatLog((prev) => [
             ...prev,
-            { senderId, msg, sentAt: new Date().toISOString() },
+            {
+              id: Date.now(),
+              senderId,
+              msg,
+              sentAt: new Date().toISOString(),
+            },
           ]);
         },
         ({ type, senderId, message }) => {
@@ -74,6 +94,32 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
           }
         }
       );
+
+      conn.on("ReceiveReaction", (messageId, userId, emoji) => {
+        setReactions((prev) => {
+          const existing = prev[messageId] || [];
+          return {
+            ...prev,
+            [messageId]: [...existing, { userId, emoji }],
+          };
+        });
+      });
+
+      conn.on("ReceiveMessageEdit", (messageId, newContent, editedAt) => {
+        setChatLog((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId ? { ...msg, msg: newContent, editedAt } : msg
+          )
+        );
+      });
+
+      conn.on("ReceiveMessageDelete", (messageId) => {
+        setChatLog((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId ? { ...msg, msg: "[deleted]", isDeleted: true } : msg
+          )
+        );
+      });
 
       const waitUntilConnected = () =>
         new Promise((resolve) => {
@@ -96,6 +142,12 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
     fetchHistory();
     initConnection();
   }, [token, receiverId, groupName]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [chatLog]);
 
   const handleTyping = (e) => {
     setMessage(e.target.value);
@@ -123,8 +175,10 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
       <div className="overflow-y-auto h-64 mb-2 border border-base-300 rounded px-2 py-1">
         {chatLog.map((entry, idx) => {
           const isSender = entry.senderId === currentUserId;
+          const ref = entry.id === anchorMessageId ? scrollRef : null;
+
           return (
-            <div key={idx} className={`flex ${isSender ? "justify-end" : "justify-start"} mb-2`}>
+            <div key={entry.id || idx} ref={ref} className={`flex ${isSender ? "justify-end" : "justify-start"} mb-2`}>
               <div
                 className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
                   isSender ? "bg-blue-500 text-white" : "bg-gray-200 text-black"
@@ -136,7 +190,49 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
+                  {entry.editedAt && !entry.isDeleted && (
+                    <span className="ml-2 italic opacity-50">(edited)</span>
+                  )}
                 </div>
+                {reactions[entry.id]?.length > 0 && (
+                  <div className="flex gap-1 mt-1 text-sm">
+                    {reactions[entry.id].map((r, i) => (
+                      <span key={i}>{r.emoji}</span>
+                    ))}
+                  </div>
+                )}
+                {!entry.isDeleted && (
+                  <div className="flex gap-2 mt-1">
+                    {["👍", "😂", "❤️"].map((emoji) => (
+                      <button
+                        key={emoji}
+                        className="text-xs"
+                        onClick={() => reactToMessage(entry.id, emoji)}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                    {isSender && (
+                      <>
+                        <button
+                          className="text-xs text-yellow-300"
+                          onClick={() => {
+                            const newContent = prompt("Edit message:", entry.msg);
+                            if (newContent) editMessage(entry.id, newContent);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="text-xs text-red-400"
+                          onClick={() => deleteMessage(entry.id)}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           );

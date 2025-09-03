@@ -70,3 +70,22 @@ export const sendTypingStatus = async (receiverId, isTyping) => {
     await connection.invoke("SendTypingStatus", receiverId, isTyping);
   }
 };
+
+export const reactToMessage = async (messageId, emoji) => {
+  if (connection && connection.state === "Connected") {
+    await connection.invoke("ReactToMessage", messageId, emoji);
+  }
+};
+
+export const editMessage = async (messageId, newContent) => {
+  if (connection && connection.state === "Connected") {
+    await connection.invoke("EditMessage", messageId, newContent);
+  }
+};
+
+export const deleteMessage = async (messageId) => {
+  if (connection && connection.state === "Connected") {
+    await connection.invoke("DeleteMessage", messageId);
+  }
+};
+
