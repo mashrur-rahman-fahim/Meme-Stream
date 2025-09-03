@@ -26,6 +26,10 @@ namespace MemeStreamApi.data
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupMembership> GroupMemberships { get; set; }
 
+        public DbSet<MessageReacton> MessageReactons { get; set; }
+
+
+
 
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)

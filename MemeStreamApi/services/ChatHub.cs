@@ -96,4 +96,22 @@ public class ChatHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
     }
+
+    public async Task ReactToMessage(int messageId, string emoji)
+    {
+        var userId = int.Parse(Context.UserIdentifier);
+
+        var reacton = new MessageReacton
+        {
+            MessageId = messageId,
+            ReactorId = userId,
+            Emoji = emoji
+        };
+
+        _context.MessageReactons.Add(reacton);
+        await _context.SaveChangesAsync();
+
+        await Clients.All.SendAsync("ReceiveReaction", messageId, userId, emoji);
+    }
+
 }
