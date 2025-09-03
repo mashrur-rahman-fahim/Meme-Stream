@@ -1,9 +1,9 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MemeStreamApi.model
 {
-    public class MessageReadReceipt
+
+public class MessageReadReceipt
 {
     public int Id { get; set; }
     public int MessageId { get; set; }
@@ -16,5 +16,6 @@ namespace MemeStreamApi.model
     [ForeignKey("UserId")]
     public User User { get; set; }
 }
+
 
 }
