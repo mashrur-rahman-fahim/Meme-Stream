@@ -1,0 +1,20 @@
+# Ignore build outputs
+MemeStreamApi/bin/
+MemeStreamApi/obj/
+
+# Ignore user secrets and environment files
+MemeStreamApi/.env
+
+# Ignore sensitive config files
+MemeStreamApi/appsettings.Development.json
+MemeStreamApi/appsettings.Local.json
+
+# Ignore database files (if any)
+MemeStreamApi/*.db
+
+# Ignore Visual Studio/VS Code settings (optional)
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates

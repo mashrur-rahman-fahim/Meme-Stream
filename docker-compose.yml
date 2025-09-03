@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: memestream-postgres
+    environment:
+      POSTGRES_DB: MemeStream
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - memestream-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./MemeStreamApi
+      dockerfile: Dockerfile
+    container_name: memestream-backend
+    environment:
+      - ConnectionStrings__MemeStreamDb=Host=postgres;Port=5432;Database=MemeStream;Username=postgres;Password=password
+      - Jwt__Key=G7v9x!pQz2Lk@1sT4wRb8Yc6Nf$0jVmrghebfghegdf
+      - Jwt__Issuer=http://localhost:5216
+      - Jwt__Audience=http://localhost:5173
+      - GEMINI_API_KEY=AIzaSyC_LOMralehMxQRh2p4t-P3Fyoasf2uNcc
+      - MODEL_NAME=gemini-1.5-flash
+      - SENDER_NAME=MemeStream
+      - SENDER_EMAIL=mashrur9550@gmail.com
+      - SMTP_SERVER=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=mashrur9550@gmail.com
+      - SMTP_PASSWORD=xapebgjvqgfahqiq
+      - FRONTEND_URL=http://localhost:5173
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "5216:80"
+    depends_on:
+      - postgres
+    networks:
+      - memestream-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:5216/api
+    container_name: memestream-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - memestream-network
+
+volumes:
+  postgres_data:
+
+networks:
+  memestream-network:
+    driver: bridge
