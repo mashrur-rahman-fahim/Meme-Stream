@@ -29,11 +29,7 @@ namespace MemeStreamApi.data
         public DbSet<MessageReacton> MessageReactons { get; set; }
 
         public DbSet<ChatFile> ChatFiles { get; set; }
-
         public DbSet<MessageReadReceipt> MessageReadReceipts { get; set; }
-
-
-
 
 
 

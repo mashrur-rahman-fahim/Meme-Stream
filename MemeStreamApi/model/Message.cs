@@ -24,7 +24,6 @@ namespace MemeStreamApi.model
         public bool IsDeleted { get; set; } = false;
         public DateTime? EditedAt { get; set; }
 
-
         [ForeignKey("SenderId")]
         public User Sender { get; set; }
 
@@ -33,5 +32,9 @@ namespace MemeStreamApi.model
 
         [ForeignKey("GroupId")]
         public Group? Group { get; set; }
+
+        public List<MessageReadReceipt> ReadReceipts { get; set; } = new();
+
+
     }
 }
