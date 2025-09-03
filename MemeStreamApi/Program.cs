@@ -6,10 +6,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using MemeStreamApi.services;
+using Microsoft.AspNetCore.SignalR;
 
 Env.Load();
 var builder = WebApplication.CreateBuilder(args);
-var key= Env.GetString("Jwt__Key");
+var key = Env.GetString("Jwt__Key");
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddAuthentication(options =>
@@ -18,8 +19,8 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
-{ 
-    options.TokenValidationParameters=new TokenValidationParameters
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
@@ -29,19 +30,33 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = Env.GetString("Jwt__Audience"),
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
+
 });
 
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
-        Title = "MemeStream API", 
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "MemeStream API",
         Version = "v1",
         Description = "API for MemeStream social media application"
     });
-    
+
     // Define the JWT Bearer authentication scheme
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -77,6 +92,10 @@ builder.Services.AddDbContext<MemeStreamDbContext>(options =>
 // Register meme detection service
 builder.Services.AddScoped<IMemeDetectionService, MemeDetectionService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
+
+
 
 
 builder.Services.AddCors(options =>
@@ -115,6 +134,8 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ChatHub>("/chathub");
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
