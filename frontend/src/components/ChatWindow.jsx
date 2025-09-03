@@ -16,6 +16,8 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   const [otherTyping, setOtherTyping] = useState(false);
   const { incrementUnread, clearUnread } = useContext(ChatContext);
 
+  const ding = new Audio("/sounds/ding.mp3"); // optional sound file
+
   useEffect(() => {
     const key = receiverId || `group-${groupName}`;
 
@@ -58,15 +60,20 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         ({ type, senderId, message }) => {
           const notifyKey = type === "private" ? senderId : `group-${groupName}`;
           incrementUnread(notifyKey);
-          toast(`${type === "private" ? "DM" : "Group"} from ${senderId}: ${message}`);
+          toast.success(`New ${type} message from ${senderId}`, {
+            duration: 3000,
+            position: "bottom-right",
+          });
+          if (document.visibilityState !== "visible") {
+            ding.play();
+          }
+        },
+        (senderId, isTyping) => {
+          if (senderId !== currentUserId) {
+            setOtherTyping(isTyping);
+          }
         }
       );
-
-      conn.on("ReceiveTypingStatus", (senderId, isTyping) => {
-        if (senderId !== currentUserId) {
-          setOtherTyping(isTyping);
-        }
-      });
 
       const waitUntilConnected = () =>
         new Promise((resolve) => {

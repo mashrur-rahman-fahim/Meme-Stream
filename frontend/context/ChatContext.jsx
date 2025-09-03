@@ -3,17 +3,17 @@ import { createContext, useState } from "react";
 export const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
-  const [unread, setUnread] = useState({}); // { userId: count, groupId: count }
+  const [unreadMap, setUnreadMap] = useState({}); 
 
   const incrementUnread = (key) => {
-    setUnread((prev) => ({
+    setUnreadMap((prev) => ({
       ...prev,
       [key]: (prev[key] || 0) + 1,
     }));
   };
 
   const clearUnread = (key) => {
-    setUnread((prev) => {
+    setUnreadMap((prev) => {
       const updated = { ...prev };
       delete updated[key];
       return updated;
@@ -21,7 +21,7 @@ export const ChatProvider = ({ children }) => {
   };
 
   return (
-    <ChatContext.Provider value={{ unread, incrementUnread, clearUnread }}>
+    <ChatContext.Provider value={{ unreadMap, incrementUnread, clearUnread }}>
       {children}
     </ChatContext.Provider>
   );
