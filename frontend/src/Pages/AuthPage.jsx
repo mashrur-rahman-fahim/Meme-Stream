@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context.jsx";
 
 export const AuthPage = () => {
-  const { isVerified, verifyUser, loading } = useContext(VerifyContext);
+  const { isVerified, verifyUser, loading, checkEmailVerified } = useContext(VerifyContext);
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formError, setFormError] = useState(null);
+  const [formSuccess, setFormSuccess] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [formData, setFormData] = useState({
     name: "",
@@ -40,6 +41,18 @@ export const AuthPage = () => {
       return;
     }
     try {
+      const isEmailVerified = await checkEmailVerified(formData.email);
+      if (!isEmailVerified) {
+        const res = await api.post("/Email/send-verification", {
+          to: formData.email,
+        });
+        if (res.status === 200) {
+          setFormSuccess(null);
+          setFormError("Your email is not verified. We've sent a new verification link to your email address. Please verify your email before logging in.");
+        }
+        return;
+      }
+
       const res = await api.post(
         "/User/login",
         {
@@ -74,7 +87,7 @@ export const AuthPage = () => {
       return;
     }
     try {
-      const res = await api.post(
+      await api.post(
         "/User/register",
         {
           name: formData.name,
@@ -87,8 +100,15 @@ export const AuthPage = () => {
           },
         }
       );
-      localStorage.setItem("token", res.data.token);
-      navigate("/");
+
+      const res = await api.post("/Email/send-verification", {
+        to: formData.email,
+      });
+      if (res.status === 200) {
+        setFormSuccess("Registration successful! A verification email has been sent. Please check your email to verify your account.");
+      }
+
+      setIsLogin(true);
     } catch (error) {
       const message = error?.response?.data || "Registration failed. The email may already be in use.";
       setFormError(message);
@@ -114,16 +134,24 @@ export const AuthPage = () => {
             </p>
           </div>
 
+          {/* success alert */}
+          {formSuccess && (
+            <div role="alert" className="alert alert-success text-sm p-3 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span>{formSuccess}</span>
+            </div>
+          )}
+
           <div className="tabs tabs-boxed grid grid-cols-2 mb-6">
             <a
               className={`tab tab-lg ${isLogin ? "tab-active" : ""}`}
-              onClick={() => { setIsLogin(true); setFormError(null); }}
+              onClick={() => { setIsLogin(true); setFormError(null); setFormSuccess(null); }}
             >
               Login
             </a>
             <a
               className={`tab tab-lg ${!isLogin ? "tab-active" : ""}`}
-              onClick={() => { setIsLogin(false); setFormError(null); }}
+              onClick={() => { setIsLogin(false); setFormError(null); setFormSuccess(null); }}
             >
               Register
             </a>
