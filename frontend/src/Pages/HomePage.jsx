@@ -12,13 +12,13 @@ export const HomePage = () => {
     }, []);
     useEffect(() => {
         if(!isVerified && !loading ){
-            navigate('/Login');
+            navigate('/auth');
         }
       
     }, [isVerified, navigate, loading]);
     const handleLogout = () => {
         logout();
-        navigate('/Login');
+        navigate('/auth');
     }
   return (
     <div>

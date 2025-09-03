@@ -31,7 +31,7 @@ namespace MemeStreamApi.controller
         public class RegisterDto
         {
             public required string Name { get; set; }
-            public required string Bio { get; set; }
+            public string Bio { get; set; } = string.Empty;
             public required string Email { get; set; }
             public required string Password { get; set; }
             public string Image { get; set; } = string.Empty;
