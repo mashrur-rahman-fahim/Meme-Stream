@@ -89,3 +89,10 @@ export const deleteMessage = async (messageId) => {
   }
 };
 
+export const markMessageAsRead = async (messageId) => {
+  if (connection && connection.state === "Connected") {
+    await connection.invoke("MarkAsRead", messageId);
+  }
+};
+
+
