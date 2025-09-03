@@ -14,7 +14,7 @@ export const ProfilePage = () => {
   const navigate = useNavigate();
   useEffect(() => {
     verifyUser();
-  }, [verifyUser]);
+  }, []);
   useEffect(() => {
     if (!isVerified && !loading) {
       navigate("/Login");
