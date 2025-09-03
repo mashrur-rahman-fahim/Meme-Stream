@@ -8,11 +8,14 @@ import { EmailVerificationPage } from "./Pages/EmailVerificationPage";
 import { SendEmailVerificationPage } from "./Pages/SendEmailVerificationPage";
 import { ForgotPassPage } from "./Pages/ForgotPassPage";
 import { ForgotPassValidationPage } from "./Pages/ForgotPassValidationPage";
+import { LoginPage } from "./Pages/LoginPage";
+import {RegisterPage} from "./Pages/RegisterPage";
 
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/auth" element={<AuthPage />}></Route>
         <Route path="/forgot-password/" element={<ForgotPassPage />}></Route>
         <Route path="/Login" element={<LoginPage />}></Route>
         <Route path="/Register" element={<RegisterPage />}></Route>
