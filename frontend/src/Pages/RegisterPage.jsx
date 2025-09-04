@@ -6,8 +6,7 @@ import { VerifyContext } from "../../context/create_verify_context";
 export const RegisterPage = () => {
   const navigate = useNavigate();
 
-  const { isVerified, verifyUser, loading } =
-    useContext(VerifyContext);
+  const { isVerified, verifyUser, loading } = useContext(VerifyContext);
 
   const [formData, setFormData] = React.useState({
     email: "",
@@ -41,7 +40,7 @@ export const RegisterPage = () => {
         );
       }
 
-      navigate("/login");
+      navigate("/auth");
     } catch (error) {
       console.error("Registration failed:", error);
     }

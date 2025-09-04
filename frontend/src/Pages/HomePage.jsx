@@ -2,6 +2,7 @@ import React, { useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { VerifyContext } from '../../context/create_verify_context';
 import { Post } from '../components/Post';
+import { FriendRequest } from '../components/FriendRequest';
 
 export const HomePage = () => {
     const {isVerified, verifyUser, loading, logout} = useContext(VerifyContext);
@@ -65,6 +66,7 @@ export const HomePage = () => {
                         <div className="card-body p-0">
                             <Post />
                         </div>
+                        <FriendRequest/>
                     </div>
                 </div>
             </div>

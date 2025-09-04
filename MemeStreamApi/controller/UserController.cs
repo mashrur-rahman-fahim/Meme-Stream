@@ -147,8 +147,32 @@ namespace MemeStreamApi.controller
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(name) || name.Length < 2)
+                {
+                    return BadRequest("Search query must be at least 2 characters long.");
+                }
+
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                var currentUserId = 0;
+                if (!string.IsNullOrEmpty(userIdClaim))
+                {
+                    currentUserId = int.Parse(userIdClaim);
+                }
+
                 var users = _context.Users
-                     .Where(u => u.Name.ToLower().Contains(name.ToLower())).ToList();
+                     .Where(u => u.Id != currentUserId && 
+                                u.Name.ToLower().Contains(name.ToLower()) &&
+                                u.IsEmailVerified) // Only include verified users
+                     .Select(u => new {
+                         Id = u.Id,
+                         Name = u.Name,
+                         Email = u.Email,
+                         Image = u.Image,
+                         Bio = u.Bio
+                     })
+                     .Take(20) // Limit results for performance
+                     .ToList();
+                
                 if (users.Count == 0)
                 {
                     return NotFound("No users found with that name.");

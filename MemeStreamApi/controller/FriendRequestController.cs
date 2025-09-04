@@ -7,6 +7,7 @@ using MemeStreamApi.model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace MemeStreamApi.controller
 {
@@ -43,10 +44,20 @@ namespace MemeStreamApi.controller
                 {
                     return NotFound("Receiver not found.");
                 }
-                var existingFriendRequest = _context.FriendRequests.FirstOrDefault(fr => fr.SenderId == userId && fr.ReceiverId == friendRequestDto.ReceiverId);
+                // Check if friend request already exists in either direction
+                var existingFriendRequest = _context.FriendRequests.FirstOrDefault(fr => 
+                    (fr.SenderId == userId && fr.ReceiverId == friendRequestDto.ReceiverId) ||
+                    (fr.SenderId == friendRequestDto.ReceiverId && fr.ReceiverId == userId));
                 if (existingFriendRequest != null)
                 {
-                    return BadRequest("Friend request already exists.");
+                    if (existingFriendRequest.Status == FriendRequest.RequestStatus.Accepted)
+                    {
+                        return BadRequest("You are already friends with this user.");
+                    }
+                    else if (existingFriendRequest.Status == FriendRequest.RequestStatus.Pending)
+                    {
+                        return BadRequest("Friend request already exists.");
+                    }
                 }
                 var friendRequest = new FriendRequest{
                     SenderId = userId,
@@ -72,7 +83,20 @@ namespace MemeStreamApi.controller
                     return Unauthorized("User ID claim not found.");
                 }
                 var userId = int.Parse(userIdClaim);
-                var friendRequests = _context.FriendRequests.Where(fr => fr.ReceiverId == userId).ToList();
+                var friendRequests = _context.FriendRequests
+                    .Include(fr => fr.Sender)
+                    .Where(fr => fr.ReceiverId == userId && fr.Status == FriendRequest.RequestStatus.Pending)
+                    .Select(fr => new {
+                        Id = fr.Id,
+                        SenderId = fr.SenderId,
+                        SenderName = fr.Sender.Name,
+                        SenderEmail = fr.Sender.Email,
+                        SenderImage = fr.Sender.Image,
+                        SenderBio = fr.Sender.Bio,
+                        CreatedAt = fr.CreatedAt,
+                        Status = fr.Status.ToString()
+                    })
+                    .ToList();
                 return Ok(friendRequests);
             }
             catch (Exception ex){
@@ -138,12 +162,161 @@ namespace MemeStreamApi.controller
                     return Unauthorized("User ID claim not found.");
                 }
                 var userId = int.Parse(userIdClaim);
-                var friends = _context.FriendRequests.Where(fr => fr.ReceiverId == userId && fr.Status == FriendRequest.RequestStatus.Accepted).ToList();
+                var friends = _context.FriendRequests
+                    .Include(fr => fr.Sender)
+                    .Include(fr => fr.Receiver)
+                    .Where(fr => (fr.ReceiverId == userId || fr.SenderId == userId) && fr.Status == FriendRequest.RequestStatus.Accepted)
+                    .Select(fr => new {
+                        Id = fr.Id,
+                        FriendId = fr.ReceiverId == userId ? fr.SenderId : fr.ReceiverId,
+                        FriendName = fr.ReceiverId == userId ? fr.Sender.Name : fr.Receiver.Name,
+                        FriendEmail = fr.ReceiverId == userId ? fr.Sender.Email : fr.Receiver.Email,
+                        FriendImage = fr.ReceiverId == userId ? fr.Sender.Image : fr.Receiver.Image,
+                        FriendBio = fr.ReceiverId == userId ? fr.Sender.Bio : fr.Receiver.Bio,
+                        CreatedAt = fr.CreatedAt,
+                        Status = fr.Status.ToString()
+                    })
+                    .ToList();
                 return Ok(friends);
             }
             catch (Exception ex){
                 Console.WriteLine($"Error in GetFriends: {ex.Message}");
                 return BadRequest("Error retrieving friends.");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("search-users/{query}")]
+        public IActionResult SearchUsersForFriendRequest(string query)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                var userId = int.Parse(userIdClaim);
+
+                if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                {
+                    return BadRequest("Search query must be at least 2 characters long.");
+                }
+
+                // Get all friend request relationships for current user
+                var friendshipData = _context.FriendRequests
+                    .Where(fr => (fr.SenderId == userId || fr.ReceiverId == userId))
+                    .Select(fr => new {
+                        OtherUserId = fr.SenderId == userId ? fr.ReceiverId : fr.SenderId,
+                        Status = fr.Status,
+                        IsSender = fr.SenderId == userId
+                    })
+                    .ToList();
+
+                // Create lookup dictionary for friendship status
+                var friendshipLookup = friendshipData.ToDictionary(
+                    f => f.OtherUserId,
+                    f => new { f.Status, f.IsSender }
+                );
+
+                // Search for users excluding current user only
+                var users = _context.Users
+                    .Where(u => u.Id != userId && 
+                               u.Name.ToLower().Contains(query.ToLower()) &&
+                               u.IsEmailVerified) // Only include verified users
+                    .Select(u => new {
+                        Id = u.Id,
+                        Name = u.Name,
+                        Email = u.Email,
+                        Image = u.Image,
+                        Bio = u.Bio
+                    })
+                    .Take(20) // Limit results for performance
+                    .ToList()
+                    .Select(u => {
+                        var friendshipStatus = "None";
+                        var canSendRequest = true;
+                        
+                        if (friendshipLookup.ContainsKey(u.Id))
+                        {
+                            var friendship = friendshipLookup[u.Id];
+                            switch (friendship.Status)
+                            {
+                                case FriendRequest.RequestStatus.Accepted:
+                                    friendshipStatus = "Friend";
+                                    canSendRequest = false;
+                                    break;
+                                case FriendRequest.RequestStatus.Pending:
+                                    friendshipStatus = friendship.IsSender ? "Request Sent" : "Request Received";
+                                    canSendRequest = false;
+                                    break;
+                                case FriendRequest.RequestStatus.Rejected:
+                                    friendshipStatus = "Request Declined";
+                                    canSendRequest = true;
+                                    break;
+                            }
+                        }
+
+                        return new {
+                            u.Id,
+                            u.Name,
+                            u.Email,
+                            u.Image,
+                            u.Bio,
+                            FriendshipStatus = friendshipStatus,
+                            CanSendRequest = canSendRequest
+                        };
+                    })
+                    .ToList();
+
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SearchUsersForFriendRequest: {ex.Message}");
+                return BadRequest("Error searching users.");
+            }
+        }
+
+        [Authorize]
+        [HttpDelete("unfriend/{friendId}")]
+        public IActionResult UnfriendUser(int friendId)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                var userId = int.Parse(userIdClaim);
+
+                if (userId == friendId)
+                {
+                    return BadRequest("You cannot unfriend yourself.");
+                }
+
+                // Find the friendship (could be in either direction)
+                var friendship = _context.FriendRequests.FirstOrDefault(fr => 
+                    ((fr.SenderId == userId && fr.ReceiverId == friendId) ||
+                     (fr.SenderId == friendId && fr.ReceiverId == userId)) &&
+                    fr.Status == FriendRequest.RequestStatus.Accepted);
+
+                if (friendship == null)
+                {
+                    return NotFound("Friendship not found or users are not friends.");
+                }
+
+                // Remove the friendship record
+                _context.FriendRequests.Remove(friendship);
+                _context.SaveChanges();
+
+                return Ok("Friend removed successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UnfriendUser: {ex.Message}");
+                return BadRequest("Error removing friend.");
             }
         }
     }
