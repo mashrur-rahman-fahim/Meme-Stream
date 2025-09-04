@@ -21,7 +21,7 @@ function App() {
       <Routes>
         <Route path="/auth" element={<AuthPage />}></Route>
         <Route path="/forgot-password/" element={<ForgotPassPage />}></Route>
-        <Route path="/Login" element={<LoginPage />}></Route>
+        {/* <Route path="/Login" element={<LoginPage />}></Route> */}
         <Route path="/Register" element={<RegisterPage />}></Route>
         <Route path="/" element={<HomePage />}></Route>
         <Route path="/meme-detector" element={<MemeDetector />}></Route>
