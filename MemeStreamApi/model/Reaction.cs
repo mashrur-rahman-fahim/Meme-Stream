@@ -12,15 +12,9 @@ namespace MemeStreamApi.model
         public int UserId { get; set; }
         public enum ReactionType
         {
-            Like,
-            Dislike,
-            Laugh,
-            Love,
-            Wow,
-            Sad,
-            Angry
+            Laugh
         }   
-        public ReactionType Type { get; set; } = ReactionType.Like;
+        public ReactionType Type { get; set; } = ReactionType.Laugh;
         public Post Post { get; set; }
         public User User { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

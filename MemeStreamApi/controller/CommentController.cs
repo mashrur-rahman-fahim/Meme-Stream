@@ -7,6 +7,7 @@ using MemeStreamApi.data;
 using MemeStreamApi.model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace MemeStreamApi.controller
 {
@@ -77,7 +78,23 @@ namespace MemeStreamApi.controller
         [HttpGet("get/{postId}")]
         public IActionResult GetCommentsByPostId(int postId){
             try{
-                var comments = _context.Comments.Where(c => c.PostId == postId).ToList();
+                var comments = _context.Comments
+                    .Include(c => c.User)
+                    .Where(c => c.PostId == postId)
+                    .OrderBy(c => c.CreatedAt)
+                    .Select(c => new {
+                        Id = c.Id,
+                        PostId = c.PostId,
+                        UserId = c.UserId,
+                        Content = c.Content,
+                        CreatedAt = c.CreatedAt,
+                        User = new {
+                            Id = c.User.Id,
+                            Name = c.User.Name,
+                            Image = c.User.Image
+                        }
+                    })
+                    .ToList();
                 return Ok(comments);
             }
             catch (Exception ex){

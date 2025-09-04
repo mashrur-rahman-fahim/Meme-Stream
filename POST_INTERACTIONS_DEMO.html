@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Interactions Demo - Raw HTML</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #10b981;
+            font-size: 2.5rem;
+            margin: 0 0 10px 0;
+        }
+
+        .demo-post {
+            background: rgba(51, 65, 85, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(8px);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .post-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #10b981, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .post-info h3 {
+            margin: 0 0 4px 0;
+            color: #e2e8f0;
+        }
+
+        .post-time {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .post-content {
+            margin: 16px 0;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .post-actions {
+            border-top: 1px solid rgba(71, 85, 105, 0.5);
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .action-btn {
+            background: none;
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .action-btn:hover {
+            background: rgba(71, 85, 105, 0.3);
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        .action-btn.active {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        .reactions-display {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+            flex-wrap: wrap;
+        }
+
+        .reaction-count {
+            background: rgba(71, 85, 105, 0.5);
+            border-radius: 20px;
+            padding: 4px 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.875rem;
+        }
+
+        .comments-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(71, 85, 105, 0.3);
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .comment-input {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .comment-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .comment-btn:hover {
+            background: #059669;
+        }
+
+        .comment-btn:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+        }
+
+        .comments-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .comment {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .comment-content {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 0.875rem;
+        }
+
+        .comment-time {
+            color: #64748b;
+            font-size: 0.75rem;
+        }
+
+        .comment-text {
+            color: #cbd5e1;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        .share-options {
+            display: none;
+            position: absolute;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 8px;
+            min-width: 150px;
+            z-index: 100;
+        }
+
+        .share-option {
+            display: block;
+            width: 100%;
+            background: none;
+            border: none;
+            color: #cbd5e1;
+            padding: 8px 12px;
+            text-align: left;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .share-option:hover {
+            background: rgba(71, 85, 105, 0.3);
+        }
+
+        .reaction-picker {
+            display: none;
+            position: absolute;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 12px;
+            padding: 8px;
+            margin-top: 8px;
+            z-index: 100;
+        }
+
+        .reaction-option {
+            background: none;
+            border: none;
+            font-size: 24px;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reaction-option:hover {
+            background: rgba(71, 85, 105, 0.3);
+            transform: scale(1.1);
+        }
+
+        .feature-highlight {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+
+        .feature-highlight h3 {
+            color: #10b981;
+            margin: 0 0 8px 0;
+        }
+
+        .code-block {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            color: #cbd5e1;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        .engagement-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Post Interactions - Raw HTML Implementation</h1>
+            <p>Reaction, Comment, and Share functionality with pure HTML/CSS/JavaScript</p>
+        </div>
+
+        <!-- Sample Post -->
+        <div class="demo-post">
+            <div class="post-header">
+                <div class="post-avatar">JD</div>
+                <div class="post-info">
+                    <h3>John Doe</h3>
+                    <div class="post-time">2 hours ago</div>
+                </div>
+            </div>
+
+            <div class="post-content">
+                <p>Just discovered this hilarious programming meme! The struggle of debugging at 3 AM is real 😂🚀</p>
+                <img src="data:image/svg+xml;charset=UTF-8,%3Csvg width='400' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23334155'/%3E%3Ctext x='50%25' y='50%25' font-size='20' fill='%23cbd5e1' text-anchor='middle' dy='.3em'%3EMeme Image Placeholder%3C/svg%3E"
+                    alt="Meme" style="width: 100%; border-radius: 8px; margin-top: 12px;">
+            </div>
+
+            <div class="post-actions">
+                <div class="actions-row">
+                    <!-- Reaction Button with Picker -->
+                    <div style="position: relative;">
+                        <button class="action-btn" onclick="toggleReactionPicker(this)">
+                            <span id="current-reaction">👍</span>
+                            <span id="reaction-text">Like</span>
+                        </button>
+                        <div class="reaction-picker" id="reaction-picker">
+                            <button class="reaction-option" onclick="selectReaction('👍', 'Like', this)">👍</button>
+                            <button class="reaction-option" onclick="selectReaction('😂', 'Laugh', this)">😂</button>
+                            <button class="reaction-option" onclick="selectReaction('❤️', 'Love', this)">❤️</button>
+                            <button class="reaction-option" onclick="selectReaction('😮', 'Wow', this)">😮</button>
+                            <button class="reaction-option" onclick="selectReaction('😢', 'Sad', this)">😢</button>
+                            <button class="reaction-option" onclick="selectReaction('😡', 'Angry', this)">😡</button>
+                        </div>
+                    </div>
+
+                    <!-- Comment Button -->
+                    <button class="action-btn" onclick="toggleComments()">
+                        💬 Comment
+                    </button>
+
+                    <!-- Share Button -->
+                    <div style="position: relative;">
+                        <button class="action-btn" onclick="toggleShareOptions(this)">
+                            📤 Share
+                        </button>
+                        <div class="share-options" id="share-options">
+                            <button class="share-option" onclick="sharePost('copy')">📋 Copy Link</button>
+                            <button class="share-option" onclick="sharePost('twitter')">🐦 Share on Twitter</button>
+                            <button class="share-option" onclick="sharePost('facebook')">📘 Share on Facebook</button>
+                            <button class="share-option" onclick="sharePost('native')">📤 Native Share</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reactions Display -->
+                <div class="reactions-display" id="reactions-display">
+                    <div class="reaction-count">👍 <span>12</span></div>
+                    <div class="reaction-count">😂 <span>8</span></div>
+                    <div class="reaction-count">❤️ <span>5</span></div>
+                </div>
+
+                <!-- Comments Section -->
+                <div class="comments-section" id="comments-section" style="display: none;">
+                    <!-- Add Comment Form -->
+                    <div class="comment-form">
+                        <input type="text" class="comment-input" id="comment-input" placeholder="Write a comment..."
+                            onkeypress="handleCommentKeyPress(event)">
+                        <button class="comment-btn" onclick="addComment()">Post</button>
+                    </div>
+
+                    <!-- Comments List -->
+                    <div class="comments-list" id="comments-list">
+                        <div class="comment">
+                            <div class="comment-avatar">AS</div>
+                            <div class="comment-content">
+                                <div class="comment-header">
+                                    <span class="comment-author">Alice Smith</span>
+                                    <span class="comment-time">1h ago</span>
+                                </div>
+                                <div class="comment-text">So true! I've been there countless times 😅</div>
+                            </div>
+                        </div>
+
+                        <div class="comment">
+                            <div class="comment-avatar">MB</div>
+                            <div class="comment-content">
+                                <div class="comment-header">
+                                    <span class="comment-author">Mike Brown</span>
+                                    <span class="comment-time">45m ago</span>
+                                </div>
+                                <div class="comment-text">The classic "it works on my machine" moment! 😂</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Engagement Stats -->
+                <div class="engagement-stats">
+                    <span>25 reactions • 2 comments</span>
+                    <span>3 shares</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Highlights -->
+        <div class="feature-highlight">
+            <h3>✨ Implemented Features</h3>
+            <ul style="margin: 8px 0; padding-left: 20px; color: #cbd5e1;">
+                <li><strong>Reactions:</strong> 6 different reaction types with dropdown picker</li>
+                <li><strong>Comments:</strong> Real-time comment adding with user avatars</li>
+                <li><strong>Sharing:</strong> Multiple share options including native Web Share API</li>
+                <li><strong>Engagement:</strong> Live reaction counts and engagement statistics</li>
+                <li><strong>UI/UX:</strong> Smooth animations and interactive feedback</li>
+            </ul>
+        </div>
+
+        <!-- React Component Code -->
+        <div class="code-block">
+            <h3 style="color: #10b981; margin: 0 0 12px 0;">📝 React Implementation Preview</h3>
+            <pre>{/* Post Actions JSX */}
+&lt;div className="post-actions pt-3 border-t border-slate-500/50"&gt;
+  {/* Main Actions Row */}
+  &lt;div className="flex justify-between items-center mb-2"&gt;
+    &lt;div className="flex gap-2"&gt;
+      {/* Reaction Dropdown */}
+      &lt;div className="dropdown dropdown-top"&gt;
+        &lt;button 
+          className="btn btn-ghost btn-sm text-slate-300 hover:text-green-400"
+          disabled={reactionLoading[post.id]}
+        &gt;
+          &lt;span className="text-lg"&gt;👍&lt;/span&gt;
+          Like
+        &lt;/button&gt;
+        &lt;ul className="dropdown-content menu bg-slate-700 rounded-box"&gt;
+          &lt;li&gt;&lt;button onClick={() =&gt; handleReaction(post.id, 0)}&gt;👍 Like&lt;/button&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;button onClick={() =&gt; handleReaction(post.id, 2)}&gt;😂 Laugh&lt;/button&gt;&lt;/li&gt;
+          {/* More reactions... */}
+        &lt;/ul&gt;
+      &lt;/div&gt;
+      
+      &lt;button onClick={() =&gt; toggleComments(post.id)}&gt;
+        💬 Comment
+      &lt;/button&gt;
+      
+      &lt;button onClick={() =&gt; handleShare(post)}&gt;
+        📤 Share
+      &lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+        </div>
+
+        <!-- API Integration Code -->
+        <div class="code-block">
+            <h3 style="color: #10b981; margin: 0 0 12px 0;">🔌 API Integration Code</h3>
+            <pre>// React handlers for interactions
+const handleReaction = async (postId, reactionType) =&gt; {
+  setReactionLoading(prev =&gt; ({ ...prev, [postId]: true }));
+  
+  try {
+    const result = await feedService.addReaction(postId, reactionType);
+    if (result.success) {
+      await loadPostReactions(postId);
+      // Update engagement score
+      setPosts(prevPosts =&gt; 
+        prevPosts.map(post =&gt; 
+          post.id === postId 
+            ? { ...post, engagementScore: (post.engagementScore || 0) + 1 }
+            : post
+        )
+      );
+    }
+  } finally {
+    setReactionLoading(prev =&gt; ({ ...prev, [postId]: false }));
+  }
+};
+
+const handleAddComment = async (postId) =&gt; {
+  const content = newComments[postId];
+  if (!content?.trim()) return;
+
+  try {
+    const result = await feedService.addComment(postId, content.trim());
+    if (result.success) {
+      setNewComments(prev =&gt; ({ ...prev, [postId]: '' }));
+      await loadPostComments(postId);
+    }
+  } catch (error) {
+    console.error('Error adding comment:', error);
+  }
+};</pre>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript for interactive demo
+        function toggleReactionPicker(button) {
+            const picker = document.getElementById('reaction-picker');
+            picker.style.display = picker.style.display === 'block' ? 'none' : 'block';
+
+            // Close when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', function closeOnOutsideClick(e) {
+                    if (!button.contains(e.target) && !picker.contains(e.target)) {
+                        picker.style.display = 'none';
+                        document.removeEventListener('click', closeOnOutsideClick);
+                    }
+                });
+            }, 100);
+        }
+
+        function selectReaction(emoji, name, button) {
+            document.getElementById('current-reaction').textContent = emoji;
+            document.getElementById('reaction-text').textContent = name;
+            document.getElementById('reaction-picker').style.display = 'none';
+
+            // Add visual feedback
+            const actionBtn = button.closest('.action-btn') || document.querySelector('.action-btn');
+            actionBtn.classList.add('active');
+
+            // Simulate API call delay
+            setTimeout(() => {
+                alert(`Added ${name} reaction! 🎉`);
+            }, 300);
+        }
+
+        function toggleComments() {
+            const commentsSection = document.getElementById('comments-section');
+            const isVisible = commentsSection.style.display !== 'none';
+            commentsSection.style.display = isVisible ? 'none' : 'block';
+
+            if (!isVisible) {
+                document.getElementById('comment-input').focus();
+            }
+        }
+
+        function toggleShareOptions(button) {
+            const options = document.getElementById('share-options');
+            options.style.display = options.style.display === 'block' ? 'none' : 'block';
+
+            // Close when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', function closeOnOutsideClick(e) {
+                    if (!button.contains(e.target) && !options.contains(e.target)) {
+                        options.style.display = 'none';
+                        document.removeEventListener('click', closeOnOutsideClick);
+                    }
+                });
+            }, 100);
+        }
+
+        function sharePost(type) {
+            const postText = "Just discovered this hilarious programming meme! The struggle of debugging at 3 AM is real 😂🚀";
+            const url = window.location.href;
+
+            switch (type) {
+                case 'copy':
+                    navigator.clipboard.writeText(`${postText}\n\n${url}`).then(() => {
+                        alert('Link copied to clipboard! 📋');
+                    });
+                    break;
+
+                case 'twitter':
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(postText)}&url=${encodeURIComponent(url)}`, '_blank');
+                    break;
+
+                case 'facebook':
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                    break;
+
+                case 'native':
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'Shared from MemeStream',
+                            text: postText,
+                            url: url
+                        });
+                    } else {
+                        alert('Native sharing not supported on this device');
+                    }
+                    break;
+            }
+
+            document.getElementById('share-options').style.display = 'none';
+        }
+
+        function addComment() {
+            const input = document.getElementById('comment-input');
+            const commentText = input.value.trim();
+
+            if (!commentText) return;
+
+            // Create new comment element
+            const commentsList = document.getElementById('comments-list');
+            const newComment = document.createElement('div');
+            newComment.className = 'comment';
+            newComment.innerHTML = `
+                <div class="comment-avatar">YU</div>
+                <div class="comment-content">
+                    <div class="comment-header">
+                        <span class="comment-author">You</span>
+                        <span class="comment-time">Just now</span>
+                    </div>
+                    <div class="comment-text">${commentText}</div>
+                </div>
+            `;
+
+            commentsList.appendChild(newComment);
+            input.value = '';
+
+            // Simulate success
+            alert('Comment added! 💬');
+        }
+
+        function handleCommentKeyPress(event) {
+            if (event.key === 'Enter') {
+                addComment();
+            }
+        }
+    </script>
+</body>
+
+</html>

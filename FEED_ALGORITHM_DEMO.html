@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemeStream Feed Algorithm Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #10b981;
+            font-size: 2.5rem;
+            margin: 0 0 10px 0;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .demo-section {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(8px);
+        }
+
+        .demo-section h2 {
+            color: #10b981;
+            margin: 0 0 20px 0;
+            font-size: 1.5rem;
+        }
+
+        .algorithm-flow {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .flow-step {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .flow-step .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .flow-step h3 {
+            color: #e2e8f0;
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .flow-step p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .demo-posts {
+            display: grid;
+            gap: 20px;
+        }
+
+        .demo-post {
+            background: rgba(51, 65, 85, 0.5);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .demo-post.friend {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .demo-post.trending {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .post-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #10b981, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .post-content {
+            flex: 1;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .post-author {
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .post-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .friend-badge {
+            background: #10b981;
+            color: white;
+        }
+
+        .trending-badge {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .score-badge {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .post-time {
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+
+        .post-text {
+            color: #cbd5e1;
+            line-height: 1.5;
+            margin: 10px 0;
+        }
+
+        .post-stats {
+            color: #64748b;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        .api-demo {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .api-demo pre {
+            color: #cbd5e1;
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .highlight {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .test-button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .test-button:hover {
+            background: #059669;
+        }
+
+        .test-button:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 MemeStream Smart Feed Algorithm</h1>
+            <p>Efficient feed prioritization with friend-first approach and engagement boosting</p>
+        </div>
+
+        <div class="demo-section">
+            <h2>🔍 How the Algorithm Works</h2>
+            <div class="algorithm-flow">
+                <div class="flow-step">
+                    <span class="icon">👥</span>
+                    <h3>Friend Detection</h3>
+                    <p>Identifies your friends from accepted friend requests</p>
+                </div>
+                <div class="flow-step">
+                    <span class="icon">⭐</span>
+                    <h3>Score Calculation</h3>
+                    <p>Assigns scores based on friendship, recency, and engagement</p>
+                </div>
+                <div class="flow-step">
+                    <span class="icon">📊</span>
+                    <h3>Content Ranking</h3>
+                    <p>Sorts posts by calculated feed score and creation time</p>
+                </div>
+                <div class="flow-step">
+                    <span class="icon">🎯</span>
+                    <h3>Balanced Mix</h3>
+                    <p>Ensures both friend and trending content appears</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📱 Sample Feed Output</h2>
+            <div class="demo-posts">
+                <div class="demo-post friend">
+                    <div class="post-avatar">JD</div>
+                    <div class="post-content">
+                        <div class="post-header">
+                            <span class="post-author">John Doe</span>
+                            <span class="post-badge friend-badge">👥 Friend</span>
+                            <span class="post-badge score-badge">⭐ 125.0</span>
+                            <span class="post-time">2h ago</span>
+                        </div>
+                        <div class="post-text">Just posted the most hilarious meme about programming! 😂</div>
+                        <div class="post-stats">🔥 8 interactions • High priority due to recent friend post</div>
+                    </div>
+                </div>
+
+                <div class="demo-post friend">
+                    <div class="post-avatar">AS</div>
+                    <div class="post-content">
+                        <div class="post-header">
+                            <span class="post-author">Alice Smith</span>
+                            <span class="post-badge friend-badge">👥 Friend</span>
+                            <span class="post-badge score-badge">⭐ 95.0</span>
+                            <span class="post-time">1d ago</span>
+                        </div>
+                        <div class="post-text">Found this gem while scrolling through old memes 🎭</div>
+                        <div class="post-stats">🔥 4 interactions • Friend bonus with time decay</div>
+                    </div>
+                </div>
+
+                <div class="demo-post trending">
+                    <div class="post-avatar">MT</div>
+                    <div class="post-content">
+                        <div class="post-header">
+                            <span class="post-author">Meme Trendy</span>
+                            <span class="post-badge trending-badge">🔥 Trending</span>
+                            <span class="post-badge score-badge">⭐ 85.0</span>
+                            <span class="post-time">3h ago</span>
+                        </div>
+                        <div class="post-text">This meme is going viral! Everyone's sharing it 🚀</div>
+                        <div class="post-stats">🔥 15 interactions • High engagement boost for non-friend</div>
+                    </div>
+                </div>
+
+                <div class="demo-post">
+                    <div class="post-avatar">RJ</div>
+                    <div class="post-content">
+                        <div class="post-header">
+                            <span class="post-author">Random Joe</span>
+                            <span class="post-badge score-badge">⭐ 45.0</span>
+                            <span class="post-time">1d ago</span>
+                        </div>
+                        <div class="post-text">Another day, another meme to brighten your feed ☀️</div>
+                        <div class="post-stats">🔥 2 interactions • Regular non-friend content</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🔧 API Integration</h2>
+            <div class="api-demo">
+                <pre><span class="highlight">GET</span> /api/Post/feed?page=1&pageSize=20
+
+<span class="highlight">Response:</span>
+{
+  "posts": [
+    {
+      "id": 1,
+      "content": "Meme content here...",
+      "createdAt": "2025-01-01T10:00:00Z",
+      "user": {
+        "name": "John Doe",
+        "image": "avatar_url"
+      },
+      <span class="highlight">"isFriend": true,</span>
+      <span class="highlight">"feedScore": 125.0,</span>
+      <span class="highlight">"engagementScore": 8</span>
+    }
+  ],
+  "page": 1,
+  "pageSize": 20
+}</pre>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎯 Algorithm Benefits</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div>
+                    <h3 style="color: #10b981; margin: 0 0 10px 0;">👥 Friend Priority</h3>
+                    <ul style="color: #cbd5e1; line-height: 1.6;">
+                        <li>Friend posts get +50 base score boost</li>
+                        <li>Recent friend posts get additional +20 points</li>
+                        <li>Ensures important content from friends is seen</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="color: #10b981; margin: 0 0 10px 0;">⏰ Time Relevance</h3>
+                    <ul style="color: #cbd5e1; line-height: 1.6;">
+                        <li>Today's posts: +30 points</li>
+                        <li>Gradual decay for older content</li>
+                        <li>Old posts get -10 penalty after a month</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="color: #10b981; margin: 0 0 10px 0;">🔥 Engagement Boost</h3>
+                    <ul style="color: #cbd5e1; line-height: 1.6;">
+                        <li>+2 points per reaction/comment</li>
+                        <li>High-engagement non-friend posts can compete</li>
+                        <li>Prevents echo chambers while prioritizing friends</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🧪 Test the Algorithm</h2>
+            <p style="color: #94a3b8; margin-bottom: 20px;">
+                The backend API is running on <strong>http://localhost:5216</strong><br>
+                The frontend is running on <strong>http://localhost:5174</strong>
+            </p>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <button class="test-button" onclick="window.open('http://localhost:5174', '_blank')">
+                    🚀 Open Frontend
+                </button>
+                <button class="test-button" onclick="testAPIEndpoint()">
+                    📡 Test API Endpoint
+                </button>
+                <button class="test-button" onclick="window.open('http://localhost:5216/swagger', '_blank')">
+                    📚 View API Docs
+                </button>
+            </div>
+            <div id="api-result"
+                style="margin-top: 20px; padding: 15px; background: rgba(15, 23, 42, 0.7); border-radius: 8px; display: none;">
+                <pre id="api-response" style="color: #cbd5e1; margin: 0; white-space: pre-wrap;"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testAPIEndpoint() {
+            const resultDiv = document.getElementById('api-result');
+            const responseDiv = document.getElementById('api-response');
+
+            resultDiv.style.display = 'block';
+            responseDiv.textContent = 'Testing API endpoint...';
+
+            try {
+                const response = await fetch('http://localhost:5216/api/Post/feed?page=1&pageSize=5', {
+                    headers: {
+                        'Authorization': 'Bearer YOUR_JWT_TOKEN_HERE', // In real use, get from localStorage
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    responseDiv.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    responseDiv.textContent = `API Error: ${response.status} - ${response.statusText}\n\nNote: You need to be authenticated to access this endpoint. Please log in through the frontend first.`;
+                }
+            } catch (error) {
+                responseDiv.textContent = `Network Error: ${error.message}\n\nMake sure the backend is running on http://localhost:5216`;
+            }
+        }
+    </script>
+</body>
+
+</html>
