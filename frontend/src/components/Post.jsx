@@ -94,13 +94,18 @@ export const Post = () => {
   };
 
 return (
-  <div className="max-w-2xl mx-auto p-6 bg-base-100 rounded-lg shadow-md space-y-6">
-    <h2 className="text-2xl font-bold text-center text-base-content">Create a Meme Post</h2>
-    
+  <div className="max-w-2xl mx-auto p-4 sm:p-6 bg-base-100 rounded-lg shadow-md space-y-6">
+    <h2 className="text-2xl font-bold text-center text-base-content">
+      Create a Meme Post
+    </h2>
+
+    {/* Meme Content */}
     <div>
-      <label className="block text-sm font-medium text-base-content mb-1">Meme Content</label>
+      <label className="block text-sm font-medium text-base-content mb-1">
+        Meme Content
+      </label>
       <textarea
-        className="textarea textarea-bordered w-full h-28 resize-none text-base p-3"
+        className="textarea textarea-bordered w-full min-h-[6rem] sm:min-h-[7rem] resize-none text-base p-3"
         placeholder="What's on your mind?"
         value={FormData.content}
         onChange={(e) => {
@@ -110,20 +115,22 @@ return (
         }}
       />
     </div>
-    
+
+    {/* Image URL */}
     <div>
-      <label className="block text-sm font-medium text-base-content mb-1">Image URL (optional)</label>
+      <label className="block text-sm font-medium text-base-content mb-1">
+        Image URL (optional)
+      </label>
       <input
         type="url"
         className="input input-bordered w-full text-base p-3"
         placeholder="https://example.com/image.jpg"
         value={FormData.image}
-        onChange={(e) =>
-          setFormData({ ...FormData, image: e.target.value })
-        }
+        onChange={(e) => setFormData({ ...FormData, image: e.target.value })}
       />
     </div>
 
+    {/* Buttons */}
     <div className="flex flex-col gap-4 mt-4">
       {/* Check if Meme Button */}
       <div className="flex flex-col gap-1">
@@ -131,7 +138,7 @@ return (
           type="button"
           onClick={handleMemeCheck}
           disabled={isCheckingMeme || !FormData.content.trim()}
-          className={`btn w-full text-lg font-semibold transition-all duration-200 ${
+          className={`btn w-full text-base sm:text-lg font-semibold transition-all duration-200 ${
             isCheckingMeme || !FormData.content.trim()
               ? "btn-disabled"
               : "btn-outline btn-primary hover:scale-105"
@@ -153,11 +160,12 @@ return (
         )}
       </div>
 
+      {/* Create Post Button */}
       <div className="flex flex-col gap-1">
         <button
           onClick={handleSubmit}
           disabled={!memeCheckResult || !memeCheckResult.isMeme}
-          className={`btn w-full text-lg font-semibold transition-all duration-200 ${
+          className={`btn w-full text-base sm:text-lg font-semibold transition-all duration-200 ${
             !memeCheckResult || !memeCheckResult.isMeme
               ? "btn-disabled"
               : "btn-primary hover:scale-105"
@@ -165,7 +173,6 @@ return (
         >
           Create Post
         </button>
-        {/* Disabled reason */}
         {(!memeCheckResult || !memeCheckResult.isMeme) && (
           <p className="text-sm text-base-content/60 pl-1">
             ✅ First check and confirm your content is a meme
@@ -174,13 +181,15 @@ return (
       </div>
     </div>
 
+    {/* Status Alert */}
     {postStatus && (
       <div className="mt-6">
         <div
-          className={`alert text-base font-medium ${
+          className={`alert text-sm sm:text-base font-medium ${
             postStatus.includes("successfully")
               ? "alert-success"
-              : postStatus.includes("not a meme") || postStatus.includes("blocked")
+              : postStatus.includes("not a meme") ||
+                postStatus.includes("blocked")
               ? "alert-error"
               : "alert-info"
           }`}
@@ -191,5 +200,6 @@ return (
     )}
   </div>
 );
+
 
 };

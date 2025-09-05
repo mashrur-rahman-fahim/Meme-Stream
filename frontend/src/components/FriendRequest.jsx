@@ -150,11 +150,11 @@ export const FriendRequest = () => {
   };
 
   return (
-  <div className="max-w-3xl mx-auto p-4 h-[80vh] overflow-y-auto">
+  <div className="max-w-3xl mx-auto p-4 h-[calc(100vh-4rem)] overflow-y-auto">
     <h1 className="text-xl font-bold mb-4 text-center">👥 Friend Management</h1>
 
     {/* Tabs */}
-    <div className="flex justify-center gap-2 mb-4">
+    <div className="flex flex-wrap justify-center gap-2 mb-4">
       {["friends", "requests", "search"].map((tab) => (
         <button
           key={tab}
@@ -176,11 +176,20 @@ export const FriendRequest = () => {
     {message && (
       <div className="mb-3 alert alert-warning">
         <span className="text-sm">{message}</span>
-        <button onClick={() => setMessage("")} className="btn btn-sm btn-ghost">×</button>
+        <button
+          onClick={() => setMessage("")}
+          className="btn btn-sm btn-ghost"
+        >
+          ×
+        </button>
       </div>
     )}
 
-    {loading && <p className="text-center text-sm loading loading-spinner loading-sm">Loading...</p>}
+    {loading && (
+      <p className="text-center text-sm loading loading-spinner loading-sm">
+        Loading...
+      </p>
+    )}
 
     {/* Friends */}
     {activeTab === "friends" && (
@@ -191,7 +200,7 @@ export const FriendRequest = () => {
         {friends.length === 0 ? (
           <p className="text-base-content/60 text-sm">You have no friends yet.</p>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2">
             {friends.map((f) => (
               <div key={f.id} className="card bg-base-100 shadow-md">
                 <div className="card-body p-3">
@@ -204,9 +213,13 @@ export const FriendRequest = () => {
                       </div>
                     )}
                     <div className="flex-1">
-                      <h3 className="font-semibold text-sm text-base-content">{f.friendName}</h3>
+                      <h3 className="font-semibold text-sm text-base-content">
+                        {f.friendName}
+                      </h3>
                       <p className="text-xs text-base-content/70">{f.friendBio}</p>
-                      <p className="text-xs text-base-content/50">Email: {f.friendEmail}</p>
+                      <p className="text-xs text-base-content/50">
+                        Email: {f.friendEmail}
+                      </p>
                     </div>
                     <button
                       onClick={() => unfriendUser(f.friendId, f.friendName)}
@@ -232,7 +245,7 @@ export const FriendRequest = () => {
         {friendRequests.length === 0 ? (
           <p className="text-base-content/60 text-sm">No pending requests.</p>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2">
             {friendRequests.map((r) => (
               <div key={r.id} className="card bg-base-100 shadow-md">
                 <div className="card-body p-3 text-sm">
@@ -245,11 +258,15 @@ export const FriendRequest = () => {
                       </div>
                     )}
                     <div className="flex-1">
-                      <h3 className="font-semibold text-base-content">{r.senderName}</h3>
-                      <p className="text-xs text-base-content/50">Email: {r.senderEmail}</p>
+                      <h3 className="font-semibold text-base-content">
+                        {r.senderName}
+                      </h3>
+                      <p className="text-xs text-base-content/50">
+                        Email: {r.senderEmail}
+                      </p>
                     </div>
                     {r.status === "Pending" && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <button
                           onClick={() => acceptFriendRequest(r.id)}
                           className="btn btn-success btn-xs"
@@ -265,8 +282,9 @@ export const FriendRequest = () => {
                       </div>
                     )}
                   </div>
-                  {/* Status message always below */}
-                  <div className="mt-1 text-xs text-base-content/60">Status: {r.status}</div>
+                  <div className="mt-1 text-xs text-base-content/60">
+                    Status: {r.status}
+                  </div>
                 </div>
               </div>
             ))}
@@ -278,20 +296,22 @@ export const FriendRequest = () => {
     {/* Search */}
     {activeTab === "search" && (
       <div>
-        <h2 className="text-lg font-semibold mb-3 text-base-content">Find Friends</h2>
-        <div className="mb-3 flex flex-col gap-2">
+        <h2 className="text-lg font-semibold mb-3 text-base-content">
+          Find Friends
+        </h2>
+        <div className="mb-3 flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             placeholder="Search by name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && triggerSearch()}
-            className="input input-bordered input-sm w-full"
+            className="input input-bordered input-sm flex-1"
           />
           <button
             onClick={triggerSearch}
             disabled={searchLoading}
-            className="btn btn-primary btn-sm w-full"
+            className="btn btn-primary btn-sm w-full sm:w-auto"
           >
             {searchLoading ? (
               <>
@@ -305,7 +325,7 @@ export const FriendRequest = () => {
         </div>
 
         {searchResults.length > 0 ? (
-          <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2">
             {searchResults.map((u) => (
               <div key={u.id} className="card bg-base-100 shadow-md">
                 <div className="card-body p-3 text-sm">
@@ -323,7 +343,6 @@ export const FriendRequest = () => {
                     </div>
                   </div>
 
-                  {/* Always show message below */}
                   <div className="mt-2 text-xs">
                     {u.friendshipStatus === "Friend" && (
                       <button
@@ -333,15 +352,12 @@ export const FriendRequest = () => {
                         Remove Friend
                       </button>
                     )}
-
                     {u.friendshipStatus === "Request Sent" && (
                       <p className="text-info">Request already sent</p>
                     )}
-
                     {u.friendshipStatus === "Request Received" && (
                       <p className="text-success">This user sent you a request</p>
                     )}
-
                     {u.canSendRequest && (
                       <button
                         onClick={() => sendFriendRequest(u.id)}
@@ -358,7 +374,9 @@ export const FriendRequest = () => {
         ) : (
           searchQuery &&
           !searchLoading && (
-            <p className="text-base-content/60 text-xs">No users found for "{searchQuery}"</p>
+            <p className="text-base-content/60 text-xs">
+              No users found for "{searchQuery}"
+            </p>
           )
         )}
       </div>
