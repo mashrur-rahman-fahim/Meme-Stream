@@ -161,8 +161,8 @@ export const FriendRequest = () => {
           onClick={() => setActiveTab(tab)}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
             activeTab === tab
-              ? "bg-blue-600 text-white shadow"
-              : "bg-gray-200 hover:bg-gray-300"
+              ? "btn-primary text-primary-content shadow"
+              : "btn-ghost hover:btn-outline"
           }`}
         >
           {tab === "friends" && "My Friends"}
@@ -174,38 +174,46 @@ export const FriendRequest = () => {
 
     {/* Global message */}
     {message && (
-      <div className="mb-3 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs text-yellow-800 flex justify-between items-center">
-        <span>{message}</span>
-        <button onClick={() => setMessage("")} className="font-bold">×</button>
+      <div className="mb-3 alert alert-warning">
+        <span className="text-sm">{message}</span>
+        <button onClick={() => setMessage("")} className="btn btn-sm btn-ghost">×</button>
       </div>
     )}
 
-    {loading && <p className="text-center text-sm">Loading...</p>}
+    {loading && <p className="text-center text-sm loading loading-spinner loading-sm">Loading...</p>}
 
     {/* Friends */}
     {activeTab === "friends" && (
       <div>
-        <h2 className="text-lg font-semibold mb-3">My Friends ({friends.length})</h2>
+        <h2 className="text-lg font-semibold mb-3 text-base-content">My Friends ({friends.length})</h2>
         {friends.length === 0 ? (
-          <p className="text-gray-600 text-sm">You have no friends yet.</p>
+          <p className="text-base-content/60 text-sm">You have no friends yet.</p>
         ) : (
           <div className="grid gap-3">
             {friends.map((f) => (
-              <div key={f.id} className="p-3 bg-white shadow rounded-md flex items-center gap-3 text-sm">
-                {f.friendImage && (
-                  <img src={f.friendImage} alt={f.friendName} className="w-10 h-10 rounded-full" />
-                )}
-                <div className="flex-1">
-                  <h3 className="font-semibold text-sm">{f.friendName}</h3>
-                  <p className="text-xs text-gray-600">{f.friendBio}</p>
-                  <p className="text-xs text-gray-500">Email: {f.friendEmail}</p>
+              <div key={f.id} className="card bg-base-100 shadow-md">
+                <div className="card-body p-3">
+                  <div className="flex items-center gap-3 text-sm">
+                    {f.friendImage && (
+                      <div className="avatar">
+                        <div className="w-10 h-10 rounded-full">
+                          <img src={f.friendImage} alt={f.friendName} />
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-sm text-base-content">{f.friendName}</h3>
+                      <p className="text-xs text-base-content/70">{f.friendBio}</p>
+                      <p className="text-xs text-base-content/50">Email: {f.friendEmail}</p>
+                    </div>
+                    <button
+                      onClick={() => unfriendUser(f.friendId, f.friendName)}
+                      className="btn btn-error btn-xs"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => unfriendUser(f.friendId, f.friendName)}
-                  className="px-2.5 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  Remove
-                </button>
               </div>
             ))}
           </div>
@@ -216,42 +224,48 @@ export const FriendRequest = () => {
     {/* Requests */}
     {activeTab === "requests" && (
       <div>
-        <h2 className="text-lg font-semibold mb-3">
+        <h2 className="text-lg font-semibold mb-3 text-base-content">
           Friend Requests ({friendRequests.length})
         </h2>
         {friendRequests.length === 0 ? (
-          <p className="text-gray-600 text-sm">No pending requests.</p>
+          <p className="text-base-content/60 text-sm">No pending requests.</p>
         ) : (
           <div className="grid gap-3">
             {friendRequests.map((r) => (
-              <div key={r.id} className="p-3 bg-white shadow rounded-md text-sm">
-                <div className="flex items-center gap-3">
-                  {r.senderImage && (
-                    <img src={r.senderImage} alt={r.senderName} className="w-10 h-10 rounded-full" />
-                  )}
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{r.senderName}</h3>
-                    <p className="text-xs text-gray-500">Email: {r.senderEmail}</p>
-                  </div>
-                  {r.status === "Pending" && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => acceptFriendRequest(r.id)}
-                        className="px-2.5 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => declineFriendRequest(r.id)}
-                        className="px-2.5 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
-                      >
-                        Decline
-                      </button>
+              <div key={r.id} className="card bg-base-100 shadow-md">
+                <div className="card-body p-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    {r.senderImage && (
+                      <div className="avatar">
+                        <div className="w-10 h-10 rounded-full">
+                          <img src={r.senderImage} alt={r.senderName} />
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-base-content">{r.senderName}</h3>
+                      <p className="text-xs text-base-content/50">Email: {r.senderEmail}</p>
                     </div>
-                  )}
+                    {r.status === "Pending" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => acceptFriendRequest(r.id)}
+                          className="btn btn-success btn-xs"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => declineFriendRequest(r.id)}
+                          className="btn btn-neutral btn-xs"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {/* Status message always below */}
+                  <div className="mt-1 text-xs text-base-content/60">Status: {r.status}</div>
                 </div>
-                {/* Status message always below */}
-                <div className="mt-1 text-xs text-gray-600">Status: {r.status}</div>
               </div>
             ))}
           </div>
@@ -262,7 +276,7 @@ export const FriendRequest = () => {
     {/* Search */}
     {activeTab === "search" && (
       <div>
-        <h2 className="text-lg font-semibold mb-3">Find Friends</h2>
+        <h2 className="text-lg font-semibold mb-3 text-base-content">Find Friends</h2>
         <div className="mb-3 flex flex-col gap-2">
           <input
             type="text"
@@ -270,56 +284,71 @@ export const FriendRequest = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && triggerSearch()}
-            className="px-3 py-1.5 border rounded-md text-sm w-full"
+            className="input input-bordered input-sm w-full"
           />
           <button
             onClick={triggerSearch}
             disabled={searchLoading}
-            className="w-full px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="btn btn-primary btn-sm w-full"
           >
-            {searchLoading ? "Searching..." : "Search"}
+            {searchLoading ? (
+              <>
+                <span className="loading loading-spinner loading-xs"></span>
+                Searching...
+              </>
+            ) : (
+              "Search"
+            )}
           </button>
         </div>
 
         {searchResults.length > 0 ? (
           <div className="grid gap-3">
             {searchResults.map((u) => (
-              <div key={u.id} className="p-3 bg-white shadow rounded-md text-sm">
-                <div className="flex items-center gap-3">
-                  {u.image && <img src={u.image} alt={u.name} className="w-10 h-10 rounded-full" />}
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{u.name}</h4>
-                    <p className="text-xs text-gray-600">{u.bio}</p>
+              <div key={u.id} className="card bg-base-100 shadow-md">
+                <div className="card-body p-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    {u.image && (
+                      <div className="avatar">
+                        <div className="w-10 h-10 rounded-full">
+                          <img src={u.image} alt={u.name} />
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-base-content">{u.name}</h4>
+                      <p className="text-xs text-base-content/70">{u.bio}</p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Always show message below */}
-                <div className="mt-2 text-xs">
-                  {u.friendshipStatus === "Friend" && (
-                    <button
-                      onClick={() => unfriendUser(u.id, u.name)}
-                      className="px-2.5 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      Remove Friend
-                    </button>
-                  )}
+                  {/* Always show message below */}
+                  <div className="mt-2 text-xs">
+                    {u.friendshipStatus === "Friend" && (
+                      <button
+                        onClick={() => unfriendUser(u.id, u.name)}
+                        className="btn btn-error btn-xs"
+                      >
+                        Remove Friend
+                      </button>
+                    )}
 
-                  {u.friendshipStatus === "Request Sent" && (
-                    <p className="text-blue-500">Request already sent</p>
-                  )}
+                    {u.friendshipStatus === "Request Sent" && (
+                      <p className="text-info">Request already sent</p>
+                    )}
 
-                  {u.friendshipStatus === "Request Received" && (
-                    <p className="text-green-600">This user sent you a request</p>
-                  )}
+                    {u.friendshipStatus === "Request Received" && (
+                      <p className="text-success">This user sent you a request</p>
+                    )}
 
-                  {u.canSendRequest && (
-                    <button
-                      onClick={() => sendFriendRequest(u.id)}
-                      className="px-2.5 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Send Friend Request
-                    </button>
-                  )}
+                    {u.canSendRequest && (
+                      <button
+                        onClick={() => sendFriendRequest(u.id)}
+                        className="btn btn-primary btn-xs"
+                      >
+                        Send Friend Request
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -327,7 +356,7 @@ export const FriendRequest = () => {
         ) : (
           searchQuery &&
           !searchLoading && (
-            <p className="text-gray-600 text-xs">No users found for "{searchQuery}"</p>
+            <p className="text-base-content/60 text-xs">No users found for "{searchQuery}"</p>
           )
         )}
       </div>
