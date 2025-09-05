@@ -1,16 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { FaLaughSquint, FaComment, FaShare, FaEllipsisH, FaPaperPlane } from "react-icons/fa";
+import { CommentModal } from "./CommentModal";
 import api from "../utils/axios";
 
 export const PostCard = ({ post, user, formatDate, onEdit, onDelete }) => {
   const [reactions, setReactions] = useState([]);
-  const [comments, setComments] = useState([]);
+  const [commentCount, setCommentCount] = useState(0);
   const [userReaction, setUserReaction] = useState(null);
-  const [showComments, setShowComments] = useState(false);
-  const [newComment, setNewComment] = useState("");
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
 
   const isOriginalPost = !post.isShared;
-  const loggedInUserId = user.id;
 
   const fetchPostInteractions = useCallback(async () => {
     try {
@@ -23,8 +22,8 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete }) => {
 
       // Fetch Comments
       const commentRes = await api.get(`/Comment/get/${post.id}`);
-      setComments(Array.isArray(commentRes.data) ? commentRes.data : []);
-      
+      setCommentCount(commentRes.data ? commentRes.data.length : 0);
+
     } catch (error) {
       console.error(`Error fetching data for post ${post.id}:`, error);
     }
@@ -48,22 +47,9 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete }) => {
     }
   };
 
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
-
-    try {
-      await api.post("/Comment/create", {
-        postId: post.id,
-        userId: loggedInUserId,
-        content: newComment,
-      });
-      setNewComment("");
-      // Re-fetch comments to include the new one
+  const handleCloseModal = () => {
+      setIsCommentModalOpen(false);
       fetchPostInteractions();
-    } catch (error) {
-      console.error("Error creating comment:", error);
-    }
   };
 
   return (
@@ -137,7 +123,7 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete }) => {
                 {reactions.length > 0 && `😂 ${reactions.length} Laughs`}
             </div>
             <div>
-                {comments.length > 0 && `${comments.length} Comments`}
+                {commentCount > 0 && `${commentCount} Comments`}
             </div>
         </div>
 
@@ -153,7 +139,7 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete }) => {
             <FaLaughSquint /> Laugh
           </button>
           <button
-            onClick={() => setShowComments(!showComments)}
+            onClick={() => setIsCommentModalOpen(true)}
             className="btn btn-ghost flex-1"
           >
             <FaComment /> Comment
@@ -162,44 +148,13 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete }) => {
             <FaShare /> Share
           </button>
         </div>
-
-        {/* Comment Section*/}
-        {showComments && (
-          <div className="mt-4 space-y-3">
-            <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
-                <div className="avatar">
-                    <div className="w-8 h-8 rounded-full">
-                        {user.image ? <img src={user.image} alt="user" /> : <span>{user.name.charAt(0)}</span>}
-                    </div>
-                </div>
-                <input
-                    type="text"
-                    placeholder="Write a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="input input-bordered bg-slate-600 w-full rounded-full"
-                />
-                <button type="submit" className="btn btn-ghost btn-circle">
-                    <FaPaperPlane/>
-                </button>
-            </form>
-
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex items-start gap-2">
-                <div className="avatar">
-                    <div className="w-8 h-8 rounded-full">
-                        {comment.user?.image ? <img src={comment.user.image} alt="commenter" /> : <span>{comment.user?.name.charAt(0)}</span>}
-                    </div>
-                </div>
-                <div className="bg-slate-600 rounded-lg p-2 text-sm">
-                  <p className="font-semibold text-slate-200">{comment.user?.name}</p>
-                  <p className="text-slate-300">{comment.content}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+      <CommentModal 
+        isOpen={isCommentModalOpen}
+        onClose={handleCloseModal}
+        postId={post.id}
+        currentUser={user}
+      />
     </div>
   );
 };
