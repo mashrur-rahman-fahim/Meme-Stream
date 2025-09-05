@@ -40,8 +40,8 @@ return (
       </div>
       
       <div className="flex min-h-screen gap-4 px-4">
+        {/* Left Sidebar - Create Post */}
         <div className="w-80 flex-shrink-0 space-y-4 bg-base-300/50">
-          {/* Create Post */}
           <div className="card bg-base-100 shadow-md border border-base-300">
             <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
               <h2 className="text-lg font-semibold text-primary-content flex items-center">
@@ -52,19 +52,9 @@ return (
               <Post />
             </div>
           </div>
-          
-          <div className="card bg-base-100 shadow-md border border-base-300">
-            <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
-              <h2 className="text-lg font-semibold text-primary-content flex items-center">
-                Friend Requests
-              </h2>
-            </div>
-            <div className="card-body p-4 border-t border-base-300">
-              <FriendRequest />
-            </div>
-          </div>
         </div>
         
+        {/* Middle - Feed */}
         <div className="flex-1">
           <div className="card bg-base-100 shadow-md border border-base-300 min-h-full">
             <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
@@ -77,9 +67,22 @@ return (
             </div>
           </div>
         </div>
+        
+        {/* Right Sidebar - Friend Requests */}
+        <div className="w-80 flex-shrink-0 space-y-4 bg-base-300/50">
+          <div className="card bg-base-100 shadow-md border border-base-300">
+            <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
+              <h2 className="text-lg font-semibold text-primary-content flex items-center">
+                Friend Requests
+              </h2>
+            </div>
+            <div className="card-body p-4 border-t border-base-300">
+              <FriendRequest />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 );
-
 };

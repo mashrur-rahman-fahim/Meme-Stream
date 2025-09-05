@@ -150,7 +150,7 @@ export const FriendRequest = () => {
   };
 
   return (
-  <div className="max-w-3xl mx-auto p-4">
+  <div className="max-w-3xl mx-auto p-4 h-[80vh] overflow-y-auto">
     <h1 className="text-xl font-bold mb-4 text-center">👥 Friend Management</h1>
 
     {/* Tabs */}
@@ -185,7 +185,9 @@ export const FriendRequest = () => {
     {/* Friends */}
     {activeTab === "friends" && (
       <div>
-        <h2 className="text-lg font-semibold mb-3 text-base-content">My Friends ({friends.length})</h2>
+        <h2 className="text-lg font-semibold mb-3 text-base-content">
+          My Friends ({friends.length})
+        </h2>
         {friends.length === 0 ? (
           <p className="text-base-content/60 text-sm">You have no friends yet.</p>
         ) : (
@@ -363,5 +365,6 @@ export const FriendRequest = () => {
     )}
   </div>
 );
+
 
 };
