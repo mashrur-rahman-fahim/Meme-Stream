@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import api from "../utils/axios";
 
 export const FriendRequest = () => {
-  const [activeTab, setActiveTab] = useState("friends"); // 'friends', 'requests', 'search'
+  const [activeTab, setActiveTab] = useState("friends");
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -11,7 +11,7 @@ export const FriendRequest = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Debounced search function
+  // Debounce
   const debounce = useCallback((func, delay) => {
     let timeoutId;
     return (...args) => {
@@ -26,23 +26,20 @@ export const FriendRequest = () => {
         setSearchResults([]);
         return;
       }
-
       setSearchLoading(true);
       try {
-        // Use the new optimized endpoint
         const response = await api.get(
           `/FriendRequest/search-users/${encodeURIComponent(query)}`
         );
         setSearchResults(response.data);
         setMessage("");
       } catch (error) {
-        const errorMessage = error.response?.data || error.message;
-        setMessage("Error searching users: " + errorMessage);
+        setMessage("Error searching users: " + (error.response?.data || error.message));
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
       }
-    }, 500), // 500ms delay
+    }, 500),
     []
   );
 
@@ -55,22 +52,17 @@ export const FriendRequest = () => {
   }, [searchQuery, activeTab, searchUsersDebounced]);
 
   useEffect(() => {
-    if (activeTab === "friends") {
-      fetchFriends();
-    } else if (activeTab === "requests") {
-      fetchFriendRequests();
-    }
+    if (activeTab === "friends") fetchFriends();
+    if (activeTab === "requests") fetchFriendRequests();
   }, [activeTab]);
 
   const fetchFriends = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/FriendRequest/get/friends");
-      setFriends(response.data);
+      const res = await api.get("/FriendRequest/get/friends");
+      setFriends(res.data);
     } catch (error) {
-      setMessage(
-        "Error fetching friends: " + (error.response?.data || error.message)
-      );
+      setMessage("Error fetching friends: " + (error.response?.data || error.message));
     } finally {
       setLoading(false);
     }
@@ -79,35 +71,29 @@ export const FriendRequest = () => {
   const fetchFriendRequests = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/FriendRequest/get/friend-requests");
-      setFriendRequests(response.data);
+      const res = await api.get("/FriendRequest/get/friend-requests");
+      setFriendRequests(res.data);
     } catch (error) {
-      setMessage(
-        "Error fetching friend requests: " +
-          (error.response?.data || error.message)
-      );
+      setMessage("Error fetching requests: " + (error.response?.data || error.message));
     } finally {
       setLoading(false);
     }
   };
 
-  // Manual search trigger (for button click or enter key)
   const triggerSearch = async () => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
       setMessage("Please enter at least 2 characters to search");
       return;
     }
-
     setSearchLoading(true);
     try {
-      const response = await api.get(
+      const res = await api.get(
         `/FriendRequest/search-users/${encodeURIComponent(searchQuery)}`
       );
-      setSearchResults(response.data);
+      setSearchResults(res.data);
       setMessage("");
     } catch (error) {
-      const errorMessage = error.response?.data || error.message;
-      setMessage("Error searching users: " + errorMessage);
+      setMessage("Error searching users: " + (error.response?.data || error.message));
       setSearchResults([]);
     } finally {
       setSearchLoading(false);
@@ -118,345 +104,235 @@ export const FriendRequest = () => {
     try {
       await api.post("/FriendRequest/send", { receiverId });
       setMessage("Friend request sent successfully!");
-
-      // Update the user's status in search results instead of removing them
-      setSearchResults((prevResults) =>
-        prevResults.map((user) =>
-          user.id === receiverId
-            ? {
-                ...user,
-                friendshipStatus: "Request Sent",
-                canSendRequest: false,
-              }
-            : user
+      setSearchResults((prev) =>
+        prev.map((u) =>
+          u.id === receiverId ? { ...u, friendshipStatus: "Request Sent", canSendRequest: false } : u
         )
       );
     } catch (error) {
-      setMessage(
-        "Error sending friend request: " +
-          (error.response?.data || error.message)
-      );
+      setMessage("Error sending request: " + (error.response?.data || error.message));
     }
   };
 
-  const acceptFriendRequest = async (requestId) => {
+  const acceptFriendRequest = async (id) => {
     try {
-      await api.put(`/FriendRequest/accept/${requestId}`);
+      await api.put(`/FriendRequest/accept/${id}`);
       setMessage("Friend request accepted!");
-      fetchFriendRequests(); // Refresh the list
-      fetchFriends(); // Update friends list
+      fetchFriendRequests();
+      fetchFriends();
     } catch (error) {
-      setMessage(
-        "Error accepting friend request: " +
-          (error.response?.data || error.message)
-      );
+      setMessage("Error accepting request: " + (error.response?.data || error.message));
     }
   };
 
-  const declineFriendRequest = async (requestId) => {
+  const declineFriendRequest = async (id) => {
     try {
-      await api.delete(`/FriendRequest/delete/${requestId}`);
+      await api.delete(`/FriendRequest/delete/${id}`);
       setMessage("Friend request declined!");
-      fetchFriendRequests(); // Refresh the list
+      fetchFriendRequests();
     } catch (error) {
-      setMessage(
-        "Error declining friend request: " +
-          (error.response?.data || error.message)
-      );
+      setMessage("Error declining request: " + (error.response?.data || error.message));
     }
   };
 
-  const unfriendUser = async (friendId, friendName) => {
-    // Confirm before unfriending
-    const confirmUnfriend = window.confirm(
-      `Are you sure you want to remove ${friendName} from your friends?`
-    );
-    if (!confirmUnfriend) return;
-
+  const unfriendUser = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to remove ${name}?`)) return;
     try {
-      await api.delete(`/FriendRequest/unfriend/${friendId}`);
-      setMessage(`${friendName} has been removed from your friends.`);
-      fetchFriends(); // Refresh the friends list
-
-      // If we're in search results, update the status there too
-      if (searchResults.length > 0) {
-        setSearchResults((prevResults) =>
-          prevResults.map((user) =>
-            user.id === friendId
-              ? { ...user, friendshipStatus: "None", canSendRequest: true }
-              : user
-          )
-        );
-      }
-    } catch (error) {
-      setMessage(
-        "Error removing friend: " + (error.response?.data || error.message)
+      await api.delete(`/FriendRequest/unfriend/${id}`);
+      setMessage(`${name} removed from friends.`);
+      fetchFriends();
+      setSearchResults((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, friendshipStatus: "None", canSendRequest: true } : u))
       );
+    } catch (error) {
+      setMessage("Error removing friend: " + (error.response?.data || error.message));
     }
   };
 
   return (
-    <div>
-      <h1>Friend Management</h1>
+  <div className="max-w-3xl mx-auto p-4">
+    <h1 className="text-xl font-bold mb-4 text-center">👥 Friend Management</h1>
 
-      {/* Navigation Tabs */}
-      <div>
-        <button onClick={() => setActiveTab("friends")}>My Friends</button>
-        <button onClick={() => setActiveTab("requests")}>
-          Friend Requests
+    {/* Tabs */}
+    <div className="flex justify-center gap-2 mb-4">
+      {["friends", "requests", "search"].map((tab) => (
+        <button
+          key={tab}
+          onClick={() => setActiveTab(tab)}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+            activeTab === tab
+              ? "bg-blue-600 text-white shadow"
+              : "bg-gray-200 hover:bg-gray-300"
+          }`}
+        >
+          {tab === "friends" && "My Friends"}
+          {tab === "requests" && "Requests"}
+          {tab === "search" && "Find"}
         </button>
-        <button onClick={() => setActiveTab("search")}>Find Friends</button>
+      ))}
+    </div>
+
+    {/* Global message */}
+    {message && (
+      <div className="mb-3 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs text-yellow-800 flex justify-between items-center">
+        <span>{message}</span>
+        <button onClick={() => setMessage("")} className="font-bold">×</button>
       </div>
+    )}
 
-      {/* Message Display */}
-      {message && (
-        <div>
-          <p>{message}</p>
-          <button onClick={() => setMessage("")}>×</button>
-        </div>
-      )}
+    {loading && <p className="text-center text-sm">Loading...</p>}
 
-      {/* Loading Indicator */}
-      {loading && <p>Loading...</p>}
+    {/* Friends */}
+    {activeTab === "friends" && (
+      <div>
+        <h2 className="text-lg font-semibold mb-3">My Friends ({friends.length})</h2>
+        {friends.length === 0 ? (
+          <p className="text-gray-600 text-sm">You have no friends yet.</p>
+        ) : (
+          <div className="grid gap-3">
+            {friends.map((f) => (
+              <div key={f.id} className="p-3 bg-white shadow rounded-md flex items-center gap-3 text-sm">
+                {f.friendImage && (
+                  <img src={f.friendImage} alt={f.friendName} className="w-10 h-10 rounded-full" />
+                )}
+                <div className="flex-1">
+                  <h3 className="font-semibold text-sm">{f.friendName}</h3>
+                  <p className="text-xs text-gray-600">{f.friendBio}</p>
+                  <p className="text-xs text-gray-500">Email: {f.friendEmail}</p>
+                </div>
+                <button
+                  onClick={() => unfriendUser(f.friendId, f.friendName)}
+                  className="px-2.5 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
 
-      {/* My Friends Tab */}
-      {activeTab === "friends" && (
-        <div>
-          <h2>My Friends ({friends.length})</h2>
-          {friends.length === 0 ? (
-            <p>
-              You have no friends yet. Start by searching for people to add!
-            </p>
-          ) : (
-            <div>
-              {friends.map((friend) => (
-                <div key={friend.id}>
-                  <div>
-                    {friend.friendImage && (
-                      <img
-                        src={friend.friendImage}
-                        alt={friend.friendName}
-                        width="50"
-                        height="50"
-                      />
-                    )}
+    {/* Requests */}
+    {activeTab === "requests" && (
+      <div>
+        <h2 className="text-lg font-semibold mb-3">
+          Friend Requests ({friendRequests.length})
+        </h2>
+        {friendRequests.length === 0 ? (
+          <p className="text-gray-600 text-sm">No pending requests.</p>
+        ) : (
+          <div className="grid gap-3">
+            {friendRequests.map((r) => (
+              <div key={r.id} className="p-3 bg-white shadow rounded-md text-sm">
+                <div className="flex items-center gap-3">
+                  {r.senderImage && (
+                    <img src={r.senderImage} alt={r.senderName} className="w-10 h-10 rounded-full" />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{r.senderName}</h3>
+                    <p className="text-xs text-gray-500">Email: {r.senderEmail}</p>
                   </div>
-                  <div>
-                    <h3>{friend.friendName}</h3>
-                    <p>{friend.friendBio}</p>
-                    <p>Email: {friend.friendEmail}</p>
-                    <p>
-                      Friends since:{" "}
-                      {new Date(friend.createdAt).toLocaleDateString()}
-                    </p>
+                  {r.status === "Pending" && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => acceptFriendRequest(r.id)}
+                        className="px-2.5 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => declineFriendRequest(r.id)}
+                        className="px-2.5 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {/* Status message always below */}
+                <div className="mt-1 text-xs text-gray-600">Status: {r.status}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* Search */}
+    {activeTab === "search" && (
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Find Friends</h2>
+        <div className="mb-3 flex flex-col gap-2">
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && triggerSearch()}
+            className="px-3 py-1.5 border rounded-md text-sm w-full"
+          />
+          <button
+            onClick={triggerSearch}
+            disabled={searchLoading}
+            className="w-full px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {searchLoading ? "Searching..." : "Search"}
+          </button>
+        </div>
+
+        {searchResults.length > 0 ? (
+          <div className="grid gap-3">
+            {searchResults.map((u) => (
+              <div key={u.id} className="p-3 bg-white shadow rounded-md text-sm">
+                <div className="flex items-center gap-3">
+                  {u.image && <img src={u.image} alt={u.name} className="w-10 h-10 rounded-full" />}
+                  <div className="flex-1">
+                    <h4 className="font-semibold">{u.name}</h4>
+                    <p className="text-xs text-gray-600">{u.bio}</p>
+                  </div>
+                </div>
+
+                {/* Always show message below */}
+                <div className="mt-2 text-xs">
+                  {u.friendshipStatus === "Friend" && (
                     <button
-                      onClick={() =>
-                        unfriendUser(friend.friendId, friend.friendName)
-                      }
-                      style={{
-                        backgroundColor: "#ff6b6b",
-                        color: "white",
-                        border: "none",
-                        padding: "5px 10px",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
+                      onClick={() => unfriendUser(u.id, u.name)}
+                      className="px-2.5 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
                     >
                       Remove Friend
                     </button>
-                  </div>
-                  <hr />
+                  )}
+
+                  {u.friendshipStatus === "Request Sent" && (
+                    <p className="text-blue-500">Request already sent</p>
+                  )}
+
+                  {u.friendshipStatus === "Request Received" && (
+                    <p className="text-green-600">This user sent you a request</p>
+                  )}
+
+                  {u.canSendRequest && (
+                    <button
+                      onClick={() => sendFriendRequest(u.id)}
+                      className="px-2.5 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Send Friend Request
+                    </button>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Friend Requests Tab */}
-      {activeTab === "requests" && (
-        <div>
-          <h2>Pending Friend Requests ({friendRequests.length})</h2>
-          {friendRequests.length === 0 ? (
-            <p>No pending friend requests.</p>
-          ) : (
-            <div>
-              {friendRequests.map((request) => (
-                <div key={request.id}>
-                  <div>
-                    {request.senderImage && (
-                      <img
-                        src={request.senderImage}
-                        alt={request.senderName}
-                        width="50"
-                        height="50"
-                      />
-                    )}
-                  </div>
-                  <div>
-                    <h3>Request from: {request.senderName}</h3>
-                    <p>{request.senderBio}</p>
-                    <p>Email: {request.senderEmail}</p>
-                    <p>
-                      Received on:{" "}
-                      {new Date(request.createdAt).toLocaleDateString()}
-                    </p>
-                    <p>Status: {request.status}</p>
-
-                    {request.status === "Pending" && (
-                      <div>
-                        <button onClick={() => acceptFriendRequest(request.id)}>
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => declineFriendRequest(request.id)}
-                        >
-                          Decline
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <hr />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Find Friends Tab */}
-      {activeTab === "search" && (
-        <div>
-          <h2>Find Friends</h2>
-
-          <div>
-            <input
-              type="text"
-              placeholder="Search by name (at least 2 characters)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && triggerSearch()}
-            />
-            <button onClick={triggerSearch} disabled={searchLoading}>
-              {searchLoading ? "Searching..." : "Search"}
-            </button>
-          </div>
-
-          {searchLoading && <p>Searching users...</p>}
-
-          {searchResults.length > 0 && (
-            <div>
-              <h3>Search Results ({searchResults.length}):</h3>
-              {searchResults.map((user) => (
-                <div key={user.id}>
-                  <div>
-                    {user.image && (
-                      <img
-                        src={user.image}
-                        alt={user.name}
-                        width="50"
-                        height="50"
-                      />
-                    )}
-                  </div>
-                  <div>
-                    <h4>
-                      {user.name}
-                      {user.friendshipStatus &&
-                        user.friendshipStatus !== "None" && (
-                          <span
-                            style={{
-                              marginLeft: "10px",
-                              padding: "2px 8px",
-                              backgroundColor: "#e0e0e0",
-                              borderRadius: "4px",
-                              fontSize: "12px",
-                            }}
-                          >
-                            {user.friendshipStatus}
-                          </span>
-                        )}
-                    </h4>
-                    <p>{user.bio}</p>
-                    <p>Email: {user.email}</p>
-
-                    {user.friendshipStatus === "Friend" && (
-                      <div>
-                        <p>
-                          <em>You are already friends</em>
-                        </p>
-                        <button
-                          onClick={() => unfriendUser(user.id, user.name)}
-                          style={{
-                            backgroundColor: "#ff6b6b",
-                            color: "white",
-                            border: "none",
-                            padding: "5px 10px",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Remove Friend
-                        </button>
-                      </div>
-                    )}
-
-                    {user.friendshipStatus === "Request Sent" && (
-                      <p>
-                        <em>Friend request already sent</em>
-                      </p>
-                    )}
-
-                    {user.friendshipStatus === "Request Received" && (
-                      <p>
-                        <em>
-                          This user sent you a friend request (check your Friend
-                          Requests tab)
-                        </em>
-                      </p>
-                    )}
-
-                    {user.canSendRequest && (
-                      <button onClick={() => sendFriendRequest(user.id)}>
-                        Send Friend Request
-                      </button>
-                    )}
-
-                    {user.friendshipStatus === "Request Declined" &&
-                      user.canSendRequest && (
-                        <button onClick={() => sendFriendRequest(user.id)}>
-                          Send Friend Request Again
-                        </button>
-                      )}
-                  </div>
-                  <hr />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {searchQuery &&
-            searchQuery.length >= 2 &&
-            searchResults.length === 0 &&
-            !searchLoading && (
-              <div>
-                <p>No users found with the name "{searchQuery}"</p>
-                <p>Tips:</p>
-                <ul>
-                  <li>Make sure the name is spelled correctly</li>
-                  <li>Try searching with fewer characters</li>
-                  <li>
-                    Users must have verified email addresses to appear in search
-                  </li>
-                </ul>
               </div>
-            )}
+            ))}
+          </div>
+        ) : (
+          searchQuery &&
+          !searchLoading && (
+            <p className="text-gray-600 text-xs">No users found for "{searchQuery}"</p>
+          )
+        )}
+      </div>
+    )}
+  </div>
+);
 
-          {searchQuery && searchQuery.length > 0 && searchQuery.length < 2 && (
-            <p>Please enter at least 2 characters to search</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
 };

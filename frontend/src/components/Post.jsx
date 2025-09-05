@@ -95,10 +95,10 @@ export const Post = () => {
 
 return (
   <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md space-y-6">
-    {/* Header */}
+
     <h2 className="text-2xl font-bold text-center text-gray-800">Create a Meme Post</h2>
 
-    {/* Content Input */}
+
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">Meme Content</label>
       <textarea
@@ -113,7 +113,7 @@ return (
       />
     </div>
 
-    {/* Image URL Input */}
+
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
       <input
@@ -127,7 +127,7 @@ return (
       />
     </div>
 
-   {/* Action Buttons */}
+
 <div className="flex flex-col gap-4 mt-4">
   {/* Check if Meme Button */}
   <div className="flex flex-col gap-1">
@@ -150,7 +150,6 @@ return (
         "Check if Meme"
       )}
     </button>
-    {/* Disabled reason */}
     {!FormData.content.trim() && (
       <p className="text-sm text-gray-500 pl-1">
         ✍️ Write something first to check if it’s a meme
@@ -158,7 +157,7 @@ return (
     )}
   </div>
 
-  {/* Create Post Button */}
+
   <div className="flex flex-col gap-1">
     <button
       onClick={handleSubmit}
@@ -181,7 +180,6 @@ return (
 </div>
 
 
-    {/* Status Message */}
     {postStatus && (
       <div className="mt-6">
         <div

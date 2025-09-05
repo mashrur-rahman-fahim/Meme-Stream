@@ -10,7 +10,7 @@ export const Navbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/Login');
+    navigate("/auth");
   };
 
   const handleNavClick = (section, route) => {
@@ -24,14 +24,14 @@ export const Navbar = () => {
     navigate('/');
   };
 
-  // Helper function to check if current route is active
+
   const isActive = (path) => {
     return location.pathname === path;
   };
 
   return (
     <div className="navbar bg-white/95 backdrop-blur-xl shadow-lg border-b border-base-200 fixed top-0 left-0 right-0 z-50 h-16">
-      {/* Left section - Logo */}
+    
       <div className="navbar-start">
         <h2 
           className="text-2xl font-black bg-gradient-to-r from-pink-500 to-blue-500 bg-clip-text text-transparent cursor-pointer hover:scale-105 transition-transform duration-300 flex items-center gap-2 hover:drop-shadow-lg"
@@ -42,10 +42,10 @@ export const Navbar = () => {
         </h2>
       </div>
 
-      {/* Right section - Navigation buttons */}
+
       <div className="navbar-end">
         <div className="flex items-center gap-2">
-          {/* Home Button */}
+         
           <div className="tooltip tooltip-bottom" data-tip="Home">
             <button 
               className={`btn btn-circle btn-ghost text-lg hover:bg-pink-100 hover:text-pink-500 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md ${
@@ -57,7 +57,7 @@ export const Navbar = () => {
             </button>
           </div>
 
-          {/* Friends Button */}
+      
           <div className="tooltip tooltip-bottom" data-tip="Friends">
             <button 
               className={`btn btn-circle btn-ghost text-lg hover:bg-pink-100 hover:text-pink-500 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md ${
@@ -69,7 +69,7 @@ export const Navbar = () => {
             </button>
           </div>
 
-          {/* Messages Button */}
+    
           <div className="tooltip tooltip-bottom" data-tip="Messages">
             <button 
               className={`btn btn-circle btn-ghost text-lg hover:bg-pink-100 hover:text-pink-500 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md ${
@@ -81,7 +81,6 @@ export const Navbar = () => {
             </button>
           </div>
 
-          {/* Notifications Button with Badge */}
           <div className="tooltip tooltip-bottom" data-tip="Notifications">
             <div className="indicator">
               {/* <span className="indicator-item badge badge-error badge-sm animate-pulse shadow-lg"></span> */}
@@ -96,7 +95,7 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Profile Dropdown */}
+
           <div className="dropdown dropdown-end">
             <div 
               tabIndex={0} 
@@ -163,23 +162,12 @@ export const Navbar = () => {
             </ul>
           </div>
 
-          {/* Divider */}
           <div className="divider divider-horizontal mx-1"></div>
 
-          {/* Alternative Standalone Logout Button (uncomment if you prefer this style) */}
-          {/* 
-          <button 
-            className="btn btn-sm bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white border-none shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            onClick={handleLogout}
-          >
-            <span className="text-sm">🚪</span>
-            Logout
-          </button>
-          */}
+         
         </div>
       </div>
 
-      {/* Mobile Menu Button (for responsive design) */}
       <div className="navbar-end lg:hidden">
         <div className="dropdown dropdown-end">
           <div tabIndex={0} role="button" className="btn btn-square btn-ghost">
