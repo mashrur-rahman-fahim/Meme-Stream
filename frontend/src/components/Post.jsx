@@ -94,13 +94,11 @@ export const Post = () => {
   };
 
 return (
-  <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md space-y-6">
-
-    <h2 className="text-2xl font-bold text-center text-gray-800">Create a Meme Post</h2>
-
-
+  <div className="max-w-2xl mx-auto p-6 bg-base-100 rounded-lg shadow-md space-y-6">
+    <h2 className="text-2xl font-bold text-center text-base-content">Create a Meme Post</h2>
+    
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Meme Content</label>
+      <label className="block text-sm font-medium text-base-content mb-1">Meme Content</label>
       <textarea
         className="textarea textarea-bordered w-full h-28 resize-none text-base p-3"
         placeholder="What's on your mind?"
@@ -112,10 +110,9 @@ return (
         }}
       />
     </div>
-
-
+    
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
+      <label className="block text-sm font-medium text-base-content mb-1">Image URL (optional)</label>
       <input
         type="url"
         className="input input-bordered w-full text-base p-3"
@@ -127,58 +124,55 @@ return (
       />
     </div>
 
+    <div className="flex flex-col gap-4 mt-4">
+      {/* Check if Meme Button */}
+      <div className="flex flex-col gap-1">
+        <button
+          type="button"
+          onClick={handleMemeCheck}
+          disabled={isCheckingMeme || !FormData.content.trim()}
+          className={`btn w-full text-lg font-semibold transition-all duration-200 ${
+            isCheckingMeme || !FormData.content.trim()
+              ? "btn-disabled"
+              : "btn-outline btn-primary hover:scale-105"
+          }`}
+        >
+          {isCheckingMeme ? (
+            <>
+              <span className="loading loading-spinner loading-sm mr-2"></span>
+              Checking...
+            </>
+          ) : (
+            "Check if Meme"
+          )}
+        </button>
+        {!FormData.content.trim() && (
+          <p className="text-sm text-base-content/60 pl-1">
+            ✍️ Write something first to check if it's a meme
+          </p>
+        )}
+      </div>
 
-<div className="flex flex-col gap-4 mt-4">
-  {/* Check if Meme Button */}
-  <div className="flex flex-col gap-1">
-    <button
-      type="button"
-      onClick={handleMemeCheck}
-      disabled={isCheckingMeme || !FormData.content.trim()}
-      className={`btn w-full text-lg font-semibold transition-all duration-200 ${
-        isCheckingMeme || !FormData.content.trim()
-          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-          : "btn-outline btn-primary hover:scale-105"
-      }`}
-    >
-      {isCheckingMeme ? (
-        <>
-          <span className="loading loading-spinner loading-sm mr-2"></span>
-          Checking...
-        </>
-      ) : (
-        "Check if Meme"
-      )}
-    </button>
-    {!FormData.content.trim() && (
-      <p className="text-sm text-gray-500 pl-1">
-        ✍️ Write something first to check if it’s a meme
-      </p>
-    )}
-  </div>
-
-
-  <div className="flex flex-col gap-1">
-    <button
-      onClick={handleSubmit}
-      disabled={!memeCheckResult || !memeCheckResult.isMeme}
-      className={`btn w-full text-lg font-semibold transition-all duration-200 ${
-        !memeCheckResult || !memeCheckResult.isMeme
-          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-          : "btn-primary hover:scale-105"
-      }`}
-    >
-      Create Post
-    </button>
-    {/* Disabled reason */}
-    {(!memeCheckResult || !memeCheckResult.isMeme) && (
-      <p className="text-sm text-gray-500 pl-1">
-        ✅ First check and confirm your content is a meme
-      </p>
-    )}
-  </div>
-</div>
-
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={handleSubmit}
+          disabled={!memeCheckResult || !memeCheckResult.isMeme}
+          className={`btn w-full text-lg font-semibold transition-all duration-200 ${
+            !memeCheckResult || !memeCheckResult.isMeme
+              ? "btn-disabled"
+              : "btn-primary hover:scale-105"
+          }`}
+        >
+          Create Post
+        </button>
+        {/* Disabled reason */}
+        {(!memeCheckResult || !memeCheckResult.isMeme) && (
+          <p className="text-sm text-base-content/60 pl-1">
+            ✅ First check and confirm your content is a meme
+          </p>
+        )}
+      </div>
+    </div>
 
     {postStatus && (
       <div className="mt-6">
