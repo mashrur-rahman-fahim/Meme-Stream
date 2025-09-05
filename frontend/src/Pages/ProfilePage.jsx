@@ -109,24 +109,24 @@ export const ProfilePage = () => {
 
   if (loading || verifyLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-slate-900">
-        <div className="loading loading-spinner loading-lg text-green-400"></div>
+      <div className="flex justify-center items-center min-h-screen bg-base-300">
+        <div className="loading loading-bars loading-lg text-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800 min-h-screen">
+    <div className="bg-base-300 min-h-screen">
       <div className="max-w-5xl mx-auto">
-        <div className="bg-slate-700 shadow-lg rounded-b-lg">
+        <div className="bg-base-200 shadow-lg rounded-b-lg">
           <div className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="avatar">
-                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full ring-4 ring-green-500 ring-offset-base-100 ring-offset-2 bg-slate-600">
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full ring-4 ring-primary ring-offset-base-100 ring-offset-2 bg-base-100">
                   {user.image ? (
                     <img src={user.image} alt={user.name} />
                   ) : (
-                    <span className="text-6xl text-slate-300 flex items-center justify-center w-full h-full">
+                    <span className="text-6xl text-base-content flex items-center justify-center w-full h-full">
                       {user.name.charAt(0).toUpperCase()}
                     </span>
                   )}
@@ -134,17 +134,17 @@ export const ProfilePage = () => {
               </div>
 
               <div className="text-center md:text-left flex-1">
-                <h1 className="text-4xl font-bold text-white">{user.name}</h1>
-                <p className="text-slate-400 mt-1">{user.email}</p>
+                <h1 className="text-4xl font-bold text-base-content">{user.name}</h1>
+                <p className="text-base-content/60 mt-1">{user.email}</p>
                 {user.bio && (
-                  <p className="text-slate-300 mt-3 max-w-lg">{user.bio}</p>
+                  <p className="text-base-content/80 mt-3 max-w-lg">{user.bio}</p>
                 )}
               </div>
 
               <div className="flex-shrink-0">
                 <button
                   onClick={openEditModal}
-                  className="btn bg-slate-600 hover:bg-slate-500 text-white border-none"
+                  className="btn btn-secondary"
                 >
                   <FaUserEdit />
                   Edit Profile
@@ -152,7 +152,7 @@ export const ProfilePage = () => {
               </div>
             </div>
           </div>
-          <div className="px-4 md:px-6 mt-4 border-t border-slate-600/50">
+          <div className="px-4 md:px-6 mt-4 border-t border-base-content/10">
             <div className="flex items-center gap-4">
               <TabButton
                 icon={<FaClipboardList />}
@@ -183,7 +183,7 @@ export const ProfilePage = () => {
                 <PostCard
                   key={`${post.isShared ? "shared" : "post"}-${post.id}`}
                   post={post}
-                  user={user} // Pass the logged-in user to the card
+                  user={user}
                   formatDate={formatDate}
                   onEdit={handleEditPost}
                   onDelete={handleDeletePost}
@@ -196,28 +196,28 @@ export const ProfilePage = () => {
       
       {isEditModalOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-700">
+          <div className="modal-box bg-base-200">
              <button onClick={() => setIsEditModalOpen(false)} className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-             <h3 className="font-bold text-2xl text-white mb-4">Edit Profile</h3>
+             <h3 className="font-bold text-2xl text-base-content mb-4">Edit Profile</h3>
              <form onSubmit={handleProfileUpdate} className="space-y-4">
                <div className="form-control">
-                 <label className="label"><span className="label-text text-slate-300">Name</span></label>
-                 <input type="text" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} className="input input-bordered w-full bg-slate-600" />
+                 <label className="label"><span className="label-text">Name</span></label>
+                 <input type="text" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} className="input input-bordered w-full bg-base-200" />
                </div>
                <div className="form-control">
-                 <label className="label"><span className="label-text text-slate-300">Email</span></label>
-                 <input type="email" value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })} className="input input-bordered w-full bg-slate-600" />
+                 <label className="label"><span className="label-text">Email</span></label>
+                 <input type="email" value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })} className="input input-bordered w-full bg-base-200" />
                </div>
                <div className="form-control">
-                 <label className="label"><span className="label-text text-slate-300">Bio</span></label>
-                 <textarea value={editingUser.bio} onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })} className="textarea textarea-bordered w-full h-24 bg-slate-600"></textarea>
+                 <label className="label"><span className="label-text">Bio</span></label>
+                 <textarea value={editingUser.bio} onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })} className="textarea textarea-bordered w-full h-24 bg-base-200"></textarea>
                </div>
                <div className="form-control">
-                 <label className="label"><span className="label-text text-slate-300">Profile Image URL</span></label>
-                 <input type="url" value={editingUser.image} onChange={(e) => setEditingUser({ ...editingUser, image: e.target.value })} className="input input-bordered w-full bg-slate-600" />
+                 <label className="label"><span className="label-text">Profile Image URL</span></label>
+                 <input type="url" value={editingUser.image} onChange={(e) => setEditingUser({ ...editingUser, image: e.target.value })} className="input input-bordered w-full bg-base-600" />
                </div>
                <div className="modal-action">
-                 <button type="submit" className="btn bg-green-500 hover:bg-green-600 text-white border-none w-full">Save Changes</button>
+                 <button type="submit" className="btn btn-primary w-full">Save Changes</button>
                </div>
              </form>
           </div>
@@ -232,8 +232,8 @@ const TabButton = ({ icon, label, isActive, onClick }) => (
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-3 font-semibold border-b-4 transition-all duration-300 ${
         isActive
-          ? "border-green-400 text-green-400"
-          : "border-transparent text-slate-400 hover:text-white"
+          ? "border-primary text-primary"
+          : "border-transparent text-base-content/70 hover:text-base-content"
       }`}
     >
       {icon}
