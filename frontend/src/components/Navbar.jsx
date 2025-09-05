@@ -84,7 +84,7 @@ export const Navbar = () => {
           {/* Notifications Button with Badge */}
           <div className="tooltip tooltip-bottom" data-tip="Notifications">
             <div className="indicator">
-              <span className="indicator-item badge badge-error badge-sm animate-pulse shadow-lg">3</span>
+              {/* <span className="indicator-item badge badge-error badge-sm animate-pulse shadow-lg"></span> */}
               <button 
                 className={`btn btn-circle btn-ghost text-lg hover:bg-pink-100 hover:text-pink-500 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md ${
                   isActive('/notifications') ? 'bg-pink-100 text-pink-500 ring-2 ring-pink-200' : ''

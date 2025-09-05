@@ -46,10 +46,10 @@ export const Post = () => {
 
       if (!response.data.isMeme) {
         setPostStatus(
-          "❌ This content is not a meme and cannot be posted. Only memes are allowed!"
+          "This content is not a meme and cannot be posted. Only memes are allowed!"
         );
       } else {
-        setPostStatus("✅ Great! This is meme content and can be posted!");
+        setPostStatus("Great! This is meme content and can be posted!");
       }
     } catch (error) {
       console.error("Error checking meme:", error);
@@ -78,7 +78,7 @@ export const Post = () => {
       });
 
       console.log("Post created:", response.data);
-      setPostStatus("✅ Post created successfully!");
+      setPostStatus("Post created successfully!");
 
       // Reset form
       setFormData({ content: "", image: "" });
@@ -86,139 +86,118 @@ export const Post = () => {
     } catch (error) {
       console.error("Error creating post:", error);
       if (error.response?.data?.error === "Non-meme content detected") {
-        setPostStatus("❌ Post blocked: Only meme content is allowed!");
+        setPostStatus("Post blocked: Only meme content is allowed!");
       } else {
         setPostStatus("Error creating post. Please try again.");
       }
     }
   };
 
-  return (
+return (
+  <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md space-y-6">
+    {/* Header */}
+    <h2 className="text-2xl font-bold text-center text-gray-800">Create a Meme Post</h2>
+
+    {/* Content Input */}
     <div>
-      <h2>Create New Meme Post</h2>
-      <p>
-        <em>Note: Only meme content is allowed on this platform!</em>
-      </p>
-
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Content:</label>
-          <textarea
-            placeholder="Share your best memes here!"
-            value={FormData.content}
-            onChange={(e) => {
-              setFormData({ ...FormData, content: e.target.value });
-              setMemeCheckResult(null); // Reset check when content changes
-              setPostStatus("");
-            }}
-            rows="4"
-            cols="50"
-          />
-        </div>
-
-        <div>
-          <label>Image URL:</label>
-          <input
-            type="text"
-            placeholder="Image URL (optional)"
-            value={FormData.image}
-            onChange={(e) =>
-              setFormData({ ...FormData, image: e.target.value })
-            }
-          />
-        </div>
-
-        <div>
-          <button
-            type="button"
-            onClick={handleMemeCheck}
-            disabled={isCheckingMeme || !FormData.content.trim()}
-          >
-            {isCheckingMeme ? "Checking..." : "Check if this is a Meme"}
-          </button>
-        </div>
-
-        <div>
-          <button
-            type="submit"
-            disabled={!memeCheckResult || !memeCheckResult.isMeme}
-          >
-            Create Post (Memes Only)
-          </button>
-        </div>
-      </form>
-
-      {postStatus && (
-        <div>
-          <h3>Status:</h3>
-          <p>{postStatus}</p>
-        </div>
-      )}
-
-      {memeCheckResult && (
-        <div>
-          <h3>Meme Detection Results:</h3>
-          <p>
-            <strong>Is Meme:</strong> {memeCheckResult.isMeme ? "Yes" : "No"}
-          </p>
-          <p>
-            <strong>Can Post:</strong> {memeCheckResult.canPost ? "Yes" : "No"}
-          </p>
-          <p>
-            <strong>Message:</strong> {memeCheckResult.message}
-          </p>
-
-          {memeCheckResult.analysis && (
-            <div>
-              <h4>Detailed Analysis:</h4>
-              <p>
-                <strong>Meme Probability:</strong>{" "}
-                {(memeCheckResult.analysis.memeProbability * 100).toFixed(1)}%
-              </p>
-              <p>
-                <strong>Humor Score:</strong>{" "}
-                {memeCheckResult.analysis.humorScore}/10
-              </p>
-              <p>
-                <strong>Sentiment:</strong> {memeCheckResult.analysis.sentiment}
-              </p>
-              <p>
-                <strong>Language:</strong>{" "}
-                {memeCheckResult.analysis.detectedLanguage}
-              </p>
-
-              {memeCheckResult.analysis.memeReferences &&
-                memeCheckResult.analysis.memeReferences.length > 0 && (
-                  <div>
-                    <strong>Meme References:</strong>
-                    <ul>
-                      {memeCheckResult.analysis.memeReferences.map(
-                        (ref, index) => (
-                          <li key={index}>{ref}</li>
-                        )
-                      )}
-                    </ul>
-                  </div>
-                )}
-
-              {memeCheckResult.analysis.keywords &&
-                memeCheckResult.analysis.keywords.length > 0 && (
-                  <div>
-                    <strong>Keywords:</strong>{" "}
-                    {memeCheckResult.analysis.keywords.join(", ")}
-                  </div>
-                )}
-
-              {memeCheckResult.analysis.analysis && (
-                <div>
-                  <strong>Analysis:</strong>
-                  <p>{memeCheckResult.analysis.analysis}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      <label className="block text-sm font-medium text-gray-700 mb-1">Meme Content</label>
+      <textarea
+        className="textarea textarea-bordered w-full h-28 resize-none text-base p-3"
+        placeholder="What's on your mind?"
+        value={FormData.content}
+        onChange={(e) => {
+          setFormData({ ...FormData, content: e.target.value });
+          setMemeCheckResult(null);
+          setPostStatus("");
+        }}
+      />
     </div>
-  );
+
+    {/* Image URL Input */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
+      <input
+        type="url"
+        className="input input-bordered w-full text-base p-3"
+        placeholder="https://example.com/image.jpg"
+        value={FormData.image}
+        onChange={(e) =>
+          setFormData({ ...FormData, image: e.target.value })
+        }
+      />
+    </div>
+
+   {/* Action Buttons */}
+<div className="flex flex-col gap-4 mt-4">
+  {/* Check if Meme Button */}
+  <div className="flex flex-col gap-1">
+    <button
+      type="button"
+      onClick={handleMemeCheck}
+      disabled={isCheckingMeme || !FormData.content.trim()}
+      className={`btn w-full text-lg font-semibold transition-all duration-200 ${
+        isCheckingMeme || !FormData.content.trim()
+          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+          : "btn-outline btn-primary hover:scale-105"
+      }`}
+    >
+      {isCheckingMeme ? (
+        <>
+          <span className="loading loading-spinner loading-sm mr-2"></span>
+          Checking...
+        </>
+      ) : (
+        "Check if Meme"
+      )}
+    </button>
+    {/* Disabled reason */}
+    {!FormData.content.trim() && (
+      <p className="text-sm text-gray-500 pl-1">
+        ✍️ Write something first to check if it’s a meme
+      </p>
+    )}
+  </div>
+
+  {/* Create Post Button */}
+  <div className="flex flex-col gap-1">
+    <button
+      onClick={handleSubmit}
+      disabled={!memeCheckResult || !memeCheckResult.isMeme}
+      className={`btn w-full text-lg font-semibold transition-all duration-200 ${
+        !memeCheckResult || !memeCheckResult.isMeme
+          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+          : "btn-primary hover:scale-105"
+      }`}
+    >
+      Create Post
+    </button>
+    {/* Disabled reason */}
+    {(!memeCheckResult || !memeCheckResult.isMeme) && (
+      <p className="text-sm text-gray-500 pl-1">
+        ✅ First check and confirm your content is a meme
+      </p>
+    )}
+  </div>
+</div>
+
+
+    {/* Status Message */}
+    {postStatus && (
+      <div className="mt-6">
+        <div
+          className={`alert text-base font-medium ${
+            postStatus.includes("successfully")
+              ? "alert-success"
+              : postStatus.includes("not a meme") || postStatus.includes("blocked")
+              ? "alert-error"
+              : "alert-info"
+          }`}
+        >
+          <span>{postStatus}</span>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
 };
