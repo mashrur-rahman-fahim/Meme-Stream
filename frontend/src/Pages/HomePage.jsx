@@ -28,8 +28,9 @@ export const HomePage = () => {
 return (
   <div className="min-h-screen bg-base-200">
     <Navbar />
-    
+
     <div className="pt-20">
+      {/* Header */}
       <div className="text-center py-6 border-b border-base-300">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           MemeStream
@@ -38,10 +39,11 @@ return (
           Your Daily Dose of Memes with Smart Feed Algorithm
         </p>
       </div>
-      
-      <div className="flex min-h-screen gap-4 px-4">
+
+      {/* Main Layout */}
+      <div className="flex flex-col lg:flex-row gap-4 px-4">
         {/* Left Sidebar - Create Post */}
-        <div className="w-80 flex-shrink-0 space-y-4 bg-base-300/50">
+        <div className="lg:w-80 w-full flex-shrink-0 space-y-4 bg-base-300/50 order-2 lg:order-1">
           <div className="card bg-base-100 shadow-md border border-base-300">
             <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
               <h2 className="text-lg font-semibold text-primary-content flex items-center">
@@ -53,9 +55,9 @@ return (
             </div>
           </div>
         </div>
-        
+
         {/* Middle - Feed */}
-        <div className="flex-1">
+        <div className="flex-1 order-1 lg:order-2">
           <div className="card bg-base-100 shadow-md border border-base-300 min-h-full">
             <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
               <h2 className="text-lg font-semibold text-primary-content flex items-center">
@@ -67,9 +69,9 @@ return (
             </div>
           </div>
         </div>
-        
+
         {/* Right Sidebar - Friend Requests */}
-        <div className="w-80 flex-shrink-0 space-y-4 bg-base-300/50">
+        <div className="lg:w-80 w-full flex-shrink-0 space-y-4 bg-base-300/50 order-3">
           <div className="card bg-base-100 shadow-md border border-base-300">
             <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
               <h2 className="text-lg font-semibold text-primary-content flex items-center">
@@ -85,4 +87,5 @@ return (
     </div>
   </div>
 );
+
 };
