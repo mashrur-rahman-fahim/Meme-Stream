@@ -4,6 +4,7 @@ import { VerifyContext } from "../../context/create_verify_context";
 import { Post } from "../components/Post";
 import { FriendRequest } from "../components/FriendRequest";
 import { Feed } from "../components/Feed";
+import { Navbar } from "../components/Navbar";
 
 export const HomePage = () => {
   const { isVerified, verifyUser, loading, logout } = useContext(VerifyContext);
@@ -24,86 +25,67 @@ export const HomePage = () => {
     navigate("/auth");
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="loading loading-spinner loading-lg text-green-400"></div>
-      </div>
-    );
-  }
+return (
+  <div className="min-h-screen bg-base-200">
+    <Navbar />
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 to-slate-900">
+    <div className="pt-20">
       {/* Header */}
-      <div className="navbar bg-slate-700/80 backdrop-blur-md border-b border-slate-600/50">
-        <div className="navbar-start">
-          <h1 className="text-2xl font-bold text-green-400">MemeStream</h1>
-        </div>
-        <div className="navbar-end">
-          <div className="flex items-center gap-4">
-            <span className="text-slate-300 text-sm">
-              Status:{" "}
-              <span className="text-green-400">{isVerified.toString()}</span>
-            </span>
-            <button
-              onClick={handleLogout}
-              className="btn bg-red-500 hover:bg-red-600 text-white border-none"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
+      <div className="text-center py-6 border-b border-base-300">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          MemeStream
+        </h1>
+        <p className="text-base-content/70 text-base mt-1">
+          Your Daily Dose of Memes with Smart Feed Algorithm
+        </p>
       </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-slate-100 mb-2">
-              MemeStream
-            </h1>
-            <p className="text-slate-300">
-              Your Daily Dose of Memes with Smart Feed Algorithm
-            </p>
-          </div>
-
-          {/* Main content grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Create Post Section */}
-            <div className="lg:col-span-1">
-              <div className="card bg-slate-700/60 backdrop-blur-md shadow-xl border border-slate-600/50 mb-6">
-                <div className="card-body p-0">
-                  <div className="card-header bg-slate-600/50 p-4 border-b border-slate-500/50">
-                    <h2 className="text-lg font-semibold text-slate-100">
-                      Create Post
-                    </h2>
-                  </div>
-                  <Post />
-                </div>
-              </div>
-
-              {/* Friend Requests */}
-              <div className="card bg-slate-700/60 backdrop-blur-md shadow-xl border border-slate-600/50">
-                <div className="card-header bg-slate-600/50 p-4 border-b border-slate-500/50">
-                  <h2 className="text-lg font-semibold text-slate-100">
-                    Friend Requests
-                  </h2>
-                </div>
-                <FriendRequest />
-              </div>
+      {/* Main Layout */}
+      <div className="flex flex-col lg:flex-row gap-4 px-4">
+        {/* Left Sidebar - Create Post */}
+        <div className="lg:w-80 w-full flex-shrink-0 space-y-4 bg-base-300/50 order-2 lg:order-1">
+          <div className="card bg-base-100 shadow-md border border-base-300">
+            <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
+              <h2 className="text-lg font-semibold text-primary-content flex items-center">
+                Create Post
+              </h2>
             </div>
+            <div className="card-body p-4 border-t border-base-300">
+              <Post />
+            </div>
+          </div>
+        </div>
 
-            {/* Feed Section */}
-            <div className="lg:col-span-2">
-              <div className="card bg-slate-700/60 backdrop-blur-md shadow-xl border border-slate-600/50">
-                <div className="card-body p-6">
-                  <Feed />
-                </div>
-              </div>
+        {/* Middle - Feed */}
+        <div className="flex-1 order-1 lg:order-2">
+          <div className="card bg-base-100 shadow-md border border-base-300 min-h-full">
+            <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
+              <h2 className="text-lg font-semibold text-primary-content flex items-center">
+                Feed
+              </h2>
+            </div>
+            <div className="card-body p-4 border-t border-base-300">
+              <Feed />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar - Friend Requests */}
+        <div className="lg:w-80 w-full flex-shrink-0 space-y-4 bg-base-300/50 order-3">
+          <div className="card bg-base-100 shadow-md border border-base-300">
+            <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
+              <h2 className="text-lg font-semibold text-primary-content flex items-center">
+                Friend Requests
+              </h2>
+            </div>
+            <div className="card-body p-4 border-t border-base-300">
+              <FriendRequest />
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 };
