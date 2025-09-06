@@ -128,6 +128,10 @@ namespace MemeStreamApi.Migrations
                     b.Property<int>("CreatedById")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -149,6 +153,12 @@ namespace MemeStreamApi.Migrations
 
                     b.Property<int>("GroupId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsCoAdmin")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");

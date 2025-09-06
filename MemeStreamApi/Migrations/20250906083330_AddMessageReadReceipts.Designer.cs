@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MemeStreamApi.Migrations
 {
     [DbContext(typeof(MemeStreamDbContext))]
-    [Migration("20250903225438_AddMessageReadReceipts")]
+    [Migration("20250906083330_AddMessageReadReceipts")]
     partial class AddMessageReadReceipts
     {
         /// <inheritdoc />
@@ -513,7 +513,7 @@ namespace MemeStreamApi.Migrations
             modelBuilder.Entity("MemeStreamApi.model.MessageReadReceipt", b =>
                 {
                     b.HasOne("MemeStreamApi.model.Message", "Message")
-                        .WithMany()
+                        .WithMany("ReadReceipts")
                         .HasForeignKey("MessageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -581,6 +581,11 @@ namespace MemeStreamApi.Migrations
             modelBuilder.Entity("MemeStreamApi.model.Group", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("MemeStreamApi.model.Message", b =>
+                {
+                    b.Navigation("ReadReceipts");
                 });
 #pragma warning restore 612, 618
         }

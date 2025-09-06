@@ -4,18 +4,19 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MemeStreamApi.model
 {
     public class Group
-{
-    public int Id { get; set; }
+    {
+        public int Id { get; set; }
 
-    public string Name { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
-    public int CreatedById { get; set; }
+        public string Description { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int CreatedById { get; set; }
 
-    public User CreatedBy { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public ICollection<GroupMembership> Members { get; set; }
-}
+        public User CreatedBy { get; set; }
 
+        public ICollection<GroupMembership> Members { get; set; }
+    }
 }
