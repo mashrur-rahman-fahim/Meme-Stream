@@ -1,23 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import debounce from "lodash/debounce";
 
 export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
   const [groupDetails, setGroupDetails] = useState(null);
-  const [nonMembers, setNonMembers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [allFriends, setAllFriends] = useState([]);
 
   useEffect(() => {
     fetchGroupDetails();
-    if (groupDetails?.isAdmin || groupDetails?.isCoAdmin) {
-      fetchNonMembers();
-    }
+    fetchAllFriends();
   }, [group.id]);
 
   const fetchGroupDetails = async () => {
@@ -39,15 +41,93 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
     }
   };
 
-  const fetchNonMembers = async () => {
+  const fetchAllFriends = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5216/api/chat/group/${group.id}/non-members`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:5216/api/friendrequest/get/friends`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      setNonMembers(response.data);
+      
+      // Transform the response data to match the expected format
+      const friends = response.data.map(friend => ({
+        Id: friend.FriendId,
+        Name: friend.FriendName,
+        Email: friend.FriendEmail,
+        Image: friend.FriendImage,
+        FriendshipStatus: "Friend"
+      }));
+      
+      setAllFriends(friends);
     } catch (err) {
-      console.error("Error fetching non-members:", err);
+      console.error("Error fetching friends:", err);
+    }
+  };
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce(async (query) => {
+      if (!token) {
+        setSearchResults([]);
+        setShowSearchResults(false);
+        return;
+      }
+
+      setSearchLoading(true);
+      try {
+        let results = [];
+        
+        if (query.length < 2) {
+          // Show all friends when search query is short
+          const currentMemberIds = groupDetails?.members.map(m => m.id) || [];
+          results = allFriends.filter(user => 
+            !currentMemberIds.includes(user.Id)
+          );
+        } else {
+          // Perform search when query is longer
+          const response = await axios.get(
+            `http://localhost:5216/api/friendrequest/search-users/${encodeURIComponent(query)}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          
+          // Filter out users who are already in the group and only show friends
+          const currentMemberIds = groupDetails?.members.map(m => m.id) || [];
+          results = response.data.filter(user => 
+            !currentMemberIds.includes(user.Id) &&
+            user.FriendshipStatus === "Friend"
+          );
+        }
+        
+        setSearchResults(results);
+        setShowSearchResults(true);
+      } catch (err) {
+        console.error("Error searching users:", err);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300),
+    [token, groupDetails, allFriends]
+  );
+
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Always show results when there's input, even if less than 2 chars
+    if (query.length > 0) {
+      debouncedSearch(query);
+    } else {
+      // Show all friends when input is empty
+      const currentMemberIds = groupDetails?.members.map(m => m.id) || [];
+      const filteredFriends = allFriends.filter(user => 
+        !currentMemberIds.includes(user.Id)
+      );
+      setSearchResults(filteredFriends);
+      setShowSearchResults(true);
     }
   };
 
@@ -59,7 +139,7 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       
       const response = await axios.post(
         `http://localhost:5216/api/chat/group/${group.id}/add`,
-        userId,
+        { userId },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -69,9 +149,10 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       );
       
       setSuccess("User added successfully");
-      setSelectedUser("");
+      setSearchQuery("");
+      setSearchResults([]);
+      setShowSearchResults(false);
       fetchGroupDetails();
-      fetchNonMembers();
       
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -80,6 +161,14 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleAddClick = (user, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    addUserToGroup(user.Id);
   };
 
   const removeUserFromGroup = async (userId) => {
@@ -99,7 +188,6 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       
       setSuccess("User removed successfully");
       fetchGroupDetails();
-      fetchNonMembers();
       
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -380,12 +468,14 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
                   Created by {groupDetails.createdBy.name}
                 </p>
               </div>
-              <button
-                onClick={() => setEditMode(true)}
-                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300"
-              >
-                Edit
-              </button>
+              {(groupDetails.isAdmin || groupDetails.isCoAdmin) && (
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300"
+                >
+                  Edit
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -394,8 +484,8 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       <div className="grid gap-6 md:grid-cols-2">
         {/* Current Members */}
         <div>
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Current Members</h3>
-          <div className="border border-gray-200 rounded-md divide-y">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">Current Members ({groupDetails.members.length})</h3>
+          <div className="border border-gray-200 rounded-md divide-y max-h-96 overflow-y-auto">
             {groupDetails.members.map((member) => (
               <div key={member.id} className="p-3 flex justify-between items-center">
                 <div>
@@ -468,32 +558,67 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
           {(groupDetails.isAdmin || groupDetails.isCoAdmin) && (
             <div>
               <h3 className="text-lg font-semibold mb-4 text-gray-800">Add New Members</h3>
+              
+              {/* Search Input */}
               <div className="mb-4">
-                <select
-                  value={selectedUser}
-                  onChange={(e) => setSelectedUser(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  disabled={nonMembers.length === 0 || actionLoading}
-                >
-                  <option value="">Select a user to add</option>
-                  {nonMembers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} (ID: {user.id})
-                    </option>
-                  ))}
-                </select>
-                {nonMembers.length === 0 && (
-                  <p className="mt-2 text-sm text-gray-500">No users available to add</p>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search Friends to Add
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search friends by name or type to see all..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {searchLoading && (
+                  <p className="text-sm text-gray-500 mt-1">Searching...</p>
                 )}
               </div>
-              
-              <button
-                onClick={() => addUserToGroup(parseInt(selectedUser))}
-                disabled={!selectedUser || actionLoading}
-                className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                {actionLoading ? "Adding..." : "Add to Group"}
-              </button>
+
+              {/* Search Results */}
+              {showSearchResults && (
+                <div className="mb-4 border border-gray-200 rounded-md max-h-48 overflow-y-auto">
+                  <div className="p-2 bg-gray-50 border-b">
+                    <p className="text-sm font-medium text-gray-700">
+                      {searchQuery.length >= 2 ? "Search Results" : "Available Friends"}
+                    </p>
+                  </div>
+                  {searchResults.length > 0 ? (
+                    searchResults.map((user) => (
+                      <div key={user.Id} className="p-3 border-b last:border-b-0 flex justify-between items-center">
+                        <div className="flex items-center">
+                          {user.Image && (
+                            <img 
+                              src={user.Image} 
+                              alt={user.Name}
+                              className="w-8 h-8 rounded-full mr-3"
+                            />
+                          )}
+                          <div>
+                            <p className="font-medium">{user.Name}</p>
+                            <p className="text-sm text-gray-500">{user.Email}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => handleAddClick(user, e)}
+                          disabled={actionLoading}
+                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 text-center text-gray-500">
+                      {searchQuery.length >= 2 
+                        ? "No friends found matching your search." 
+                        : "No friends available to add."
+                      }
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
