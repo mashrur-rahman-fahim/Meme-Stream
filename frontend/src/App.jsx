@@ -17,6 +17,7 @@ import GroupManagePage from "./Pages/GroupManagePage";
 import CreateGroup from "./components/CreateGroup";
 import GroupList from "./components/GroupList";
 import GroupManager from "./components/GroupManager";
+import ChatSidebar from "./components/ChatSidebar";
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
         <Route path="/groups/create" element={<CreateGroup />} />
         <Route path="/groups/list" element={<GroupList />} />
         <Route path="/groups/manage" element={<GroupManager />} />
+        <Route path="/chat/side" element={<ChatSidebar />} />
 
         
       </Routes>
