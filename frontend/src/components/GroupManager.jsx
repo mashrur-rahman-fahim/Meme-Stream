@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
-import debounce from "lodash/debounce";
 
 export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
   const [groupDetails, setGroupDetails] = useState(null);
@@ -9,12 +8,8 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
   const [groupDescription, setGroupDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
   const [allFriends, setAllFriends] = useState([]);
 
   useEffect(() => {
@@ -50,84 +45,21 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
         }
       );
       
+      console.log("Friends response:", response.data); // Debug log
+      
       // Transform the response data to match the expected format
       const friends = response.data.map(friend => ({
-        Id: friend.FriendId,
-        Name: friend.FriendName,
-        Email: friend.FriendEmail,
-        Image: friend.FriendImage,
+        Id: friend.friendId || friend.FriendId,
+        Name: friend.friendName || friend.FriendName,
+        Email: friend.friendEmail || friend.FriendEmail,
+        Image: friend.friendImage || friend.FriendImage,
         FriendshipStatus: "Friend"
       }));
       
+      console.log("Transformed friends:", friends); // Debug log
       setAllFriends(friends);
     } catch (err) {
       console.error("Error fetching friends:", err);
-    }
-  };
-
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (query) => {
-      if (!token) {
-        setSearchResults([]);
-        setShowSearchResults(false);
-        return;
-      }
-
-      setSearchLoading(true);
-      try {
-        let results = [];
-        
-        if (query.length < 2) {
-          // Show all friends when search query is short
-          const currentMemberIds = groupDetails?.members.map(m => m.id) || [];
-          results = allFriends.filter(user => 
-            !currentMemberIds.includes(user.Id)
-          );
-        } else {
-          // Perform search when query is longer
-          const response = await axios.get(
-            `http://localhost:5216/api/friendrequest/search-users/${encodeURIComponent(query)}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          
-          // Filter out users who are already in the group and only show friends
-          const currentMemberIds = groupDetails?.members.map(m => m.id) || [];
-          results = response.data.filter(user => 
-            !currentMemberIds.includes(user.Id) &&
-            user.FriendshipStatus === "Friend"
-          );
-        }
-        
-        setSearchResults(results);
-        setShowSearchResults(true);
-      } catch (err) {
-        console.error("Error searching users:", err);
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 300),
-    [token, groupDetails, allFriends]
-  );
-
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    
-    // Always show results when there's input, even if less than 2 chars
-    if (query.length > 0) {
-      debouncedSearch(query);
-    } else {
-      // Show all friends when input is empty
-      const currentMemberIds = groupDetails?.members.map(m => m.id) || [];
-      const filteredFriends = allFriends.filter(user => 
-        !currentMemberIds.includes(user.Id)
-      );
-      setSearchResults(filteredFriends);
-      setShowSearchResults(true);
     }
   };
 
@@ -137,9 +69,10 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setError("");
       setSuccess("");
       
+      // The backend expects just the integer userId in the request body
       const response = await axios.post(
         `http://localhost:5216/api/chat/group/${group.id}/add`,
-        { userId },
+        userId, // Send just the userId integer, not an object
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -149,10 +82,8 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       );
       
       setSuccess("User added successfully");
-      setSearchQuery("");
-      setSearchResults([]);
-      setShowSearchResults(false);
       fetchGroupDetails();
+      fetchAllFriends(); // Refresh friends list after adding
       
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -394,6 +325,12 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
     );
   }
 
+  // Filter out friends who are already in the group
+  const currentMemberIds = groupDetails?.members.map(m => m.id) || [];
+  const availableFriends = allFriends.filter(user => 
+    !currentMemberIds.includes(user.Id)
+  );
+
   return (
     <div className="p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md">
       <div className="flex items-center mb-6">
@@ -557,66 +494,43 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
           {/* Add Members */}
           {(groupDetails.isAdmin || groupDetails.isCoAdmin) && (
             <div>
-              <h3 className="text-lg font-semibold mb-4 text-gray-800">Add New Members</h3>
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">Add Friends to Group</h3>
               
-              {/* Search Input */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Search Friends to Add
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search friends by name or type to see all..."
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {searchLoading && (
-                  <p className="text-sm text-gray-500 mt-1">Searching...</p>
-                )}
-              </div>
-
-              {/* Search Results */}
-              {showSearchResults && (
+              {availableFriends.length === 0 ? (
+                <div className="text-gray-500 text-sm p-3 bg-gray-50 rounded-md">
+                  <p>No friends available to add right now.</p>
+                </div>
+              ) : (
                 <div className="mb-4 border border-gray-200 rounded-md max-h-48 overflow-y-auto">
                   <div className="p-2 bg-gray-50 border-b">
                     <p className="text-sm font-medium text-gray-700">
-                      {searchQuery.length >= 2 ? "Search Results" : "Available Friends"}
+                      Available Friends ({availableFriends.length})
                     </p>
                   </div>
-                  {searchResults.length > 0 ? (
-                    searchResults.map((user) => (
-                      <div key={user.Id} className="p-3 border-b last:border-b-0 flex justify-between items-center">
-                        <div className="flex items-center">
-                          {user.Image && (
-                            <img 
-                              src={user.Image} 
-                              alt={user.Name}
-                              className="w-8 h-8 rounded-full mr-3"
-                            />
-                          )}
-                          <div>
-                            <p className="font-medium">{user.Name}</p>
-                            <p className="text-sm text-gray-500">{user.Email}</p>
-                          </div>
+                  {availableFriends.map((user) => (
+                    <div key={user.Id} className="p-3 border-b last:border-b-0 flex justify-between items-center">
+                      <div className="flex items-center">
+                        {user.Image && (
+                          <img 
+                            src={user.Image} 
+                            alt={user.Name}
+                            className="w-8 h-8 rounded-full mr-3"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium">{user.Name}</p>
+                          <p className="text-sm text-gray-500">{user.Email}</p>
                         </div>
-                        <button
-                          onClick={(e) => handleAddClick(user, e)}
-                          disabled={actionLoading}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          Add
-                        </button>
                       </div>
-                    ))
-                  ) : (
-                    <div className="p-3 text-center text-gray-500">
-                      {searchQuery.length >= 2 
-                        ? "No friends found matching your search." 
-                        : "No friends available to add."
-                      }
+                      <button
+                        onClick={(e) => handleAddClick(user, e)}
+                        disabled={actionLoading}
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Add
+                      </button>
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
             </div>
