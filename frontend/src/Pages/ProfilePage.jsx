@@ -179,47 +179,53 @@ export const ProfilePage = () => {
         <div className="p-4 md:p-6">
           {activeTab === "posts" && (
             <div className="grid grid-cols-1 gap-6">
-              {posts.map((post) => (
-                <PostCard
-                  key={`${post.isShared ? "shared" : "post"}-${post.id}`}
-                  post={post}
-                  user={user}
-                  formatDate={formatDate}
-                  onEdit={handleEditPost}
-                  onDelete={handleDeletePost}
-                />
-              ))}
+              {posts?.length === 0 ? (
+                <div className="mt-5 text-center text-base-content text-xl">
+                  No posts to show
+                </div>
+              ) : (
+                posts?.map((post) => (
+                  <PostCard
+                    key={`${post.isShared ? "shared" : "post"}-${post.id}`}
+                    post={post}
+                    user={user}
+                    formatDate={formatDate}
+                    onEdit={handleEditPost}
+                    onDelete={handleDeletePost}
+                  />
+                ))
+              )}
             </div>
           )}
         </div>
       </div>
-      
+
       {isEditModalOpen && (
         <div className="modal modal-open">
           <div className="modal-box bg-base-200">
-             <button onClick={() => setIsEditModalOpen(false)} className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-             <h3 className="font-bold text-2xl text-base-content mb-4">Edit Profile</h3>
-             <form onSubmit={handleProfileUpdate} className="space-y-4">
-               <div className="form-control">
-                 <label className="label"><span className="label-text">Name</span></label>
-                 <input type="text" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} className="input input-bordered w-full bg-base-200" />
-               </div>
-               <div className="form-control">
-                 <label className="label"><span className="label-text">Email</span></label>
-                 <input type="email" value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })} className="input input-bordered w-full bg-base-200" />
-               </div>
-               <div className="form-control">
-                 <label className="label"><span className="label-text">Bio</span></label>
-                 <textarea value={editingUser.bio} onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })} className="textarea textarea-bordered w-full h-24 bg-base-200"></textarea>
-               </div>
-               <div className="form-control">
-                 <label className="label"><span className="label-text">Profile Image URL</span></label>
-                 <input type="url" value={editingUser.image} onChange={(e) => setEditingUser({ ...editingUser, image: e.target.value })} className="input input-bordered w-full bg-base-600" />
-               </div>
-               <div className="modal-action">
-                 <button type="submit" className="btn btn-primary w-full">Save Changes</button>
-               </div>
-             </form>
+            <button onClick={() => setIsEditModalOpen(false)} className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            <h3 className="font-bold text-2xl text-base-content mb-4">Edit Profile</h3>
+            <form onSubmit={handleProfileUpdate} className="space-y-4">
+              <div className="form-control">
+                <label className="label"><span className="label-text">Name</span></label>
+                <input type="text" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} className="input input-bordered w-full bg-base-200" />
+              </div>
+              <div className="form-control">
+                <label className="label"><span className="label-text">Email</span></label>
+                <input type="email" value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })} className="input input-bordered w-full bg-base-200" />
+              </div>
+              <div className="form-control">
+                <label className="label"><span className="label-text">Bio</span></label>
+                <textarea value={editingUser.bio} onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })} className="textarea textarea-bordered w-full h-24 bg-base-200"></textarea>
+              </div>
+              <div className="form-control">
+                <label className="label"><span className="label-text">Profile Image URL</span></label>
+                <input type="url" value={editingUser.image} onChange={(e) => setEditingUser({ ...editingUser, image: e.target.value })} className="input input-bordered w-full bg-base-600" />
+              </div>
+              <div className="modal-action">
+                <button type="submit" className="btn btn-primary w-full">Save Changes</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -228,15 +234,14 @@ export const ProfilePage = () => {
 };
 
 const TabButton = ({ icon, label, isActive, onClick }) => (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-3 font-semibold border-b-4 transition-all duration-300 ${
-        isActive
-          ? "border-primary text-primary"
-          : "border-transparent text-base-content/70 hover:text-base-content"
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-2 px-4 py-3 font-semibold border-b-4 transition-all duration-300 ${isActive
+        ? "border-primary text-primary"
+        : "border-transparent text-base-content/70 hover:text-base-content"
       }`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
+  >
+    {icon}
+    {label}
+  </button>
+);
