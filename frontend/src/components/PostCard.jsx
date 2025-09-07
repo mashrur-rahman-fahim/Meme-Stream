@@ -48,8 +48,8 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete }) => {
   };
 
   const handleCloseModal = () => {
-      setIsCommentModalOpen(false);
-      fetchPostInteractions();
+    setIsCommentModalOpen(false);
+    fetchPostInteractions();
   };
 
   return (
@@ -82,49 +82,52 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete }) => {
             </div>
           </div>
           {isOriginalPost && (
-             <div className="dropdown dropdown-end">
-               <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
-                 <FaEllipsisH className="text-base-content/60" />
-               </label>
-               <ul
-                 tabIndex={0}
-                 className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-300 rounded-box w-52"
-               >
-                 <li>
-                   <a onClick={() => onEdit(post.id, post.content)}>Edit Post</a>
-                 </li>
-                 <li>
-                   <a onClick={() => onDelete(post.id)} className="text-error">
-                     Delete Post
-                   </a>
-                 </li>
-               </ul>
-             </div>
-           )}
+            <div className="dropdown dropdown-end">
+              <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
+                <FaEllipsisH className="text-base-content/60" />
+              </label>
+              <ul
+                tabIndex={0}
+                className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-300 rounded-box w-52"
+              >
+                <li>
+                  <a onClick={() => onEdit(post.id, post.content)}>Edit Post</a>
+                </li>
+                <li>
+                  <a onClick={() => onDelete(post.id)} className="text-error">
+                    Delete Post
+                  </a>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
-        
+
         {/* Post Content */}
         <div>
           {post.content && (
-            <p className="text-base-content mb-4">{post.content}</p>
+            <p className="text-base-content mb-3">{post.content}</p>
           )}
           {post.image && (
-            <img
-              src={post.image}
-              alt="Post"
-              className="rounded-lg w-full h-auto object-cover"
-            />
+            <div className="relative w-full min-h-[200px] max-h-[450px] rounded-lg">
+              <img
+                src={post.image}
+                alt="Post"
+                className="mx-auto max-h-[450px] w-auto h-auto object-contain"
+                loading="lazy"
+              />
+            </div>
           )}
         </div>
 
         {/* Reaction and Comment Counts */}
         <div className="flex justify-between items-center text-sm text-base-content/90 mt-3 px-2">
-            <div>
-                {reactions.length > 0 && `😂 ${reactions.length} Laughs`}
-            </div>
-            <div>
-                {commentCount > 0 && `${commentCount} Comments`}
-            </div>
+          <div>
+            {reactions.length > 0 && `😂 ${reactions.length} Laughs`}
+          </div>
+          <div>
+            {commentCount > 0 && `${commentCount} Comments`}
+          </div>
         </div>
 
         {/* Divider */}
@@ -149,7 +152,7 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete }) => {
           </button>
         </div>
       </div>
-      <CommentModal 
+      <CommentModal
         isOpen={isCommentModalOpen}
         onClose={handleCloseModal}
         postId={post.id}
