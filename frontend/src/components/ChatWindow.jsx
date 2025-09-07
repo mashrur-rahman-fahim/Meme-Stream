@@ -20,12 +20,13 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   const [chatLog, setChatLog] = useState([]);
   const [otherTyping, setOtherTyping] = useState(false);
   const [reactions, setReactions] = useState({});
-  const [readMap, setReadMap] = useState({}); // ✅ NEW: Read receipts
+  const [readMap, setReadMap] = useState({});
   const { incrementUnread, clearUnread } = useContext(ChatContext);
   const [searchParams] = useSearchParams();
   const anchorMessageId = parseInt(searchParams.get("msg"));
   const scrollRef = useRef(null);
   const ding = new Audio("/sounds/ding.mp3");
+  const connectionRef = useRef(null);
 
   useEffect(() => {
     const key = receiverId || `group-${groupName}`;
@@ -59,25 +60,27 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
     const initConnection = async () => {
       const conn = await startSignalRConnection(
         token,
-        (senderId, msg) => {
+        (senderId, msg, messageId, sentAt) => {
+          // Add message to chat log immediately
           setChatLog((prev) => [
             ...prev,
             {
-              id: Date.now(),
+              id: messageId || Date.now(),
               senderId,
               msg,
-              sentAt: new Date().toISOString(),
+              sentAt: sentAt || new Date().toISOString(),
             },
           ]);
         },
-        (senderId, msg) => {
+        (senderId, msg, messageId, sentAt) => {
+          // Add group message to chat log immediately
           setChatLog((prev) => [
             ...prev,
             {
-              id: Date.now(),
+              id: messageId || Date.now(),
               senderId,
               msg,
-              sentAt: new Date().toISOString(),
+              sentAt: sentAt || new Date().toISOString(),
             },
           ]);
         },
@@ -98,6 +101,8 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
           }
         }
       );
+
+      connectionRef.current = conn;
 
       conn.on("ReceiveReaction", (messageId, userId, emoji) => {
         setReactions((prev) => {
@@ -125,7 +130,6 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         );
       });
 
-      // ✅ NEW: Listen for read receipts
       conn.on("ReceiveReadReceipt", (messageId, userId) => {
         setReadMap((prev) => ({
           ...prev,
@@ -153,16 +157,17 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
 
     fetchHistory();
     initConnection();
-  }, [token, receiverId, groupName]);
 
-  // ✅ Trigger marking messages as read
-  useEffect(() => {
-    chatLog.forEach((msg) => {
-      if (msg.senderId !== currentUserId) {
-        markMessageAsRead(msg.id);
+    // Cleanup function
+    return () => {
+      if (connectionRef.current) {
+        connectionRef.current.off("ReceiveReaction");
+        connectionRef.current.off("ReceiveMessageEdit");
+        connectionRef.current.off("ReceiveMessageDelete");
+        connectionRef.current.off("ReceiveReadReceipt");
       }
-    });
-  }, [chatLog]);
+    };
+  }, [token, receiverId, groupName]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -184,14 +189,29 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   const handleSend = () => {
     if (!message.trim()) return;
 
-    if (groupName) sendGroupMessage(groupName, message);
-    else sendPrivateMessage(receiverId, message);
+    // Add message to chat log immediately for instant feedback
+    const tempMessageId = Date.now();
+    setChatLog((prev) => [
+      ...prev,
+      {
+        id: tempMessageId,
+        senderId: currentUserId,
+        msg: message,
+        sentAt: new Date().toISOString(),
+      },
+    ]);
+
+    // Send message via SignalR
+    if (groupName) {
+      sendGroupMessage(groupName, message);
+    } else {
+      sendPrivateMessage(receiverId, message);
+    }
 
     setMessage("");
     if (receiverId) sendTypingStatus(receiverId, false);
   };
 
-  // ✅ File upload handler
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -206,6 +226,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      // Add file message to chat log immediately
       setChatLog((prev) => [
         ...prev,
         {
@@ -304,7 +325,6 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
                   </div>
                 )}
 
-                {/* ✅ Read Receipt (Seen) */}
                 {isSender && readMap[entry.id]?.length > 0 && (
                   <div className="text-xs text-right text-green-500 mt-1">
                     {groupName ? (
@@ -323,7 +343,6 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         )}
       </div>
 
-      {/* ✅ File Input */}
       <input
         type="file"
         onChange={handleFileUpload}
