@@ -210,6 +210,7 @@ export const ProfilePage = () => {
                     onEdit={handleEditPost}
                     onDelete={handleDeletePost}
                     onUnshare={handleUnsharePost}
+                    onChange={fetchUserData}
                   />
                 ))
               )}

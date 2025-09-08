@@ -4,7 +4,7 @@ import { CommentModal } from "./CommentModal";
 import feedService from "../services/feedService";
 import toast from 'react-hot-toast';
 
-export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare }) => {
+export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare, onChange }) => {
   const [reactions, setReactions] = useState([]);
   const [commentCount, setCommentCount] = useState(0);
   const [userReaction, setUserReaction] = useState(null);
@@ -50,6 +50,7 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare }
 
       if (result.success) {
         toast.success("Post shared successfully!", { id: toastId });
+        if (onChange) onChange();
       } else {
         toast.error(result.error, { id: toastId });
       }
