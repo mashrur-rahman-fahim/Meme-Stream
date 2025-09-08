@@ -119,7 +119,7 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare }
             </div>
           ) : (
             // --- RENDER FOR A SHARED POST ---
-            <div className="border border-base-300 rounded-lg p-4 mt-2">
+            <div className="border border-base-300 shadow-sm rounded-lg p-4 mt-2">
               {/* Original post's author info */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="avatar">
