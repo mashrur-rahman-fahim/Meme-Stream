@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { FaLaughSquint, FaComment, FaShare, FaEllipsisH, FaShareSquare } from "react-icons/fa";
 import { CommentModal } from "./CommentModal";
 import feedService from "../services/feedService";
+import toast from 'react-hot-toast';
 
 export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare }) => {
   const [reactions, setReactions] = useState([]);
@@ -42,8 +43,20 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare }
 
   const handleShareClick = async () => {
     if (!targetPostId) return;
-    const result = await feedService.sharePost(targetPostId);
-    alert(result.success ? "Post shared successfully!" : result.error);
+    const toastId = toast.loading('Sharing post...');
+
+    try {
+      const result = await feedService.sharePost(targetPostId);
+
+      if (result.success) {
+        toast.success("Post shared successfully!", { id: toastId });
+      } else {
+        toast.error(result.error, { id: toastId });
+      }
+    } catch (err) {
+      toast.error("An unexpected error occurred.", { id: toastId });
+      console.error("Critical error sharing post:", err);
+    }
   };
 
   const handleCloseModal = () => {
