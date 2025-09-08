@@ -82,6 +82,23 @@ export const ProfilePage = () => {
     }
   }, []);
 
+  const handleUnsharePost = useCallback(async (shareId, originalPostId) => {
+    if (window.confirm("Are you sure you want to unshare this post?")) {
+      try {
+        const result = await feedService.unsharePost(originalPostId);
+        if (result.success) {
+          setPosts(prevPosts => prevPosts.filter(p => p.id !== shareId));
+          alert("Post unshared successfully!");
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        console.error("Error unsharing post:", error);
+        alert("Failed to unshare post.");
+      }
+    }
+  }, []);
+
   const handleEditPost = useCallback((postId, currentContent) => {
     alert(`Editing Post ID: ${postId}\nCurrent Content: ${currentContent}`);
   }, []);
@@ -192,6 +209,7 @@ export const ProfilePage = () => {
                     formatDate={formatDate}
                     onEdit={handleEditPost}
                     onDelete={handleDeletePost}
+                    onUnshare={handleUnsharePost}
                   />
                 ))
               )}
