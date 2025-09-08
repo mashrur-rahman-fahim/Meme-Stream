@@ -4,7 +4,25 @@ import { CommentModal } from "./CommentModal";
 import feedService from "../services/feedService";
 import toast from 'react-hot-toast';
 
-export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare, onChange }) => {
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+
+  if (diffInSeconds < 60) return "Just now";
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays}d ago`;
+
+  return date.toLocaleDateString();
+};
+
+
+export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onChange }) => {
   const [reactions, setReactions] = useState([]);
   const [commentCount, setCommentCount] = useState(0);
   const [userReaction, setUserReaction] = useState(null);
@@ -12,6 +30,14 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare, 
 
   const isOriginalPost = !post.isShared;
   const targetPostId = isOriginalPost ? post.id : post.originalPost?.id;
+
+  const author = isOriginalPost ? post.user : post.originalPost.user;
+  const sharer = post.sharedBy || post.user;
+  const timestamp = isOriginalPost ? post.createdAt : post.originalPost.createdAt;
+
+  const canDeleteOrEdit = isOriginalPost && currentUser.id === post.user.id;
+  const canUnshare = !isOriginalPost && currentUser.id === sharer.id;
+  const showOptions = canDeleteOrEdit || canUnshare;
 
   const fetchPostInteractions = useCallback(async () => {
     if (!targetPostId) return;
@@ -65,10 +91,6 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare, 
     fetchPostInteractions();
   };
 
-
-  const author = isOriginalPost ? user : post.originalPost.user;
-  const timestamp = isOriginalPost ? post.createdAt : post.originalPost.createdAt;
-
   return (
     <>
       <div className="card bg-base-200 shadow-xl border border-base-300">
@@ -76,10 +98,11 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare, 
           {!isOriginalPost && (
             <div className="flex items-center gap-2 text-sm text-base-content/70 mb-3">
               <FaShareSquare className="text-primary" />
-              <span className="font-semibold">{user.name}</span> shared
+              <span className="font-semibold">{sharer.name}</span> shared
             </div>
           )}
 
+          {/* Post Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="avatar">
@@ -95,72 +118,56 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare, 
               </div>
               <div>
                 <span className="font-semibold text-base-content">{author.name}</span>
-                <p className="text-xs text-base-content/60">
-                  {formatDate(timestamp)}
-                </p>
+                <p className="text-xs text-base-content/60">{formatDate(timestamp)}</p>
               </div>
             </div>
 
-            {/* Options Menu Logic */}
-            <div className="dropdown dropdown-end">
-              <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
-                <FaEllipsisH className="text-base-content/60" />
-              </label>
-              <ul tabIndex={0} className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-300 rounded-box w-52">
-                {isOriginalPost ? (
-                  <>
-                    <li><a onClick={() => onEdit(post.id, post.content)}>Edit Post</a></li>
-                    <li><a onClick={() => onDelete(post.id)} className="text-error">Delete Post</a></li>
-                  </>
-                ) : (
-                  <li>
-                    <a onClick={() => onUnshare(post.id, post.originalPost.id)} className="text-warning">
-                      Unshare
-                    </a>
-                  </li>
-                )}
-              </ul>
-            </div>
+            {/* The options menu */}
+            {showOptions && (
+              <div className="dropdown dropdown-end">
+                <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
+                  <FaEllipsisH className="text-base-content/60" />
+                </label>
+                <ul tabIndex={0} className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-300 rounded-box w-52">
+                  {canDeleteOrEdit && (
+                    <>
+                      <li><a onClick={() => onEdit(post.id, post.content)}>Edit Post</a></li>
+                      <li><a onClick={() => onDelete(post.id)} className="text-error">Delete Post</a></li>
+                    </>
+                  )}
+                  {canUnshare && (
+                    <li>
+                      <a onClick={() => onUnshare(post.id, post.originalPost.id)} className="text-warning">
+                        Unshare
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
 
+          {/* Post Content */}
           <div>
-            {post.content && (
-              <p className="text-base-content mb-3 whitespace-pre-wrap">{post.content}</p>
-            )}
+            {post.content && <p className="text-base-content mb-3 whitespace-pre-wrap">{post.content}</p>}
             {post.image && (
               <div className="relative w-full max-h-[450px] rounded-lg bg-base-300/20 flex justify-center">
-                <img
-                  src={post.image}
-                  alt="Post content"
-                  className="max-h-[450px] w-auto h-auto object-contain"
-                  loading="lazy"
-                />
+                <img src={post.image} alt="Post content" className="max-h-[450px] w-auto h-auto object-contain" loading="lazy" />
               </div>
             )}
           </div>
 
+          {/* Interactions */}
           <div className="flex justify-between items-center text-sm text-base-content/90 mt-3 px-2">
-            <div>
-              {reactions.length > 0 && `😂 ${reactions.length} Laughs`}
-            </div>
-            <div>
-              {commentCount > 0 && `${commentCount} Comments`}
-            </div>
+            <div>{reactions.length > 0 && `😂 ${reactions.length} Laughs`}</div>
+            <div>{commentCount > 0 && `${commentCount} Comments`}</div>
           </div>
-
           <div className="divider my-1"></div>
-
           <div className="flex justify-around items-center text-base-content">
-            <button
-              onClick={handleReactionClick}
-              className={`btn btn-ghost flex-1 ${userReaction ? "text-primary" : ""}`}
-            >
+            <button onClick={handleReactionClick} className={`btn btn-ghost flex-1 ${userReaction ? "text-primary" : ""}`}>
               <FaLaughSquint /> Laugh
             </button>
-            <button
-              onClick={() => setIsCommentModalOpen(true)}
-              className="btn btn-ghost flex-1"
-            >
+            <button onClick={() => setIsCommentModalOpen(true)} className="btn btn-ghost flex-1">
               <FaComment /> Comment
             </button>
             <button onClick={handleShareClick} className="btn btn-ghost flex-1">
@@ -174,7 +181,7 @@ export const PostCard = ({ post, user, formatDate, onEdit, onDelete, onUnshare, 
         isOpen={isCommentModalOpen}
         onClose={handleCloseModal}
         postId={targetPostId}
-        currentUser={user}
+        currentUser={currentUser}
       />
     </>
   );
