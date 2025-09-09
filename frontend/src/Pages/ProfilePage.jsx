@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/axios";
 import feedService from "../services/feedService";
 import { PostCard } from "../components/PostCard";
+import toast from "react-hot-toast";
 import {
   FaUserEdit,
   FaClipboardList,
@@ -71,30 +72,26 @@ export const ProfilePage = () => {
 
   const handleDeletePost = useCallback(async (postId) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
-      try {
-        await api.delete(`/Post/delete/${postId}`);
-        setPosts(prevPosts => prevPosts.filter((p) => p.id !== postId));
-        alert("Post deleted successfully!");
-      } catch (error) {
-        console.error("Error deleting post:", error);
-        alert("Failed to delete post.");
+      const result = await feedService.deletePost(postId);
+      if (result.success) {
+        fetchUserData();
+        toast.success("Post deleted successfully!");
+      } else {
+        toast.error(`Failed to delete post`);
+        console.error("Error deleting post:", result.error);
       }
     }
   }, []);
 
-  const handleUnsharePost = useCallback(async (shareId, originalPostId) => {
+  const handleUnsharePost = useCallback(async (postId) => {
     if (window.confirm("Are you sure you want to unshare this post?")) {
-      try {
-        const result = await feedService.unsharePost(originalPostId);
-        if (result.success) {
-          setPosts(prevPosts => prevPosts.filter(p => p.id !== shareId));
-          alert("Post unshared successfully!");
-        } else {
-          throw new Error(result.error);
-        }
-      } catch (error) {
-        console.error("Error unsharing post:", error);
-        alert("Failed to unshare post.");
+      const result = await feedService.unsharePost(postId);
+      if (result.success) {
+        fetchUserData();
+        toast.success("Post unshared successfully!");
+      } else {
+        toast.error(`Failed to unshare post`);
+        console.error("Error unsharing post:", result.error);
       }
     }
   }, []);
@@ -239,8 +236,8 @@ const TabButton = ({ icon, label, isActive, onClick }) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-2 px-4 py-3 font-semibold border-b-4 transition-all duration-300 ${isActive
-        ? "border-primary text-primary"
-        : "border-transparent text-base-content/70 hover:text-base-content"
+      ? "border-primary text-primary"
+      : "border-transparent text-base-content/70 hover:text-base-content"
       }`}
   >
     {icon}

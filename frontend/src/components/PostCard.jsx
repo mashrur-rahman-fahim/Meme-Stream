@@ -121,7 +121,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                   )}
                   {canUnshare && (
                     <li>
-                      <a onClick={() => onUnshare(post.id, post.originalPost.id)} className="text-warning">
+                      <a onClick={() => onUnshare(post.originalPost.id)} className="text-warning">
                         Unshare
                       </a>
                     </li>
