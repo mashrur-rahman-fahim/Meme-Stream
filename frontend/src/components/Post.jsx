@@ -4,7 +4,7 @@ import { useContext } from "react";
 import { VerifyContext } from "../../context/create_verify_context.jsx";
 import { useNavigate } from "react-router-dom";
 
-export const Post = () => {
+export const Post = ({ onSuccess }) => {
   const { isVerified, verifyUser, loading } = useContext(VerifyContext);
   const navigate = useNavigate();
   const [FormData, setFormData] = useState({
@@ -83,6 +83,14 @@ export const Post = () => {
       // Reset form
       setFormData({ content: "", image: "" });
       setMemeCheckResult(null);
+      
+      // Call success callback if provided (for mobile modal)
+      if (onSuccess) {
+        setTimeout(() => onSuccess(), 1000);
+      }
+      
+      // Reload the page to show new post
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       console.error("Error creating post:", error);
       if (error.response?.data?.error === "Non-meme content detected") {
