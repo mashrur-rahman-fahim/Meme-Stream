@@ -180,6 +180,42 @@ export const feedService = {
     }
   },
 
+  editComment: async (commentId, content) => {
+    try {
+      const response = await api.put(`/Comment/update/${commentId}`, { content });
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to update comment",
+      };
+    }
+  },
+
+  deleteComment: async (commentId) => {
+    try {
+      const response = await api.delete(`/Comment/delete/${commentId}`);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to delete comment",
+      };
+    }
+  },
+
   // Share a post
   sharePost: async (postId) => {
     try {
