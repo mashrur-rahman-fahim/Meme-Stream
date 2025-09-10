@@ -30,14 +30,14 @@ export const HomePage = () => {
     <div className="min-h-screen bg-base-200">
       <Navbar />
 
-      <div className="pt-16 pb-4">
+      <div className="pt-20 pb-4">
         {/* Main Container */}
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-4 px-2 sm:px-4">
             
             {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
             <div className="hidden lg:block lg:w-80 flex-shrink-0">
-              <div className="sticky top-20">
+              <div className="sticky top-24">
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">
                     <h2 className="text-lg font-bold text-base-content mb-3">
@@ -76,7 +76,7 @@ export const HomePage = () => {
 
             {/* Right Sidebar - Friend Requests - Hidden on mobile */}
             <div className="hidden xl:block xl:w-80 flex-shrink-0">
-              <div className="sticky top-20">
+              <div className="sticky top-24">
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">
                     <h2 className="text-lg font-bold text-base-content mb-3">
