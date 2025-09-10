@@ -6,6 +6,7 @@ import feedService from "../services/feedService";
 import { PostCard } from "../components/PostCard";
 import { ConfirmationModal } from "../components/ConfirmationModal";
 import { Navbar } from "../components/Navbar";
+import ProfileEditModal from "../components/ProfileEditModal";
 import toast from "react-hot-toast";
 import {
   FaUserEdit,
@@ -16,7 +17,6 @@ import {
 
 export const ProfilePage = () => {
   const [user, setUser] = useState({ name: "", email: "", bio: "", image: "" });
-  const [editingUser, setEditingUser] = useState({ name: "", email: "", bio: "", image: "" });
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
@@ -50,7 +50,6 @@ export const ProfilePage = () => {
       setLoading(true);
       const userRes = await api.get("/User/profile");
       setUser(userRes.data);
-      setEditingUser(userRes.data);
 
       const postsRes = await feedService.getUserPosts();
       if (postsRes.success) {
@@ -69,18 +68,12 @@ export const ProfilePage = () => {
     }
   }, [isVerified, fetchUserData]);
 
-  const handleProfileUpdate = useCallback(async (e) => {
-    e.preventDefault();
-    try {
-      await api.put("/User/profile", editingUser);
-      setUser(editingUser);
-      setIsEditModalOpen(false);
-      alert("Profile updated successfully!");
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("Failed to update profile");
-    }
-  }, [editingUser]);
+  // Handle profile update from the modal
+  const handleProfileUpdate = useCallback((updatedUser) => {
+    setUser(updatedUser);
+    // Optionally refresh user data to ensure consistency
+    // fetchUserData();
+  }, []);
 
   const handleDeletePost = useCallback(async (postId) => {
     setConfirmState({
@@ -135,9 +128,8 @@ export const ProfilePage = () => {
   }, []);
 
   const openEditModal = useCallback(() => {
-    setEditingUser(user);
     setIsEditModalOpen(true);
-  }, [user]);
+  }, []);
 
   if (loading || verifyLoading) {
     return (
@@ -245,35 +237,13 @@ export const ProfilePage = () => {
         isLoading={isConfirming}
       />
 
-      {isEditModalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-base-200">
-            <button onClick={() => setIsEditModalOpen(false)} className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-            <h3 className="font-bold text-2xl text-base-content mb-4">Edit Profile</h3>
-            <form onSubmit={handleProfileUpdate} className="space-y-4">
-              <div className="form-control">
-                <label className="label"><span className="label-text">Name</span></label>
-                <input type="text" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} className="input input-bordered w-full bg-base-200" />
-              </div>
-              <div className="form-control">
-                <label className="label"><span className="label-text">Email</span></label>
-                <input type="email" value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })} className="input input-bordered w-full bg-base-200" />
-              </div>
-              <div className="form-control">
-                <label className="label"><span className="label-text">Bio</span></label>
-                <textarea value={editingUser.bio} onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })} className="textarea textarea-bordered w-full h-24 bg-base-200"></textarea>
-              </div>
-              <div className="form-control">
-                <label className="label"><span className="label-text">Profile Image URL</span></label>
-                <input type="url" value={editingUser.image} onChange={(e) => setEditingUser({ ...editingUser, image: e.target.value })} className="input input-bordered w-full bg-base-600" />
-              </div>
-              <div className="modal-action">
-                <button type="submit" className="btn btn-primary w-full">Save Changes</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modern Profile Edit Modal */}
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        currentUser={user}
+        onUpdate={handleProfileUpdate}
+      />
     </div>
   );
 };

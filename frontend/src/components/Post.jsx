@@ -3,6 +3,7 @@ import api from "../utils/axios.js";
 import { useContext } from "react";
 import { VerifyContext } from "../../context/create_verify_context.jsx";
 import { useNavigate } from "react-router-dom";
+import ImageUpload from "./ImageUpload";
 
 export const Post = ({ onSuccess }) => {
   const { isVerified, verifyUser, loading } = useContext(VerifyContext);
@@ -11,6 +12,7 @@ export const Post = ({ onSuccess }) => {
     content: "",
     image: "",
   });
+  const [uploadedImageData, setUploadedImageData] = useState(null);
   const [memeCheckResult, setMemeCheckResult] = useState(null);
   const [isCheckingMeme, setIsCheckingMeme] = useState(false);
   const [postStatus, setPostStatus] = useState("");
@@ -82,6 +84,7 @@ export const Post = ({ onSuccess }) => {
 
       // Reset form
       setFormData({ content: "", image: "" });
+      setUploadedImageData(null);
       setMemeCheckResult(null);
       
       // Call success callback if provided (for mobile modal)
@@ -99,6 +102,18 @@ export const Post = ({ onSuccess }) => {
         setPostStatus("Error creating post. Please try again.");
       }
     }
+  };
+
+  // Handle image upload
+  const handleImageUpload = (imageData) => {
+    setUploadedImageData(imageData);
+    setFormData({ ...FormData, image: imageData.url });
+  };
+
+  // Handle image removal
+  const handleImageRemove = () => {
+    setUploadedImageData(null);
+    setFormData({ ...FormData, image: "" });
   };
 
 return (
@@ -124,18 +139,22 @@ return (
       />
     </div>
 
-    {/* Image URL */}
+    {/* Image Upload */}
     <div>
-      <label className="block text-sm font-medium text-base-content mb-1">
-        Image URL (optional)
+      <label className="block text-sm font-medium text-base-content mb-2">
+        Upload Image (optional)
       </label>
-      <input
-        type="url"
-        className="input input-bordered w-full text-base p-3"
-        placeholder="https://example.com/image.jpg"
-        value={FormData.image}
-        onChange={(e) => setFormData({ ...FormData, image: e.target.value })}
+      <ImageUpload
+        onImageUpload={handleImageUpload}
+        currentImageUrl={FormData.image}
+        onImageRemove={handleImageRemove}
       />
+      {uploadedImageData && (
+        <div className="mt-2 text-xs text-base-content/60">
+          <p>✅ Image uploaded: {uploadedImageData.originalName}</p>
+          <p>📏 {uploadedImageData.width}x{uploadedImageData.height} • {(uploadedImageData.size / 1024).toFixed(1)}KB</p>
+        </div>
+      )}
     </div>
 
     {/* Buttons */}

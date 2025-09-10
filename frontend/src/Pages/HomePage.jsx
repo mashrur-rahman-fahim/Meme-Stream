@@ -67,11 +67,7 @@ export const HomePage = () => {
               </div>
 
               {/* Posts Feed */}
-              <div className="bg-base-100 rounded-lg shadow-lg border border-base-300">
-                <div className="p-4">
-                  <Feed />
-                </div>
-              </div>
+              <Feed />
             </div>
 
             {/* Right Sidebar - Friend Requests - Hidden on mobile */}
