@@ -142,7 +142,7 @@ export const ProfilePage = () => {
               <div className="flex-shrink-0">
                 <button
                   onClick={openEditModal}
-                  className="btn btn-secondary"
+                  className="btn btn-outline btn-primary"
                 >
                   <FaUserEdit />
                   Edit Profile
