@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { VerifyContext } from '../../context/create_verify_context';
 import { FaHome, FaUserFriends, FaCommentAlt, FaBell, FaUser, FaCog, FaQuestionCircle, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
 import api from '../utils/axios';
+import ThemeSwitcher from './ThemeSwitcher';
 
 export const Navbar = () => {
   const { logout } = useContext(VerifyContext);
@@ -118,6 +119,11 @@ export const Navbar = () => {
 
         {/* Profile & Mobile Menu */}
         <div className="navbar-end">
+          {/* Theme Switcher - Desktop */}
+          <div className="hidden lg:block mr-2">
+            <ThemeSwitcher />
+          </div>
+          
           {/* Profile Dropdown - Desktop */}
           <div className="dropdown dropdown-end hidden lg:block">
             <div 
@@ -276,6 +282,13 @@ export const Navbar = () => {
                     )}
                   </button>
                 ))}
+              </div>
+
+              {/* Theme Switcher - Mobile */}
+              <div className="mb-4">
+                <div className="flex items-center justify-center">
+                  <ThemeSwitcher />
+                </div>
               </div>
 
               {/* Profile Actions */}
