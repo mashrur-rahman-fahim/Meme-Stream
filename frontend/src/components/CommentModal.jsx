@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { FaPaperPlane, FaEllipsisH } from 'react-icons/fa';
 import feedService from '../services/feedService';
-import {formatDate} from '../utils/formatDate';
+import { formatDate } from '../utils/formatDate';
 import toast from 'react-hot-toast';
+import { ConfirmationModal } from './ConfirmationModal';
 
 
 const Comment = ({ comment, currentUser, onEdit, onDelete }) => {
@@ -43,6 +44,15 @@ export const CommentModal = ({ isOpen, onClose, postId, currentUser }) => {
   const [loading, setLoading] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState('');
+  const [confirmState, setConfirmState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+    confirmText: 'Confirm',
+    confirmButtonClass: 'btn-primary',
+  });
+  const [isConfirming, setIsConfirming] = useState(false);
 
   // Fetch comments whenever the modal is opened for a specific post
   const fetchComments = useCallback(async () => {
@@ -99,15 +109,27 @@ export const CommentModal = ({ isOpen, onClose, postId, currentUser }) => {
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (window.confirm("Are you sure you want to delete this comment?")) {
-      const result = await feedService.deleteComment(commentId);
-      if (result.success) {
-        toast.success("Comment deleted.");
-        fetchComments();
-      } else {
-        toast.error("Failed to delete comment.");
-      }
+    setConfirmState({
+      isOpen: true,
+      title: 'Delete Comment',
+      message: 'Are you sure you want to permanently delete this comment?',
+      onConfirm: () => performDeleteComment(commentId),
+      confirmText: 'Delete',
+      confirmButtonClass: 'btn-error',
+    });
+  };
+
+  const performDeleteComment = async (commentId) => {
+    setIsConfirming(true);
+    const result = await feedService.deleteComment(commentId);
+    if (result.success) {
+      toast.success("Comment deleted successfully!");
+      fetchComments();
+    } else {
+      toast.error(`Failed to delete comment`);
     }
+    setIsConfirming(false);
+    setConfirmState({ isOpen: false });
   };
 
 
@@ -188,6 +210,17 @@ export const CommentModal = ({ isOpen, onClose, postId, currentUser }) => {
           </button>
         </form>
       </div>
+
+      <ConfirmationModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState({ isOpen: false })}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        confirmButtonClass={confirmState.confirmButtonClass}
+        isLoading={isConfirming}
+      />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/axios";
 import feedService from "../services/feedService";
 import { PostCard } from "../components/PostCard";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 import toast from "react-hot-toast";
 import {
   FaUserEdit,
@@ -19,6 +20,16 @@ export const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // for confirmation modal:
+  const [confirmState, setConfirmState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+    confirmText: 'Confirm',
+    confirmButtonClass: 'btn-primary',
+  });
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const { isVerified, verifyUser, loading: verifyLoading } = useContext(VerifyContext);
   const navigate = useNavigate();
@@ -71,30 +82,52 @@ export const ProfilePage = () => {
   }, [editingUser]);
 
   const handleDeletePost = useCallback(async (postId) => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
-      const result = await feedService.deletePost(postId);
-      if (result.success) {
-        fetchUserData();
-        toast.success("Post deleted successfully!");
-      } else {
-        toast.error(`Failed to delete post`);
-        console.error("Error deleting post:", result.error);
-      }
-    }
+    setConfirmState({
+      isOpen: true,
+      title: 'Delete Post',
+      message: 'Are you sure you want to permanently delete this post?',
+      onConfirm: () => performDeletePost(postId),
+      confirmText: 'Delete',
+      confirmButtonClass: 'btn-error',
+    });
   }, []);
 
-  const handleUnsharePost = useCallback(async (postId) => {
-    if (window.confirm("Are you sure you want to unshare this post?")) {
-      const result = await feedService.unsharePost(postId);
-      if (result.success) {
-        fetchUserData();
-        toast.success("Post unshared successfully!");
-      } else {
-        toast.error(`Failed to unshare post`);
-        console.error("Error unsharing post:", result.error);
-      }
+  const performDeletePost = async (postId) => {
+    setIsConfirming(true);
+    const result = await feedService.deletePost(postId);
+    if (result.success) {
+      toast.success("Post deleted successfully!");
+      fetchUserData();
+    } else {
+      toast.error(`Failed to delete post`);
     }
+    setIsConfirming(false);
+    setConfirmState({ isOpen: false });
+  };
+
+  const handleUnsharePost = useCallback(async (postId) => {
+    setConfirmState({
+      isOpen: true,
+      title: 'Unshare Post',
+      message: 'Are you sure you want to unshare this post?',
+      onConfirm: () => performUnsharePost(postId),
+      confirmText: 'Unshare',
+      confirmButtonClass: 'btn-warning',
+    });
   }, []);
+
+  const performUnsharePost = async (postId) => {
+    setIsConfirming(true);
+    const result = await feedService.unsharePost(postId);
+    if (result.success) {
+      toast.success("Post unshared successfully!");
+      fetchUserData();
+    } else {
+      toast.error(`Failed to unshare post`);
+    }
+    setIsConfirming(false);
+    setConfirmState({ isOpen: false });
+  };
 
   const handleEditPost = useCallback((postId, currentContent) => {
     alert(`Editing Post ID: ${postId}\nCurrent Content: ${currentContent}`);
@@ -198,6 +231,17 @@ export const ProfilePage = () => {
           )}
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState({ isOpen: false })}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        confirmButtonClass={confirmState.confirmButtonClass}
+        isLoading={isConfirming}
+      />
 
       {isEditModalOpen && (
         <div className="modal modal-open">
