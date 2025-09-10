@@ -13,14 +13,14 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
 
   const isOriginalPost = !post.isShared;
-  const targetPostId = isOriginalPost ? post.id : post.originalPost?.id;
+  const targetPostId = isOriginalPost ? post.id : (post.originalPost?.id || post.id);
 
-  const author = isOriginalPost ? post.user : post.originalPost.user;
-  const sharer = post.sharedBy || post.user;
-  const timestamp = isOriginalPost ? post.createdAt : post.originalPost.createdAt;
+  const author = isOriginalPost ? post.user : (post.originalPost?.user || post.user);
+  const sharer = post.sharedBy || (post.isShared ? post.user : null);
+  const timestamp = isOriginalPost ? post.createdAt : (post.originalPost?.createdAt || post.createdAt);
 
-  const canDeleteOrEdit = isOriginalPost && currentUser.id === post.user.id;
-  const canUnshare = !isOriginalPost && currentUser.id === sharer.id;
+  const canDeleteOrEdit = isOriginalPost && currentUser?.id === post.user?.id;
+  const canUnshare = !isOriginalPost && currentUser?.id === sharer?.id;
   const showOptions = canDeleteOrEdit || canUnshare;
 
   const fetchPostInteractions = useCallback(async () => {
@@ -79,10 +79,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     <>
       <div className="card bg-base-200 shadow-xl border border-base-300">
         <div className="card-body p-5">
-          {!isOriginalPost && (
+          {!isOriginalPost && sharer && (
             <div className="flex items-center gap-2 text-sm text-base-content/70 mb-3">
               <FaShareSquare className="text-primary" />
-              <span className="font-semibold">{sharer.name}</span> shared
+              <span className="font-semibold">{sharer?.name || 'Someone'}</span> shared
             </div>
           )}
 
@@ -91,17 +91,17 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
             <div className="flex items-center gap-3">
               <div className="avatar">
                 <div className="w-12 h-12 rounded-full bg-primary">
-                  {author.image ? (
-                    <img src={author.image} alt={author.name} />
+                  {author?.image ? (
+                    <img src={author.image} alt={author?.name || 'User'} />
                   ) : (
                     <span className="text-2xl text-primary-content flex items-center justify-center w-full h-full">
-                      {author.name.charAt(0).toUpperCase()}
+                      {(author?.name || 'U').charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
               </div>
               <div>
-                <span className="font-semibold text-base-content">{author.name}</span>
+                <span className="font-semibold text-base-content">{author?.name || 'Unknown User'}</span>
                 <p className="text-xs text-base-content/60">{formatDate(timestamp)}</p>
               </div>
             </div>
