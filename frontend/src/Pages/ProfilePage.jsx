@@ -5,6 +5,7 @@ import api from "../utils/axios";
 import feedService from "../services/feedService";
 import { PostCard } from "../components/PostCard";
 import { ConfirmationModal } from "../components/ConfirmationModal";
+import { Navbar } from "../components/Navbar";
 import toast from "react-hot-toast";
 import {
   FaUserEdit,
@@ -148,7 +149,8 @@ export const ProfilePage = () => {
 
   return (
     <div className="bg-base-300 min-h-screen">
-      <div className="max-w-5xl mx-auto">
+      <Navbar />
+      <div className="max-w-5xl mx-auto pt-20">
         <div className="bg-base-200 shadow-lg rounded-b-lg">
           <div className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row items-center gap-6">
