@@ -77,8 +77,8 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
 
   return (
     <>
-      <div className="card bg-base-200 shadow-xl border border-base-300">
-        <div className="card-body p-5">
+      <div className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow duration-200 border border-base-300">
+        <div className="card-body p-3 sm:p-5">
           {!isOriginalPost && sharer && (
             <div className="flex items-center gap-2 text-sm text-base-content/70 mb-3">
               <FaShareSquare className="text-primary" />
@@ -87,21 +87,21 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
           )}
 
           {/* Post Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="avatar">
-                <div className="w-12 h-12 rounded-full bg-primary">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary">
                   {author?.image ? (
                     <img src={author.image} alt={author?.name || 'User'} />
                   ) : (
-                    <span className="text-2xl text-primary-content flex items-center justify-center w-full h-full">
+                    <span className="text-lg sm:text-2xl text-primary-content flex items-center justify-center w-full h-full">
                       {(author?.name || 'U').charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
               </div>
               <div>
-                <span className="font-semibold text-base-content">{author?.name || 'Unknown User'}</span>
+                <span className="font-semibold text-sm sm:text-base text-base-content">{author?.name || 'Unknown User'}</span>
                 <p className="text-xs text-base-content/60">{formatDate(timestamp)}</p>
               </div>
             </div>
@@ -133,29 +133,32 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
 
           {/* Post Content */}
           <div>
-            {post.content && <p className="text-base-content mb-3 whitespace-pre-wrap">{post.content}</p>}
+            {post.content && <p className="text-sm sm:text-base text-base-content mb-3 whitespace-pre-wrap">{post.content}</p>}
             {post.image && (
-              <div className="relative w-full max-h-[450px] rounded-lg bg-base-300/20 flex justify-center">
-                <img src={post.image} alt="Post content" className="max-h-[450px] w-auto h-auto object-contain" loading="lazy" />
+              <div className="relative w-full max-h-[300px] sm:max-h-[450px] rounded-lg bg-base-300/20 flex justify-center">
+                <img src={post.image} alt="Post content" className="max-h-[300px] sm:max-h-[450px] w-auto h-auto object-contain rounded-lg" loading="lazy" />
               </div>
             )}
           </div>
 
           {/* Interactions */}
-          <div className="flex justify-between items-center text-sm text-base-content/90 mt-3 px-2">
+          <div className="flex justify-between items-center text-xs sm:text-sm text-base-content/90 mt-3 px-1 sm:px-2">
             <div>{reactions.length > 0 && `😂 ${reactions.length} Laughs`}</div>
             <div>{commentCount > 0 && `${commentCount} Comments`}</div>
           </div>
           <div className="divider my-1"></div>
           <div className="flex justify-around items-center text-base-content">
-            <button onClick={handleReactionClick} className={`btn btn-ghost flex-1 ${userReaction ? "text-primary" : ""}`}>
-              <FaLaughSquint /> Laugh
+            <button onClick={handleReactionClick} className={`btn btn-ghost btn-sm sm:btn-md flex-1 gap-1 sm:gap-2 ${userReaction ? "text-primary" : ""}`}>
+              <FaLaughSquint className="text-sm sm:text-base" />
+              <span className="hidden sm:inline">Laugh</span>
             </button>
-            <button onClick={() => setIsCommentModalOpen(true)} className="btn btn-ghost flex-1">
-              <FaComment /> Comment
+            <button onClick={() => setIsCommentModalOpen(true)} className="btn btn-ghost btn-sm sm:btn-md flex-1 gap-1 sm:gap-2">
+              <FaComment className="text-sm sm:text-base" />
+              <span className="hidden sm:inline">Comment</span>
             </button>
-            <button onClick={handleShareClick} className="btn btn-ghost flex-1">
-              <FaShare /> Share
+            <button onClick={handleShareClick} className="btn btn-ghost btn-sm sm:btn-md flex-1 gap-1 sm:gap-2">
+              <FaShare className="text-sm sm:text-base" />
+              <span className="hidden sm:inline">Share</span>
             </button>
           </div>
         </div>

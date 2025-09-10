@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import feedService from "../services/feedService";
 import { PostCard } from "./PostCard";
 import api from "../utils/axios";
@@ -12,6 +12,25 @@ export const Feed = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  
+  // Refs for infinite scroll
+  const observerRef = useRef();
+  const lastPostElementRef = useCallback(node => {
+    if (loadingMore) return;
+    if (observerRef.current) observerRef.current.disconnect();
+    
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && !loadingMore) {
+        loadMore();
+      }
+    }, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0
+    });
+    
+    if (node) observerRef.current.observe(node);
+  }, [loadingMore, hasMore]);
 
   // Fetch current user data
   const fetchCurrentUser = useCallback(async () => {
@@ -47,7 +66,7 @@ export const Feed = () => {
         }
       } catch (err) {
         console.error("Error fetching feed:", err);
-        setError("Failed to load feed. Please try again.");
+        setError("Failed to load posts. Please try again.");
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -56,14 +75,17 @@ export const Feed = () => {
     []
   );
 
-  const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchFeed(nextPage, true);
-  };
+  const loadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchFeed(nextPage, true);
+    }
+  }, [page, loadingMore, hasMore, fetchFeed]);
 
   const refreshFeed = () => {
     setPage(1);
+    setPosts([]);
     fetchFeed(1, false);
   };
 
@@ -99,35 +121,39 @@ export const Feed = () => {
   useEffect(() => {
     fetchCurrentUser();
     fetchFeed();
-  }, [fetchFeed, fetchCurrentUser]);
+  }, []);
 
   if (loading && posts.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="loading loading-spinner loading-lg text-primary mb-4"></div>
-        <h2 className="text-2xl font-bold text-base-content mb-2">
-          Your Smart Feed
-        </h2>
-        <p className="text-base-content/70">Loading your personalized content...</p>
+      <div className="flex justify-center items-center py-8">
+        <div className="loading loading-spinner loading-lg text-primary"></div>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-base-content">Your Smart Feed</h2>
-          <p className="text-sm text-base-content/70">
-            Prioritized content from friends and trending posts
-          </p>
-        </div>
+      {/* Refresh button - Mobile optimized */}
+      <div className="flex justify-end mb-4">
         <button
           onClick={refreshFeed}
           disabled={loading}
-          className="btn btn-sm btn-primary"
+          className="btn btn-sm btn-ghost btn-circle"
+          aria-label="Refresh posts"
         >
-          🔄 Refresh
+          <svg 
+            className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+            />
+          </svg>
         </button>
       </div>
 
@@ -152,95 +178,71 @@ export const Feed = () => {
 
       {posts.length === 0 && !loading ? (
         <div className="text-center py-16">
-          <div className="text-6xl mb-4">📭</div>
-          <h3 className="text-2xl font-bold text-base-content mb-2">
-            No posts in your feed yet!
+          <div className="text-6xl mb-4">😴</div>
+          <h3 className="text-xl font-bold text-base-content mb-2">
+            No memes yet
           </h3>
           <p className="text-base-content/70 mb-6">
-            Connect with friends or check back later for new content.
+            Be the first to share something funny!
           </p>
           <button
             onClick={refreshFeed}
             className="btn btn-primary"
           >
-            Try Again
+            Refresh
           </button>
         </div>
       ) : (
         <>
-          <div className="space-y-6">
-            {currentUser && posts.map((post) => (
-              <PostCard
-                key={`${post.isShared ? "shared" : "post"}-${post.id}`}
-                post={post}
-                currentUser={currentUser}
-                onEdit={handleEditPost}
-                onDelete={handleDeletePost}
-                onUnshare={handleUnsharePost}
-                onChange={refreshFeed}
-              />
-            ))}
+          <div className="space-y-4 sm:space-y-6">
+            {currentUser && posts.map((post, index) => {
+              // Add ref to last post for infinite scroll
+              if (index === posts.length - 1) {
+                return (
+                  <div ref={lastPostElementRef} key={`${post.isShared ? "shared" : "post"}-${post.id}`}>
+                    <PostCard
+                      post={post}
+                      currentUser={currentUser}
+                      onEdit={handleEditPost}
+                      onDelete={handleDeletePost}
+                      onUnshare={handleUnsharePost}
+                      onChange={refreshFeed}
+                    />
+                  </div>
+                );
+              } else {
+                return (
+                  <PostCard
+                    key={`${post.isShared ? "shared" : "post"}-${post.id}`}
+                    post={post}
+                    currentUser={currentUser}
+                    onEdit={handleEditPost}
+                    onDelete={handleDeletePost}
+                    onUnshare={handleUnsharePost}
+                    onChange={refreshFeed}
+                  />
+                );
+              }
+            })}
           </div>
 
-          {/* Load More Button */}
-          {hasMore && (
-            <div className="text-center mt-8">
-              <button
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="btn btn-primary"
-              >
-                {loadingMore ? (
-                  <>
-                    <div className="loading loading-spinner loading-sm"></div>
-                    Loading More...
-                  </>
-                ) : (
-                  "Load More Posts"
-                )}
-              </button>
+          {/* Loading indicator for infinite scroll */}
+          {loadingMore && (
+            <div className="flex justify-center py-8">
+              <div className="loading loading-spinner loading-md text-primary"></div>
             </div>
           )}
 
           {!hasMore && posts.length > 0 && (
-            <div className="text-center mt-8 py-6 border-t border-base-300">
-              <div className="text-4xl mb-2">🎉</div>
-              <p className="text-base-content/80 font-medium">
-                You've caught up with your feed!
-              </p>
-              <p className="text-xs text-base-content/60 mt-1">
-                Check back later for new content
+            <div className="text-center py-8">
+              <div className="text-2xl mb-2">✨</div>
+              <p className="text-base-content/60 text-sm">
+                You're all caught up!
               </p>
             </div>
           )}
         </>
       )}
-
-      {/* Feed Algorithm Info */}
-      <div className="mt-8 p-4 bg-base-200 rounded-lg border border-base-300">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">🤖</span>
-          <h4 className="font-semibold text-base-content">Smart Feed Algorithm</h4>
-        </div>
-        <ul className="text-sm text-base-content/80 space-y-1">
-          <li className="flex items-center gap-2">
-            <span className="text-success">✓</span>
-            Friend posts get priority, especially recent ones
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="text-success">✓</span>
-            High-engagement content gets boosted
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="text-success">✓</span>
-            Fresh content from all users is mixed in
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="text-success">✓</span>
-            Ranked by relevance, engagement, and freshness
-          </li>
-        </ul>
-      </div>
     </div>
   );
 };

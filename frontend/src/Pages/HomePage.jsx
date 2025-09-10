@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context";
 import { Post } from "../components/Post";
@@ -9,6 +9,7 @@ import { Navbar } from "../components/Navbar";
 export const HomePage = () => {
   const { isVerified, verifyUser, loading, logout } = useContext(VerifyContext);
   const navigate = useNavigate();
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   useEffect(() => {
     verifyUser();
@@ -25,67 +26,87 @@ export const HomePage = () => {
     navigate("/auth");
   };
 
-return (
-  <div className="min-h-screen bg-base-200">
-    <Navbar />
+  return (
+    <div className="min-h-screen bg-base-200">
+      <Navbar />
 
-    <div className="pt-20">
-      {/* Header */}
-      <div className="text-center py-6 border-b border-base-300">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          MemeStream
-        </h1>
-        <p className="text-base-content/70 text-base mt-1">
-          Your Daily Dose of Memes with Smart Feed Algorithm
-        </p>
+      <div className="pt-16 pb-4">
+        {/* Main Container */}
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row gap-4 px-2 sm:px-4">
+            
+            {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
+            <div className="hidden lg:block lg:w-80 flex-shrink-0">
+              <div className="sticky top-20">
+                <div className="card bg-base-100 shadow-lg border border-base-300">
+                  <div className="card-body p-4">
+                    <h2 className="text-lg font-bold text-base-content mb-3">
+                      Create Meme
+                    </h2>
+                    <Post />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Feed Container */}
+            <div className="flex-1 min-w-0">
+              {/* Mobile Create Post Button */}
+              <div className="lg:hidden mb-4">
+                <button
+                  onClick={() => setIsCreatePostOpen(true)}
+                  className="w-full bg-base-100 hover:bg-base-200 border border-base-300 rounded-lg p-4 flex items-center gap-3 transition-colors"
+                >
+                  <div className="avatar">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                      <span className="text-primary-content font-bold">U</span>
+                    </div>
+                  </div>
+                  <span className="text-base-content/70">What's on your mind?</span>
+                </button>
+              </div>
+
+              {/* Posts Feed */}
+              <div className="bg-base-100 rounded-lg shadow-lg border border-base-300">
+                <div className="p-4">
+                  <Feed />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Sidebar - Friend Requests - Hidden on mobile */}
+            <div className="hidden xl:block xl:w-80 flex-shrink-0">
+              <div className="sticky top-20">
+                <div className="card bg-base-100 shadow-lg border border-base-300">
+                  <div className="card-body p-4">
+                    <h2 className="text-lg font-bold text-base-content mb-3">
+                      Friend Requests
+                    </h2>
+                    <FriendRequest />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Main Layout */}
-      <div className="flex flex-col lg:flex-row gap-4 px-4">
-        {/* Left Sidebar - Create Post */}
-        <div className="lg:w-80 w-full flex-shrink-0 space-y-4 bg-base-300/50 order-2 lg:order-1">
-          <div className="card bg-base-100 shadow-md border border-base-300">
-            <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
-              <h2 className="text-lg font-semibold text-primary-content flex items-center">
-                Create Post
-              </h2>
-            </div>
-            <div className="card-body p-4 border-t border-base-300">
-              <Post />
-            </div>
+      {/* Mobile Create Post Modal */}
+      {isCreatePostOpen && (
+        <div className="modal modal-open lg:hidden">
+          <div className="modal-box bg-base-100 max-w-lg mx-auto">
+            <button
+              onClick={() => setIsCreatePostOpen(false)}
+              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+            >
+              ✕
+            </button>
+            <h3 className="font-bold text-lg mb-4">Create Meme</h3>
+            <Post onSuccess={() => setIsCreatePostOpen(false)} />
           </div>
+          <div className="modal-backdrop" onClick={() => setIsCreatePostOpen(false)}></div>
         </div>
-
-        {/* Middle - Feed */}
-        <div className="flex-1 order-1 lg:order-2">
-          <div className="card bg-base-100 shadow-md border border-base-300 min-h-full">
-            <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
-              <h2 className="text-lg font-semibold text-primary-content flex items-center">
-                Feed
-              </h2>
-            </div>
-            <div className="card-body p-4 border-t border-base-300">
-              <Feed />
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar - Friend Requests */}
-        <div className="lg:w-80 w-full flex-shrink-0 space-y-4 bg-base-300/50 order-3">
-          <div className="card bg-base-100 shadow-md border border-base-300">
-            <div className="card-header bg-gradient-to-r from-primary to-secondary p-4 rounded-t-xl">
-              <h2 className="text-lg font-semibold text-primary-content flex items-center">
-                Friend Requests
-              </h2>
-            </div>
-            <div className="card-body p-4 border-t border-base-300">
-              <FriendRequest />
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
-  </div>
-);
-
+  );
 };
