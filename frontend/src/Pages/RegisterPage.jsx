@@ -2,12 +2,12 @@ import React, { useContext, useEffect } from "react";
 import api from "../utils/axios";
 import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context";
+import ImageUpload from "../components/ImageUpload";
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
 
-  const { isVerified, verifyUser, loading } =
-    useContext(VerifyContext);
+  const { isVerified, verifyUser, loading } = useContext(VerifyContext);
 
   const [formData, setFormData] = React.useState({
     email: "",
@@ -16,6 +16,7 @@ export const RegisterPage = () => {
     bio: "",
     image: "",
   });
+  const [uploadedImageData, setUploadedImageData] = React.useState(null);
   useEffect(() => {
     verifyUser();
   }, []);
@@ -41,10 +42,22 @@ export const RegisterPage = () => {
         );
       }
 
-      navigate("/login");
+      navigate("/auth");
     } catch (error) {
       console.error("Registration failed:", error);
     }
+  };
+
+  // Handle profile picture upload
+  const handleImageUpload = (imageData) => {
+    setUploadedImageData(imageData);
+    setFormData({ ...formData, image: imageData.url });
+  };
+
+  // Handle profile picture removal
+  const handleImageRemove = () => {
+    setUploadedImageData(null);
+    setFormData({ ...formData, image: "" });
   };
   return (
     <div>
@@ -75,12 +88,16 @@ export const RegisterPage = () => {
             setFormData({ ...formData, password: e.target.value })
           }
         />
-        <input
-          type="text"
-          placeholder="Image URL"
-          value={formData.image}
-          onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-        />
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">
+            Profile Picture (optional)
+          </label>
+          <ImageUpload
+            onImageUpload={handleImageUpload}
+            currentImageUrl={formData.image}
+            onImageRemove={handleImageRemove}
+          />
+        </div>
         <button onClick={handleSubmit} type="submit">
           Register
         </button>

@@ -22,6 +22,17 @@ namespace MemeStreamApi.data
         public DbSet<Reaction> Reactions { get; set; }
         public DbSet<Comment> Comments { get; set; }
 
+        public DbSet<Message> Messages { get; set; }
+        public DbSet<Group> Groups { get; set; }
+        public DbSet<GroupMembership> GroupMemberships { get; set; }
+
+        public DbSet<MessageReacton> MessageReactons { get; set; }
+
+        public DbSet<ChatFile> ChatFiles { get; set; }
+        public DbSet<MessageReadReceipt> MessageReadReceipts { get; set; }
+
+
+
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

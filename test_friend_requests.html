@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friend Request Component Test</title>
+    <script type="module" crossorigin src="/src/main.jsx"></script>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script>
+        // Simple test to verify the component loads
+        console.log('Testing Friend Request Component');
+
+        // You can uncomment and modify this to test API calls directly
+        /*
+        const testAPI = async () => {
+            const baseURL = 'http://localhost:5216/api';
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                console.log('Please login first to test friend requests');
+                return;
+            }
+            
+            try {
+                // Test getting friend requests
+                const response = await fetch(`${baseURL}/FriendRequest/get/friend-requests`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                console.log('Friend Requests:', data);
+            } catch (error) {
+                console.error('Error testing API:', error);
+            }
+        };
+        
+        // Uncomment to test API
+        // testAPI();
+        */
+    </script>
+</body>
+
+</html>
