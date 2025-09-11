@@ -16,6 +16,9 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const [newComment, setNewComment] = useState('');
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
   const isOriginalPost = !post.isShared;
   const targetPostId = isOriginalPost ? post.id : (post.originalPost?.id || post.id);
@@ -110,6 +113,34 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     } finally {
       setIsSubmittingComment(false);
     }
+  };
+
+  const handleSubmitReply = async (e) => {
+    e.preventDefault();
+    if (!replyText.trim() || !replyingTo) return;
+
+    setIsSubmittingReply(true);
+    try {
+      const result = await feedService.addReply(replyingTo, replyText.trim());
+      if (result.success) {
+        setReplyText('');
+        setReplyingTo(null);
+        fetchPostInteractions();
+        toast.success("Reply added!");
+      } else {
+        toast.error(result.error || "Failed to add reply");
+      }
+    } catch (error) {
+      toast.error("Error adding reply");
+      console.error("Error adding reply:", error);
+    } finally {
+      setIsSubmittingReply(false);
+    }
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+    setReplyText('');
   };
 
   return (
@@ -230,29 +261,108 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
               {/* Comments List */}
               <div className="space-y-3">
                 {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-2">
-                    <div className="avatar">
-                      <div className="w-8 h-8 rounded-full bg-primary">
-                        {comment.user?.image ? (
-                          <img src={comment.user.image} alt={comment.user?.name} className="rounded-full" />
-                        ) : (
-                          <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
-                            {comment.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                          </span>
-                        )}
+                  <div key={comment.id}>
+                    {/* Main Comment */}
+                    <div className="flex gap-2">
+                      <div className="avatar">
+                        <div className="w-8 h-8 rounded-full bg-primary">
+                          {comment.user?.image ? (
+                            <img src={comment.user.image} alt={comment.user?.name} className="rounded-full" />
+                          ) : (
+                            <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
+                              {comment.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="bg-base-200 rounded-2xl px-3 py-2">
+                          <p className="font-semibold text-sm">{comment.user?.name}</p>
+                          <p className="text-sm">{comment.content}</p>
+                        </div>
+                        <div className="flex gap-4 mt-1 text-xs text-base-content/60">
+                          <span>{formatDate(comment.createdAt)}</span>
+                          <button className="hover:underline font-medium">Like</button>
+                          <button 
+                            className="hover:underline font-medium"
+                            onClick={() => setReplyingTo(comment.id)}
+                          >
+                            Reply
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex-1">
-                      <div className="bg-base-200 rounded-2xl px-3 py-2">
-                        <p className="font-semibold text-sm">{comment.user?.name}</p>
-                        <p className="text-sm">{comment.content}</p>
+
+                    {/* Replies */}
+                    {comment.replies && comment.replies.length > 0 && (
+                      <div className="ml-10 mt-2 space-y-2">
+                        {comment.replies.map((reply) => (
+                          <div key={reply.id} className="flex gap-2">
+                            <div className="avatar">
+                              <div className="w-7 h-7 rounded-full bg-primary">
+                                {reply.user?.image ? (
+                                  <img src={reply.user.image} alt={reply.user?.name} className="rounded-full" />
+                                ) : (
+                                  <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
+                                    {reply.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <div className="bg-base-200 rounded-2xl px-3 py-2">
+                                <p className="font-semibold text-sm">{reply.user?.name}</p>
+                                <p className="text-sm">{reply.content}</p>
+                              </div>
+                              <div className="flex gap-4 mt-1 text-xs text-base-content/60">
+                                <span>{formatDate(reply.createdAt)}</span>
+                                <button className="hover:underline font-medium">Like</button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex gap-4 mt-1 text-xs text-base-content/60">
-                        <span>{formatDate(comment.createdAt)}</span>
-                        <button className="hover:underline font-medium">Like</button>
-                        <button className="hover:underline font-medium">Reply</button>
+                    )}
+
+                    {/* Reply Input Form */}
+                    {replyingTo === comment.id && (
+                      <div className="ml-10 mt-2">
+                        <form onSubmit={handleSubmitReply} className="flex gap-2">
+                          <div className="avatar">
+                            <div className="w-7 h-7 rounded-full bg-primary">
+                              {currentUser?.image ? (
+                                <img src={currentUser.image} alt={currentUser?.name} className="rounded-full" />
+                              ) : (
+                                <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
+                                  {currentUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder={`Reply to ${comment.user?.name}...`}
+                                className="input input-bordered input-sm w-full rounded-full bg-base-200 focus:bg-base-100"
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                disabled={isSubmittingReply}
+                                autoFocus
+                              />
+                              <button
+                                type="button"
+                                onClick={handleCancelReply}
+                                className="btn btn-ghost btn-sm text-xs"
+                                disabled={isSubmittingReply}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </form>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
