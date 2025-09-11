@@ -119,8 +119,8 @@ export const Navbar = () => {
 
         {/* Profile & Mobile Menu */}
         <div className="navbar-end">
-          {/* Theme Switcher - Desktop */}
-          <div className="hidden lg:block mr-2">
+          {/* Theme Switcher - Desktop/Mobile */}
+          <div className="mr-2">
             <ThemeSwitcher />
           </div>
           
@@ -233,7 +233,7 @@ export const Navbar = () => {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="absolute top-16 left-0 right-0 bg-base-100 border-b border-base-300 shadow-xl">
+          <div className="absolute top-16 left-0 right-0 bg-base-100 border-b border-base-300 shadow-xl max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="p-4">
               
               {/* User Profile Section */}
@@ -282,13 +282,6 @@ export const Navbar = () => {
                     )}
                   </button>
                 ))}
-              </div>
-
-              {/* Theme Switcher - Mobile */}
-              <div className="mb-4">
-                <div className="flex items-center justify-center">
-                  <ThemeSwitcher />
-                </div>
               </div>
 
               {/* Profile Actions */}
