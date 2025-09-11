@@ -47,10 +47,10 @@ export const HomePage = () => {
     <div className="min-h-screen bg-base-200 animate-fadeIn">
       <Navbar />
 
-      <div className="pt-20 pb-4">
+      <div className="pt-16 pb-4">
         {/* Main Container */}
-        <div className="max-w-[1400px] mx-auto">
-          <div className="flex flex-col lg:flex-row gap-6 px-2 sm:px-4">
+        <div className="max-w-[1600px] mx-auto">
+          <div className="flex flex-col lg:flex-row gap-6 px-1 sm:px-2 lg:px-3">
             
             {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
             <div className="hidden lg:block lg:w-80 flex-shrink-0">
