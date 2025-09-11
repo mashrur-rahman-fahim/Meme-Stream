@@ -11,6 +11,11 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const [commentCount, setCommentCount] = useState(0);
   const [userReaction, setUserReaction] = useState(null);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [showInlineComments, setShowInlineComments] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const isOriginalPost = !post.isShared;
   const targetPostId = isOriginalPost ? post.id : (post.originalPost?.id || post.id);
@@ -34,6 +39,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
       const commentsRes = await feedService.getPostComments(targetPostId);
       if (commentsRes.success && commentsRes.data) {
         setCommentCount(commentsRes.data.length);
+        setComments(commentsRes.data);
       }
     } catch (error) {
       console.error(`Error fetching interaction data for post ${targetPostId}:`, error);
@@ -51,8 +57,13 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     fetchPostInteractions();
   };
 
-  const handleShareClick = async () => {
+  const handleShareClick = () => {
+    setIsShareDialogOpen(true);
+  };
+
+  const handleConfirmShare = async () => {
     if (!targetPostId) return;
+    setIsShareDialogOpen(false);
     const toastId = toast.loading('Sharing post...');
 
     try {
@@ -73,6 +84,32 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const handleCloseModal = () => {
     setIsCommentModalOpen(false);
     fetchPostInteractions();
+  };
+
+  const handleToggleComments = () => {
+    setShowInlineComments(!showInlineComments);
+  };
+
+  const handleSubmitComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim() || !targetPostId) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const result = await feedService.addComment(targetPostId, newComment.trim());
+      if (result.success) {
+        setNewComment('');
+        fetchPostInteractions();
+        toast.success("Comment added!");
+      } else {
+        toast.error(result.error || "Failed to add comment");
+      }
+    } catch (error) {
+      toast.error("Error adding comment");
+      console.error("Error adding comment:", error);
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   return (
@@ -152,7 +189,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
               <FaLaughSquint className="text-sm sm:text-base" />
               <span className="hidden sm:inline">Laugh</span>
             </button>
-            <button onClick={() => setIsCommentModalOpen(true)} className="btn btn-ghost btn-sm sm:btn-md flex-1 gap-1 sm:gap-2">
+            <button onClick={handleToggleComments} className="btn btn-ghost btn-sm sm:btn-md flex-1 gap-1 sm:gap-2">
               <FaComment className="text-sm sm:text-base" />
               <span className="hidden sm:inline">Comment</span>
             </button>
@@ -161,8 +198,98 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
               <span className="hidden sm:inline">Share</span>
             </button>
           </div>
+
+          {/* Inline Comments Section (Facebook Style) */}
+          {showInlineComments && (
+            <div className="border-t border-base-300 pt-3 mt-3">
+              {/* Comment Input */}
+              <form onSubmit={handleSubmitComment} className="flex gap-2 mb-4">
+                <div className="avatar">
+                  <div className="w-8 h-8 rounded-full bg-primary">
+                    {currentUser?.image ? (
+                      <img src={currentUser.image} alt={currentUser?.name} className="rounded-full" />
+                    ) : (
+                      <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
+                        {currentUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Write a comment..."
+                    className="input input-bordered input-sm w-full rounded-full bg-base-200 focus:bg-base-100"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    disabled={isSubmittingComment}
+                  />
+                </div>
+              </form>
+
+              {/* Comments List */}
+              <div className="space-y-3">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-2">
+                    <div className="avatar">
+                      <div className="w-8 h-8 rounded-full bg-primary">
+                        {comment.user?.image ? (
+                          <img src={comment.user.image} alt={comment.user?.name} className="rounded-full" />
+                        ) : (
+                          <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
+                            {comment.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="bg-base-200 rounded-2xl px-3 py-2">
+                        <p className="font-semibold text-sm">{comment.user?.name}</p>
+                        <p className="text-sm">{comment.content}</p>
+                      </div>
+                      <div className="flex gap-4 mt-1 text-xs text-base-content/60">
+                        <span>{formatDate(comment.createdAt)}</span>
+                        <button className="hover:underline font-medium">Like</button>
+                        <button className="hover:underline font-medium">Reply</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Share Confirmation Dialog */}
+      {isShareDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => setIsShareDialogOpen(false)}
+          />
+          <div className="relative bg-base-100 rounded-2xl shadow-xl p-6 max-w-md mx-4 border border-base-300">
+            <h3 className="text-lg font-semibold text-base-content mb-4">Share this post?</h3>
+            <p className="text-base-content/70 mb-6">
+              This will share the post to your timeline and it will be visible to your friends.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setIsShareDialogOpen(false)}
+                className="btn btn-ghost"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmShare}
+                className="btn btn-primary"
+              >
+                Share Post
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CommentModal
         isOpen={isCommentModalOpen}

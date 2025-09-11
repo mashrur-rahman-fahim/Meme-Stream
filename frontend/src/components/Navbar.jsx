@@ -151,7 +151,7 @@ export const Navbar = () => {
     <>
       {/* Facebook-Style Navbar */}
       <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 z-50 h-14">
-        <div className="max-w-[1920px] mx-auto px-4">
+        <div className="max-w-[1920px] mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-3 items-center h-14">
             
             {/* Left Section: Logo + Search */}

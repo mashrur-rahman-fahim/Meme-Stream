@@ -120,6 +120,22 @@ export const PublicProfile = () => {
     }
   };
 
+  const handleDeclineRequest = async () => {
+    try {
+      setActionLoading(true);
+      // Decline the friend request from this user
+      await api.post("/FriendRequest/decline", { senderId: parseInt(userId) });
+      toast.success("Friend request declined");
+      // Refresh profile to update friendship status
+      fetchProfile();
+    } catch (error) {
+      console.error("Error declining friend request:", error);
+      toast.error("Failed to decline friend request");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const renderActionButton = () => {
     if (!profile || profile.isOwnProfile) return null;
 
@@ -147,14 +163,24 @@ export const PublicProfile = () => {
         );
       case "Request Received":
         return (
-          <button
-            onClick={handleAcceptRequest}
-            disabled={actionLoading}
-            className={buttonClass}
-          >
-            <FaUserCheck />
-            Accept Request
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleAcceptRequest}
+              disabled={actionLoading}
+              className={buttonClass}
+            >
+              <FaUserCheck />
+              {actionLoading ? "Processing..." : "Accept"}
+            </button>
+            <button
+              onClick={handleDeclineRequest}
+              disabled={actionLoading}
+              className="btn btn-outline btn-error flex items-center gap-2"
+            >
+              <FaUserTimes />
+              {actionLoading ? "Processing..." : "Decline"}
+            </button>
+          </div>
         );
       case "None":
       case "Request Declined":
