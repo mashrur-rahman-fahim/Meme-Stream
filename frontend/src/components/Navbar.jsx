@@ -119,8 +119,8 @@ export const Navbar = () => {
 
         {/* Profile & Mobile Menu */}
         <div className="navbar-end">
-          {/* Theme Switcher - Desktop */}
-          <div className="hidden lg:block mr-2">
+          {/* Theme Switcher - Desktop/Mobile */}
+          <div className="mr-2">
             <ThemeSwitcher />
           </div>
           
@@ -282,13 +282,6 @@ export const Navbar = () => {
                     )}
                   </button>
                 ))}
-              </div>
-
-              {/* Theme Switcher - Mobile */}
-              <div className="mb-4">
-                <div className="flex items-center justify-center">
-                  <ThemeSwitcher />
-                </div>
               </div>
 
               {/* Profile Actions */}
