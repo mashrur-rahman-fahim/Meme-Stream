@@ -60,13 +60,48 @@ const ProfileEditModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
   };
 
   // Handle image removal
-  const handleImageRemove = () => {
-    setUploadedImageData(null);
-    setFormData(prev => ({
-      ...prev,
-      image: ''
-    }));
-    setIsDirty(true);
+  const handleImageRemove = async () => {
+    try {
+      // If there's a current image, we need to remove it from the backend
+      if (formData.image) {
+        toast.loading('Removing profile picture...', { id: 'remove' });
+        
+        // Call the backend to remove the image
+        await api.put('/User/profile', {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          bio: formData.bio.trim(),
+          image: '' // Set image to empty string to remove it
+        });
+
+        toast.success('Profile picture removed successfully!', { id: 'remove' });
+        
+        // Update local state
+        setUploadedImageData(null);
+        setFormData(prev => ({
+          ...prev,
+          image: ''
+        }));
+        setIsDirty(true);
+        
+        // Update parent component
+        if (onUpdate) {
+          const updatedUser = { ...currentUser, image: '' };
+          onUpdate(updatedUser);
+        }
+      } else {
+        // If no image exists, just clear the local state
+        setUploadedImageData(null);
+        setFormData(prev => ({
+          ...prev,
+          image: ''
+        }));
+        setIsDirty(true);
+      }
+    } catch (error) {
+      console.error('Error removing image:', error);
+      toast.error('Failed to remove profile picture. Please try again.', { id: 'remove' });
+    }
   };
 
   // Validate form
@@ -328,7 +363,12 @@ const ProfileEditModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
       </div>
       
       {/* Backdrop */}
-      <div className="modal-backdrop" onClick={handleClose} />
+      <div className="modal-backdrop" onClick={(e) => {
+        // Only close if clicking on the backdrop itself, not on children
+        if (e.target === e.currentTarget) {
+          handleClose();
+        }
+      }} />
     </div>
   );
 };

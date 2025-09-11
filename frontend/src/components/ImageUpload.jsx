@@ -108,7 +108,11 @@ const ImageUpload = ({ onImageUpload, currentImageUrl, onImageRemove, className 
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               <button
-                onClick={triggerFileSelect}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  triggerFileSelect();
+                }}
                 disabled={uploading}
                 className="btn btn-sm btn-primary"
                 title="Change image"
@@ -117,7 +121,11 @@ const ImageUpload = ({ onImageUpload, currentImageUrl, onImageRemove, className 
                 Change
               </button>
               <button
-                onClick={handleRemoveImage}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleRemoveImage();
+                }}
                 disabled={uploading}
                 className="btn btn-sm btn-error"
                 title="Remove image"
@@ -165,6 +173,10 @@ const ImageUpload = ({ onImageUpload, currentImageUrl, onImageRemove, className 
               </div>
               <button
                 type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
                 className="btn btn-outline btn-primary btn-sm"
                 disabled={uploading}
               >
