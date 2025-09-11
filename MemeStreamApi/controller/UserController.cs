@@ -469,5 +469,90 @@ namespace MemeStreamApi.controller
             }
         }
 
+        [Authorize]
+        [HttpGet("profile/{userId}")]
+        public IActionResult GetPublicProfile(int userId)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                var currentUserId = int.Parse(userIdClaim);
+
+                var user = _context.Users.FirstOrDefault(u => u.Id == userId && u.IsEmailVerified);
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                // Get friendship status if not viewing own profile
+                string friendshipStatus = "None";
+                bool canSendRequest = true;
+                
+                if (currentUserId != userId)
+                {
+                    var friendship = _context.FriendRequests.FirstOrDefault(fr => 
+                        (fr.SenderId == currentUserId && fr.ReceiverId == userId) ||
+                        (fr.SenderId == userId && fr.ReceiverId == currentUserId));
+
+                    if (friendship != null)
+                    {
+                        switch (friendship.Status)
+                        {
+                            case FriendRequest.RequestStatus.Accepted:
+                                friendshipStatus = "Friend";
+                                canSendRequest = false;
+                                break;
+                            case FriendRequest.RequestStatus.Pending:
+                                friendshipStatus = friendship.SenderId == currentUserId ? "Request Sent" : "Request Received";
+                                canSendRequest = false;
+                                break;
+                            case FriendRequest.RequestStatus.Rejected:
+                                friendshipStatus = "Request Declined";
+                                canSendRequest = true;
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    friendshipStatus = "Own Profile";
+                    canSendRequest = false;
+                }
+
+                var publicProfile = new PublicProfileDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Bio = user.Bio,
+                    Image = user.Image,
+                    FriendshipStatus = friendshipStatus,
+                    CanSendRequest = canSendRequest,
+                    IsOwnProfile = currentUserId == userId
+                };
+
+                return Ok(publicProfile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetPublicProfile: {ex.Message}");
+                return BadRequest("Error retrieving user profile.");
+            }
+        }
+
+        public class PublicProfileDto
+        {
+            public int Id { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Bio { get; set; } = string.Empty;
+            public string Image { get; set; } = string.Empty;
+            public string FriendshipStatus { get; set; } = string.Empty;
+            public bool CanSendRequest { get; set; }
+            public bool IsOwnProfile { get; set; }
+        }
+
     }
 }
