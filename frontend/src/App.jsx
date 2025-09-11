@@ -15,6 +15,7 @@ import GroupChatPage from "./Pages/GroupChatPage";
 import CreateGroupPage from "./Pages/CreateGroupPage";
 import GroupManagePage from "./Pages/GroupManagePage";
 import { FriendsPage } from "./Pages/FriendsPage";
+import { SettingsPage } from "./Pages/Settings";
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
         <Route path="/chat/group/create" element={<CreateGroupPage />} />
         <Route path="/chat/group/manage/:groupId" element={<GroupManagePage />} />
         <Route path="/friends" element={<FriendsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         
       </Routes>
     </Router>
