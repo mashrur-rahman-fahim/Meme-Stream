@@ -432,6 +432,110 @@ namespace MemeStreamApi.controller
         }
 
         [Authorize]
+        [HttpGet("user/{userId}")]
+        public IActionResult GetPostsByUserId(int userId)
+        {
+            try
+            {
+                var currentUserIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(currentUserIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+
+                // Check if the target user exists and is verified
+                var targetUser = _context.Users.FirstOrDefault(u => u.Id == userId && u.IsEmailVerified);
+                if (targetUser == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                // Get user's original posts
+                var originalPosts = _context.Posts
+                    .Include(p => p.User)
+                    .Where(p => p.UserId == userId)
+                    .Select(p => new {
+                        Id = p.Id,
+                        Content = p.Content,
+                        Image = p.Image,
+                        CreatedAt = p.CreatedAt,
+                        UserId = p.UserId,
+                        User = new {
+                            Id = p.User.Id,
+                            Name = p.User.Name,
+                            Email = p.User.Email,
+                            Image = p.User.Image,
+                            Bio = p.User.Bio
+                        },
+                        IsShared = false,
+                        SharedBy = (object?)null,
+                        SharedAt = (DateTime?)null,
+                        OriginalPost = (object?)null
+                    })
+                    .ToList();
+
+                // Get user's shared posts
+                var sharedPosts = _context.SharedPosts
+                    .Include(sp => sp.Post)
+                        .ThenInclude(p => p.User)
+                    .Include(sp => sp.User)
+                    .Where(sp => sp.UserId == userId)
+                    .Select(sp => new {
+                        Id = sp.Id, // Use SharedPost ID for unique identification
+                        Content = sp.Post.Content,
+                        Image = sp.Post.Image,
+                        CreatedAt = sp.SharedAt, // Use share date for sorting
+                        UserId = sp.UserId,
+                        User = new {
+                            Id = sp.User.Id,
+                            Name = sp.User.Name,
+                            Email = sp.User.Email,
+                            Image = sp.User.Image,
+                            Bio = sp.User.Bio
+                        },
+                        IsShared = true,
+                        SharedBy = new {
+                            Id = sp.User.Id,
+                            Name = sp.User.Name,
+                            Email = sp.User.Email,
+                            Image = sp.User.Image,
+                            Bio = sp.User.Bio
+                        },
+                        SharedAt = sp.SharedAt,
+                        OriginalPost = new {
+                            Id = sp.Post.Id,
+                            User = new {
+                                Id = sp.Post.User.Id,
+                                Name = sp.Post.User.Name,
+                                Email = sp.Post.User.Email,
+                                Image = sp.Post.User.Image,
+                                Bio = sp.Post.User.Bio
+                            },
+                            CreatedAt = sp.Post.CreatedAt
+                        }
+                    })
+                    .ToList();
+
+                // Combine and sort by creation/share date
+                var allPosts = originalPosts.Cast<dynamic>()
+                    .Concat(sharedPosts.Cast<dynamic>())
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToList();
+
+                return Ok(new { 
+                    allPosts, 
+                    posts = originalPosts, 
+                    sharedPosts
+                });
+            }
+            catch (System.Exception ex)
+            {
+                Console.WriteLine($"Error in GetPostsByUserId: {ex.Message}");
+                return BadRequest("Error retrieving posts.");
+            }
+        }
+
+        [Authorize]
         [HttpDelete("delete/{id}")]
         public IActionResult DeletePost(int id)
         {

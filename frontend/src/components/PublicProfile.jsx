@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context";
 import { Navbar } from "./Navbar";
+import { PostCard } from "./PostCard";
 import api from "../utils/axios";
 import { FaUserPlus, FaUserTimes, FaClock, FaUserCheck, FaArrowLeft, FaUserCircle } from "react-icons/fa";
 import toast from "react-hot-toast";
@@ -15,6 +16,7 @@ export const PublicProfile = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [posts, setPosts] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     if (isVerified === false && !verifyLoading) {
@@ -24,9 +26,19 @@ export const PublicProfile = () => {
 
   useEffect(() => {
     if (isVerified && userId) {
+      fetchCurrentUser();
       fetchProfile();
     }
   }, [isVerified, userId]);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const userRes = await api.get("/User/profile");
+      setCurrentUser(userRes.data);
+    } catch (error) {
+      console.error("Error fetching current user data:", error);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -34,9 +46,8 @@ export const PublicProfile = () => {
       const response = await api.get(`/User/profile/${userId}`);
       setProfile(response.data);
       
-      // Fetch user's posts (you might want to create a separate endpoint for this)
-      // For now, we'll just set empty posts array
-      setPosts([]);
+      // Fetch user's posts
+      await fetchPosts();
     } catch (error) {
       console.error("Error fetching profile:", error);
       if (error.response?.status === 404) {
@@ -47,6 +58,17 @@ export const PublicProfile = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPosts = async () => {
+    try {
+      const response = await api.get(`/Post/user/${userId}`);
+      // Use allPosts which includes both original and shared posts, sorted by date
+      setPosts(response.data.allPosts || []);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      setPosts([]);
     }
   };
 
@@ -85,10 +107,11 @@ export const PublicProfile = () => {
   const handleAcceptRequest = async () => {
     try {
       setActionLoading(true);
-      // You would need to get the request ID from the backend or handle this differently
-      // For now, let's assume you have an endpoint that can accept by user ID
-      toast.info("Please accept the request from the Friends page");
-      navigate("/friends");
+      // Accept the friend request from this user
+      await api.post("/FriendRequest/accept", { senderId: parseInt(userId) });
+      toast.success("Friend request accepted!");
+      // Refresh profile to update friendship status
+      fetchProfile();
     } catch (error) {
       console.error("Error accepting friend request:", error);
       toast.error("Failed to accept friend request");
@@ -281,14 +304,17 @@ export const PublicProfile = () => {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-6">
-                  {posts.map((post) => (
-                    <div key={post.id} className="card bg-base-200 border border-base-300">
-                      {/* Post content would go here */}
-                      <div className="card-body">
-                        <p>Post content placeholder</p>
-                      </div>
-                    </div>
+                <div className="space-y-6">
+                  {currentUser && posts.map((post) => (
+                    <PostCard
+                      key={`post-${post.id}`}
+                      post={post}
+                      currentUser={currentUser}
+                      onEdit={null} // Don't allow editing on public profiles
+                      onDelete={null} // Don't allow deleting on public profiles
+                      onUnshare={null} // Don't allow unsharing on public profiles
+                      onChange={() => fetchPosts()} // Refresh posts if needed
+                    />
                   ))}
                 </div>
               )}
