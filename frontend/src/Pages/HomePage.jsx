@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState, useRef, useCallback } from "rea
 import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context";
 import { Post } from "../components/Post";
-import { FriendRequest } from "../components/FriendRequest";
+import { FriendsList } from "../components/FriendsList";
 import { Feed } from "../components/Feed";
 import { Navbar } from "../components/Navbar";
 
@@ -87,15 +87,15 @@ export const HomePage = () => {
               <Feed />
             </div>
 
-            {/* Right Sidebar - Friend Requests - Hidden on mobile */}
+            {/* Right Sidebar - Friends List - Hidden on mobile */}
             <div className="hidden xl:block xl:w-80 flex-shrink-0">
               <div className="sticky top-24">
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">
                     <h2 className="text-lg font-bold text-base-content mb-3">
-                      Friend Requests
+                      Friends
                     </h2>
-                    <FriendRequest />
+                    <FriendsList />
                   </div>
                 </div>
               </div>
