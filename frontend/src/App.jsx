@@ -15,7 +15,11 @@ import GroupChatPage from "./Pages/GroupChatPage";
 import CreateGroupPage from "./Pages/CreateGroupPage";
 import GroupManagePage from "./Pages/GroupManagePage";
 import { FriendsPage } from "./Pages/FriendsPage";
+<<<<<<< HEAD
 import { PublicProfile } from "./components/PublicProfile";
+=======
+import { SettingsPage } from "./Pages/Settings";
+>>>>>>> ea631ac38a4b4403b1f522a17a07367803227679
 
 function App() {
   return (
@@ -38,7 +42,11 @@ function App() {
         <Route path="/chat/group/create" element={<CreateGroupPage />} />
         <Route path="/chat/group/manage/:groupId" element={<GroupManagePage />} />
         <Route path="/friends" element={<FriendsPage />} />
+<<<<<<< HEAD
         <Route path="/profile/:userId" element={<PublicProfile />} />
+=======
+        <Route path="/settings" element={<SettingsPage />} />
+>>>>>>> ea631ac38a4b4403b1f522a17a07367803227679
         
       </Routes>
     </Router>
