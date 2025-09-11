@@ -305,11 +305,8 @@ namespace MemeStreamApi.controller
                 user.Bio = updateDto.Bio?.Trim() ?? string.Empty;
                 user.Email = updateDto.Email.Trim().ToLower();
                 
-                // Update image only if provided
-                if (!string.IsNullOrWhiteSpace(updateDto.Image))
-                {
-                    user.Image = updateDto.Image.Trim();
-                }
+                // Always update image (including empty string to remove image)
+                user.Image = updateDto.Image?.Trim() ?? string.Empty;
 
                 _context.SaveChanges();
 
@@ -344,9 +341,9 @@ namespace MemeStreamApi.controller
         {
             try
             {
-                if (imageDto == null || string.IsNullOrWhiteSpace(imageDto.ImageUrl))
+                if (imageDto == null)
                 {
-                    return BadRequest("Image URL is required.");
+                    return BadRequest("Image data is required.");
                 }
 
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
@@ -362,13 +359,50 @@ namespace MemeStreamApi.controller
                     return NotFound("User not found.");
                 }
 
-                user.Image = imageDto.ImageUrl.Trim();
+                // Allow empty string to remove image
+                user.Image = imageDto.ImageUrl?.Trim() ?? string.Empty;
                 _context.SaveChanges();
 
                 var response = new ImageUpdateResponseDto
                 { 
-                    Message = "Profile image updated successfully.",
+                    Message = string.IsNullOrEmpty(user.Image) ? "Profile image removed successfully." : "Profile image updated successfully.",
                     ImageUrl = user.Image
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ErrorResponseDto { Error = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpDelete("profile/image")]
+        public IActionResult RemoveProfileImage()
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+
+                int userId = int.Parse(userIdClaim);
+                var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                user.Image = string.Empty;
+                _context.SaveChanges();
+
+                var response = new ImageUpdateResponseDto
+                { 
+                    Message = "Profile image removed successfully.",
+                    ImageUrl = string.Empty
                 };
 
                 return Ok(response);

@@ -60,48 +60,15 @@ const ProfileEditModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
   };
 
   // Handle image removal
-  const handleImageRemove = async () => {
-    try {
-      // If there's a current image, we need to remove it from the backend
-      if (formData.image) {
-        toast.loading('Removing profile picture...', { id: 'remove' });
-        
-        // Call the backend to remove the image
-        await api.put('/User/profile', {
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          bio: formData.bio.trim(),
-          image: '' // Set image to empty string to remove it
-        });
-
-        toast.success('Profile picture removed successfully!', { id: 'remove' });
-        
-        // Update local state
-        setUploadedImageData(null);
-        setFormData(prev => ({
-          ...prev,
-          image: ''
-        }));
-        setIsDirty(true);
-        
-        // Update parent component
-        if (onUpdate) {
-          const updatedUser = { ...currentUser, image: '' };
-          onUpdate(updatedUser);
-        }
-      } else {
-        // If no image exists, just clear the local state
-        setUploadedImageData(null);
-        setFormData(prev => ({
-          ...prev,
-          image: ''
-        }));
-        setIsDirty(true);
-      }
-    } catch (error) {
-      console.error('Error removing image:', error);
-      toast.error('Failed to remove profile picture. Please try again.', { id: 'remove' });
-    }
+  const handleImageRemove = () => {
+    // Just remove the image from form state - user needs to save manually
+    setUploadedImageData(null);
+    setFormData(prev => ({
+      ...prev,
+      image: ''
+    }));
+    setIsDirty(true);
+    toast.success('Profile picture will be removed when you save changes');
   };
 
   // Validate form
@@ -213,11 +180,11 @@ const ProfileEditModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
             </label>
             
             {/* Current Profile Picture */}
-            {(currentUser?.image || formData.image) && !uploadedImageData && (
+            {formData.image && !uploadedImageData && (
               <div className="flex justify-center mb-4">
                 <div className="relative">
                   <img
-                    src={formData.image || currentUser?.image}
+                    src={formData.image}
                     alt="Current profile"
                     className="w-24 h-24 rounded-full object-cover border-4 border-base-300"
                   />
