@@ -286,7 +286,10 @@ export const FriendsPage = () => {
                           {(showMoreRequests ? friendRequests : friendRequests.slice(0, 3)).map((request) => (
                           <div key={request.id} className="p-3 bg-base-200 rounded-lg">
                             <div className="flex items-center gap-3 mb-3">
-                              <div className="avatar">
+                              <div 
+                                className="avatar cursor-pointer hover:scale-105 transition-transform"
+                                onClick={() => navigate(`/profile/${request.senderId}`)}
+                              >
                                 <div className="w-10 h-10 rounded-full bg-primary">
                                   {request.senderImage ? (
                                     <img src={request.senderImage} alt={request.senderName} />
@@ -298,7 +301,10 @@ export const FriendsPage = () => {
                                 </div>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm text-base-content truncate">
+                                <p 
+                                  className="font-medium text-sm text-base-content truncate cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() => navigate(`/profile/${request.senderId}`)}
+                                >
                                   {request.senderName}
                                 </p>
                                 <p className="text-xs text-base-content/50">
@@ -397,7 +403,10 @@ export const FriendsPage = () => {
                         {searchResults.slice(0, 3).map((user) => (
                           <div key={user.id} className="p-3 bg-base-200 rounded-lg">
                             <div className="flex items-center gap-3 mb-3">
-                              <div className="avatar">
+                              <div 
+                                className="avatar cursor-pointer hover:scale-105 transition-transform"
+                                onClick={() => navigate(`/profile/${user.id}`)}
+                              >
                                 <div className="w-10 h-10 rounded-full bg-primary">
                                   {user.image ? (
                                     <img src={user.image} alt={user.name} />
@@ -409,7 +418,10 @@ export const FriendsPage = () => {
                                 </div>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm text-base-content truncate">
+                                <p 
+                                  className="font-medium text-sm text-base-content truncate cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() => navigate(`/profile/${user.id}`)}
+                                >
                                   {user.name}
                                 </p>
                                 {user.bio && (
@@ -489,7 +501,10 @@ export const FriendsPage = () => {
                         <div key={friend.id} className="card bg-base-200 border border-base-300 hover:shadow-md transition-shadow">
                           <div className="card-body p-4">
                             <div className="flex flex-col items-center text-center">
-                              <div className="avatar mb-3">
+                              <div 
+                                className="avatar mb-3 cursor-pointer hover:scale-105 transition-transform"
+                                onClick={() => navigate(`/profile/${friend.friendId}`)}
+                              >
                                 <div className="w-16 h-16 rounded-full bg-primary">
                                   {friend.friendImage ? (
                                     <img src={friend.friendImage} alt={friend.friendName} className="rounded-full" />
@@ -501,7 +516,10 @@ export const FriendsPage = () => {
                                 </div>
                               </div>
                               
-                              <h3 className="font-semibold text-base-content mb-1">
+                              <h3 
+                                className="font-semibold text-base-content mb-1 cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => navigate(`/profile/${friend.friendId}`)}
+                              >
                                 {friend.friendName}
                               </h3>
                               
