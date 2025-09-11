@@ -53,7 +53,7 @@ export const HomePage = () => {
           <div className="flex flex-col lg:flex-row gap-6 px-2 sm:px-4">
             
             {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
-            <div className="hidden lg:block lg:w-72 flex-shrink-0">
+            <div className="hidden lg:block lg:w-80 flex-shrink-0">
               <div className="sticky top-24 space-y-4">
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">
@@ -88,7 +88,7 @@ export const HomePage = () => {
             </div>
 
             {/* Right Sidebar - Friends List - Hidden on mobile */}
-            <div className="hidden xl:block xl:w-72 flex-shrink-0">
+            <div className="hidden xl:block xl:w-80 flex-shrink-0">
               <div className="sticky top-24 space-y-4">
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">

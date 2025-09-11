@@ -47,12 +47,12 @@ export const FriendsPage = () => {
       setSearchLoading(true);
       try {
         const response = await api.get(
-          `/FriendRequest/search-users/${encodeURIComponent(query)}`
+          `/FriendRequest/search-friends/${encodeURIComponent(query)}`
         );
         setSearchResults(response.data);
         setMessage("");
       } catch (error) {
-        setMessage("Error searching users");
+        setMessage("Error searching friends");
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
@@ -375,13 +375,13 @@ export const FriendsPage = () => {
                   <div className="card-body p-4">
                     <h2 className="text-lg font-bold text-base-content flex items-center gap-2 mb-4">
                       <FaSearch className="text-primary" />
-                      Find Friends
+                      Search Friends
                     </h2>
                     
                     <div className="form-control mb-4">
                       <input
                         type="text"
-                        placeholder="Search by name..."
+                        placeholder="Search your friends..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="input input-bordered input-sm w-full"
@@ -420,37 +420,18 @@ export const FriendsPage = () => {
                               </div>
                             </div>
                             
-                            {user.friendshipStatus === "Friend" && (
-                              <div className="flex gap-2">
-                                <button className="btn btn-primary btn-xs flex-1">
-                                  Message
-                                </button>
-                                <button
-                                  onClick={() => unfriendUser(user.id, user.name)}
-                                  className="btn btn-ghost btn-xs text-error"
-                                >
-                                  Unfriend
-                                </button>
-                              </div>
-                            )}
-                            {user.friendshipStatus === "Request Sent" && (
-                              <div className="text-center text-info text-xs py-2">
-                                ✓ Request sent
-                              </div>
-                            )}
-                            {user.friendshipStatus === "Request Received" && (
-                              <div className="text-center text-warning text-xs py-2">
-                                Sent you a request
-                              </div>
-                            )}
-                            {user.canSendRequest && (
-                              <button
-                                onClick={() => sendFriendRequest(user.id)}
-                                className="btn btn-primary btn-xs gap-1 w-full"
-                              >
-                                <FaUserPlus className="text-xs" /> Add Friend
+                            {/* Since we're searching only friends, show friend actions */}
+                            <div className="flex gap-2">
+                              <button className="btn btn-primary btn-xs flex-1">
+                                Message
                               </button>
-                            )}
+                              <button
+                                onClick={() => unfriendUser(user.id, user.name)}
+                                className="btn btn-ghost btn-xs text-error"
+                              >
+                                Unfriend
+                              </button>
+                            </div>
                           </div>
                         ))}
                         {searchResults.length > 3 && (
@@ -461,11 +442,11 @@ export const FriendsPage = () => {
                       </div>
                     ) : searchQuery && !searchLoading ? (
                       <p className="text-base-content/60 text-sm text-center py-4">
-                        No users found for "{searchQuery}"
+                        No friends found matching "{searchQuery}"
                       </p>
                     ) : (
                       <p className="text-base-content/60 text-sm text-center py-4">
-                        Enter a name to search
+                        Search among your friends
                       </p>
                     )}
                   </div>
