@@ -7,27 +7,44 @@ import { Feed } from "../components/Feed";
 import { Navbar } from "../components/Navbar";
 
 export const HomePage = () => {
-  const { isVerified, verifyUser, loading, logout } = useContext(VerifyContext);
+  const { isVerified, loading, logout } = useContext(VerifyContext);
   const navigate = useNavigate();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
 
   useEffect(() => {
-    verifyUser();
-  }, []);
-
-  useEffect(() => {
-    if (!isVerified && !loading) {
+    if (isVerified === false && !loading) {
       navigate("/auth");
+    } else if (isVerified === true && !pageReady) {
+      // Give components time to mount and start fetching data
+      // This prevents showing the page until everything is ready
+      setTimeout(() => setPageReady(true), 100);
     }
-  }, [isVerified, navigate, loading]);
+  }, [isVerified, navigate, loading, pageReady]);
 
   const handleLogout = () => {
     logout();
     navigate("/auth");
   };
 
+  // Show loading while authentication is in progress OR page is not ready yet
+  if (loading || isVerified === null || (isVerified === true && !pageReady)) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <div className="text-center">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="mt-4 text-base-content">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isVerified === false) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-base-200">
+    <div className="min-h-screen bg-base-200 animate-fadeIn">
       <Navbar />
 
       <div className="pt-20 pb-4">

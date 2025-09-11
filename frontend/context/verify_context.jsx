@@ -3,22 +3,40 @@ import api from "../src/utils/axios.js";
 import { VerifyContext } from "./create_verify_context";
 
 export const VerifyProvider = ({ children }) => {
-  const [isVerified, setIsVerified] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Check if token exists synchronously to avoid flicker
+  const token = localStorage.getItem("token");
+  const hasToken = !!token;
+  
+  // If we have a token, assume verified initially to prevent flash
+  // Will be corrected if token is invalid
+  const [isVerified, setIsVerified] = useState(hasToken ? null : false);
+  const [loading, setLoading] = useState(hasToken);
   const verifyUser = async () => {
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      setIsVerified(false);
+      setLoading(false);
+      return;
+    }
+    
     try {
-      setLoading(true);
+      // Don't set loading to true if it's already true (avoid re-render)
+      
       const res = await api.get("/Verification/verify", {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       if (res.status === 200) {
         setIsVerified(true);
+      } else {
+        setIsVerified(false);
       }
     } catch (error) {
       console.error("Error verifying user:", error);
+      setIsVerified(false);
     } finally {
       setLoading(false);
     }

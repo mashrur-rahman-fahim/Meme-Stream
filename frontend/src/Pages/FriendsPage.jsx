@@ -6,7 +6,7 @@ import api from "../utils/axios";
 import { FaUserPlus, FaSearch, FaUserFriends, FaBell } from "react-icons/fa";
 
 export const FriendsPage = () => {
-  const { isVerified, verifyUser, loading: verifyLoading } = useContext(VerifyContext);
+  const { isVerified, loading: verifyLoading } = useContext(VerifyContext);
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState("friends");
@@ -17,16 +17,6 @@ export const FriendsPage = () => {
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    verifyUser();
-  }, []);
-
-  useEffect(() => {
-    if (!isVerified && !verifyLoading) {
-      navigate("/auth");
-    }
-  }, [isVerified, navigate, verifyLoading]);
 
   // Debounce for search
   const debounce = useCallback((func, delay) => {
@@ -153,6 +143,27 @@ export const FriendsPage = () => {
       setTimeout(() => setMessage(""), 3000);
     }
   };
+
+  useEffect(() => {
+    if (isVerified === false && !verifyLoading) {
+      navigate("/auth");
+    }
+  }, [isVerified, navigate, verifyLoading]);
+
+  if (verifyLoading || isVerified === null) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center transition-opacity duration-300">
+        <div className="text-center">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="mt-4 text-base-content animate-pulse">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isVerified === false) {
+    return null;
+  }
 
   const getTabCount = (tab) => {
     if (tab === "friends") return friends.length;

@@ -6,12 +6,13 @@ import toast from "react-hot-toast";
 
 export const Feed = () => {
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);  // Start with false to prevent initial loading state
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isInitialFetch, setIsInitialFetch] = useState(true);
   
   // Refs for infinite scroll
   const observerRef = useRef();
@@ -45,8 +46,12 @@ export const Feed = () => {
   const fetchFeed = useCallback(
     async (pageNum = 1, isLoadMore = false) => {
       try {
-        if (!isLoadMore) setLoading(true);
-        else setLoadingMore(true);
+        // Only set loading for user-initiated actions, not initial load
+        if (!isLoadMore && !isInitialFetch) {
+          setLoading(true);
+        } else if (isLoadMore) {
+          setLoadingMore(true);
+        }
 
         const result = await feedService.getFeed(pageNum, 20);
 
@@ -70,9 +75,12 @@ export const Feed = () => {
       } finally {
         setLoading(false);
         setLoadingMore(false);
+        if (isInitialFetch) {
+          setIsInitialFetch(false);
+        }
       }
     },
-    []
+    [isInitialFetch]
   );
 
   const loadMore = useCallback(() => {
@@ -123,6 +131,7 @@ export const Feed = () => {
     fetchFeed();
   }, []);
 
+  // Show loading spinner only for user-initiated refreshes, not initial load
   if (loading && posts.length === 0) {
     return (
       <div className="flex justify-center items-center py-8">
