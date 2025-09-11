@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/axios';
 import toast from 'react-hot-toast';
-import { FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { FaTrashAlt, FaExclamationTriangle, FaArrowLeft } from 'react-icons/fa';
 import { VerifyContext } from "../../context/create_verify_context";
 
 export const SettingsPage = () => {
@@ -68,7 +68,15 @@ export const SettingsPage = () => {
     <>
       <div className="bg-base-300 min-h-screen p-4 sm:p-8">
         <div className="max-w-2xl mx-auto space-y-8">
-          <h1 className="text-4xl font-bold text-base-content">Settings</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="btn btn-ghost btn-circle"
+            >
+              <FaArrowLeft className="text-xl" />
+            </button>
+            <h1 className="text-4xl font-bold text-base-content">Settings</h1>
+          </div>
 
           {/* Danger Zone Section */}
           <div className="card bg-base-100 shadow-xl border border-error">
