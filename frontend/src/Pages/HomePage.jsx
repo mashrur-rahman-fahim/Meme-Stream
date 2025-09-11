@@ -33,10 +33,10 @@ export const HomePage = () => {
       <div className="pt-20 pb-4">
         {/* Main Container */}
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-4 px-2 sm:px-4 lg:h-[calc(100vh-6rem)]">
+          <div className="flex flex-col lg:flex-row gap-4 px-2 sm:px-4 lg:h-[calc(100vh-6rem)] scrollbar-hide">
             
             {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
-            <div className="hidden lg:block lg:w-80 flex-shrink-0 lg:overflow-y-auto">
+            <div className="hidden lg:block lg:w-80 flex-shrink-0 group overflow-y-auto scrollbar-hide">
               <div>
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">
@@ -50,7 +50,7 @@ export const HomePage = () => {
             </div>
 
             {/* Main Feed Container */}
-            <div className="flex-1 min-w-0 lg:overflow-y-auto">
+            <div className="flex-1 min-w-0 lg:overflow-y-auto lg:scrollbar-hide">
               {/* Mobile Create Post Button */}
               <div className="lg:hidden mb-4">
                 <button
@@ -71,7 +71,7 @@ export const HomePage = () => {
             </div>
 
             {/* Right Sidebar - Friend Requests - Hidden on mobile */}
-            <div className="hidden xl:block xl:w-80 flex-shrink-0 lg:overflow-y-auto">
+            <div className="hidden xl:block xl:w-80 flex-shrink-0 lg:overflow-y-auto scrollbar-hide">
               <div>
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">
