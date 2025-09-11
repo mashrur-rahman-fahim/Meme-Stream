@@ -1,20 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/axios';
 import toast from 'react-hot-toast';
 import { FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { VerifyContext } from "../../context/create_verify_context";
 
 export const SettingsPage = () => {
+  const { isVerified, verifyUser, loading, logout } = useContext(VerifyContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
-  
+
   // The exact phrase the user must type to enable the delete button
   const requiredConfirmText = 'DELETE MY ACCOUNT';
 
+  useEffect(() => {
+    verifyUser();
+  }, []);
+
+  useEffect(() => {
+    if (!isVerified && !loading) {
+      navigate("/auth");
+    }
+  }, [isVerified, loading, navigate]);
+
   const handleOpenModal = () => setIsModalOpen(true);
-  
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setConfirmText('');
@@ -32,15 +44,9 @@ export const SettingsPage = () => {
 
     try {
       await api.delete('/User/delete');
-      
       toast.success("Account deleted successfully.", { id: toastId });
-
-      localStorage.removeItem('token');
-
-      // Redirect to the auth page after a short delay
-      setTimeout(() => {
-        navigate('/auth');
-      }, 1500);
+      logout();
+      navigate("/auth");
 
     } catch (error) {
       toast.error("Failed to delete account. Please try again.", { id: toastId });
@@ -48,6 +54,15 @@ export const SettingsPage = () => {
       setIsDeleting(false);
     }
   };
+
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-base-300">
+        <div className="loading loading-bars loading-lg text-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -65,7 +80,7 @@ export const SettingsPage = () => {
               <p className="text-base-content/80">
                 These actions are permanent and cannot be undone. Please proceed with caution.
               </p>
-              
+
               <div className="divider"></div>
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -75,8 +90,8 @@ export const SettingsPage = () => {
                     Once you delete your account, all of your posts, comments, and data will be permanently removed.
                   </p>
                 </div>
-                <button 
-                  onClick={handleOpenModal} 
+                <button
+                  onClick={handleOpenModal}
                   className="btn btn-error w-full sm:w-auto flex-shrink-0"
                 >
                   <FaTrashAlt />
@@ -114,8 +129,8 @@ export const SettingsPage = () => {
               <button onClick={handleCloseModal} className="btn btn-ghost" disabled={isDeleting}>
                 Cancel
               </button>
-              <button 
-                onClick={handleDeleteAccount} 
+              <button
+                onClick={handleDeleteAccount}
                 className="btn btn-error"
                 // Disable button until the user types the exact phrase
                 disabled={confirmText !== requiredConfirmText || isDeleting}
