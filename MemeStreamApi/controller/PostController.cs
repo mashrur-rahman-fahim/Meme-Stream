@@ -327,7 +327,8 @@ namespace MemeStreamApi.controller
                     .Include(sp => sp.Post)
                         .ThenInclude(p => p.User)
                     .Include(sp => sp.User)
-                    .Where(sp => sp.UserId != userId) // Exclude user's own shares from feed
+                    .Where(sp => sp.UserId != userId && // Exclude user's own shares from feed
+                                sp.Post.UserId != userId) // Exclude shares of user's own posts
                     .Select(sp => new {
                         Id = sp.Post.Id,
                         Content = sp.Post.Content,
@@ -404,28 +405,50 @@ namespace MemeStreamApi.controller
                 baseScore += 50.0;
             }
             
-            // Time decay - newer posts are preferred
-            if (daysOld == 0) baseScore += 30.0; // Today
-            else if (daysOld == 1) baseScore += 25.0; // Yesterday
-            else if (daysOld <= 3) baseScore += 20.0; // Last 3 days
-            else if (daysOld <= 7) baseScore += 15.0; // Last week
+            // Time decay - newer posts are preferred with exponential decay
+            if (daysOld == 0) baseScore += 35.0; // Today - increased from 30
+            else if (daysOld == 1) baseScore += 28.0; // Yesterday - increased from 25
+            else if (daysOld <= 3) baseScore += 22.0; // Last 3 days - increased from 20
+            else if (daysOld <= 7) baseScore += 16.0; // Last week - increased from 15
             else if (daysOld <= 14) baseScore += 10.0; // Last 2 weeks
-            else if (daysOld <= 30) baseScore += 5.0; // Last month
-            else baseScore -= 10.0; // Very old posts get penalty
+            else if (daysOld <= 30) baseScore += 3.0; // Last month - decreased from 5
+            else baseScore -= 15.0; // Very old posts get bigger penalty
             
-            // Engagement bonus
-            baseScore += engagementScore * 2.0;
+            // Enhanced engagement scoring with diminishing returns
+            if (engagementScore > 0)
+            {
+                // Use logarithmic scaling to prevent extremely popular posts from dominating
+                baseScore += Math.Log(engagementScore + 1) * 5.0; // More balanced than linear 2.0
+            }
             
             // Special case: Fresh friend posts (within 3 days) get extra boost
             if (isFriend && daysOld <= 3)
             {
-                baseScore += 20.0;
+                baseScore += 25.0; // Increased from 20
             }
             
             // Special case: High engagement non-friend posts can compete with old friend posts
             if (!isFriend && engagementScore >= 5)
             {
-                baseScore += 15.0;
+                baseScore += 18.0; // Increased from 15
+            }
+            
+            // Viral content bonus - posts with exceptional engagement get extra boost
+            if (engagementScore >= 10)
+            {
+                baseScore += 25.0;
+            }
+            
+            // Content freshness bonus for very recent posts (within 6 hours)
+            if (daysOld == 0)
+            {
+                baseScore += 10.0; // Extra boost for very fresh content
+            }
+            
+            // Diversity bonus for non-friend content to ensure feed variety
+            if (!isFriend && engagementScore >= 2)
+            {
+                baseScore += 8.0; // Small boost to promote discovery
             }
             
             return baseScore;
