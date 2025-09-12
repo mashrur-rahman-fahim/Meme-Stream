@@ -418,7 +418,8 @@ namespace MemeStreamApi.controller
                         DaysOld = (int)(now - p.CreatedAt).TotalDays,
                         IsShared = false,
                         SharedBy = (object?)null,
-                        SharedAt = (DateTime?)null
+                        SharedAt = (DateTime?)null,
+                        HasUserShared = _context.SharedPosts.Any(sp => sp.PostId == p.Id && sp.UserId == userId)
                     })
                     .ToList(); // Execute query first
                 
@@ -456,7 +457,8 @@ namespace MemeStreamApi.controller
                             Image = sp.User.Image,
                             Bio = sp.User.Bio
                         },
-                        SharedAt = sp.SharedAt
+                        SharedAt = sp.SharedAt,
+                        HasUserShared = _context.SharedPosts.Any(sp2 => sp2.PostId == sp.Post.Id && sp2.UserId == userId)
                     })
                     .ToList();
                 

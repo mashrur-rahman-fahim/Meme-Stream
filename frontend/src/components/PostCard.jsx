@@ -29,6 +29,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const [commentsLoaded, setCommentsLoaded] = useState(false);
   const [isLoadingReactions, setIsLoadingReactions] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [hasUserShared, setHasUserShared] = useState(post.hasUserShared || false);
 
   const isOriginalPost = !post.isShared;
   const targetPostId = isOriginalPost ? post.id : (post.originalPost?.id || post.id);
@@ -46,8 +47,8 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     [isOriginalPost, currentUser?.id, sharer?.id]
   );
   const canShare = useMemo(() => 
-    currentUser?.id !== author?.id, // User can't share their own post
-    [currentUser?.id, author?.id]
+    currentUser?.id !== author?.id && !hasUserShared, // User can't share their own post or share again
+    [currentUser?.id, author?.id, hasUserShared]
   );
   const showOptions = canDeleteOrEdit || canUnshare;
 
@@ -207,6 +208,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
 
       if (result.success) {
         toast.success("Post shared successfully!", { id: toastId });
+        setHasUserShared(true); // Update state to reflect that user has shared this post
         if (onChange) onChange();
       } else {
         toast.error(result.error, { id: toastId });

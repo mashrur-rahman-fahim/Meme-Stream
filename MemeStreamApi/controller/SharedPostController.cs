@@ -46,7 +46,27 @@ namespace MemeStreamApi.controller
         {
             try
             {
-                var userId = User.GetUserId();
+                // Validate shareDto
+                if (shareDto == null)
+                {
+                    return BadRequest("Invalid request data.");
+                }
+                
+                if (shareDto.PostId <= 0)
+                {
+                    return BadRequest("Invalid post ID.");
+                }
+                
+                int userId;
+                try
+                {
+                    userId = User.GetUserId();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.WriteLine($"Error getting user ID: {ex.Message}");
+                    return Unauthorized("Invalid authentication token.");
+                }
                 
                 // Check if post exists and get post author info
                 var post = await _context.Posts
