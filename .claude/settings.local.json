@@ -22,8 +22,7 @@
       "Bash(git reset:*)",
       "Bash(tasklist:*)",
       "Bash(npm run build:*)",
-      "Bash(dir F:MemeStream)",
-      "Bash(dir:*)"
+      "Bash(dir F:MemeStream)"
     ],
     "deny": [],
     "ask": []
