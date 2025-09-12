@@ -37,7 +37,7 @@ builder.Services.AddAuthentication(options =>
         {
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
+            if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/chathub") || path.StartsWithSegments("/notificationhub")))
             {
                 context.Token = accessToken;
             }
@@ -96,6 +96,9 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Register notification services
 builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Register LaughScore service
+builder.Services.AddScoped<ILaughScoreService, LaughScoreService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();

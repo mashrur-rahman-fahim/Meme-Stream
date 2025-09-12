@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../utils/axios";
 
 const CreateGroupPage = () => {
   const [groupName, setGroupName] = useState("");
@@ -7,10 +7,8 @@ const CreateGroupPage = () => {
 
   const handleCreate = async () => {
     try {
-      await axios.post("http://localhost:5216/api/chat/group", {
+      await api.post("/chat/group", {
         name: groupName,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       alert("Group created!");
       setGroupName("");

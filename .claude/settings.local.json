@@ -11,7 +11,12 @@
       "Bash(taskkill:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(curl:*)",
+      "Bash(cmd /c:*)",
+      "Bash(cat:*)",
+      "Bash(psql:*)",
+      "Bash(tasklist)"
     ],
     "deny": [],
     "ask": []

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
-import axios from "axios";
+import api from "../utils/axios";
+import { getApiBaseUrl } from "../utils/api-config";
 import {
   startSignalRConnection,
   sendPrivateMessage,
@@ -32,10 +33,10 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
 
     const fetchHistory = async () => {
       try {
-        const res = await axios.get(
+        const res = await api.get(
           groupName
-            ? `http://localhost:5216/api/chat/group/${groupName.replace("group-", "")}/messages`
-            : `http://localhost:5216/api/chat/private/${receiverId}`,
+            ? `/chat/group/${groupName.replace("group-", "")}/messages`
+            : `/chat/private/${receiverId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -202,8 +203,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
     if (groupName) formData.append("groupId", groupName.replace("group-", ""));
 
     try {
-      const res = await axios.post("http://localhost:5216/api/chat/upload", formData, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.post("/chat/upload", formData, {
       });
 
       setChatLog((prev) => [
@@ -243,7 +243,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
                 {entry.filePath && (
                   <div className="mt-2">
                     <a
-                      href={`http://localhost:5216/${entry.filePath}`}
+                      href={`${getApiBaseUrl().replace('/api', '')}/${entry.filePath}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 underline"

@@ -1,4 +1,5 @@
 import * as signalR from "@microsoft/signalr";
+import { getWebSocketUrl } from "../utils/api-config";
 
 let connection = null;
 
@@ -10,7 +11,7 @@ export const startSignalRConnection = async (
   onTypingStatus
 ) => {
   connection = new signalR.HubConnectionBuilder()
-    .withUrl("http://localhost:5216/chathub", {
+    .withUrl(`${getWebSocketUrl()}/chathub`, {
       accessTokenFactory: () => token,
     })
     .withAutomaticReconnect()

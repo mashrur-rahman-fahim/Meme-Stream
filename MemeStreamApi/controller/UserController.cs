@@ -23,10 +23,12 @@ namespace MemeStreamApi.controller
     {
         private readonly MemeStreamDbContext _context;
         private readonly IEmailService _emailService;
-        public UserController(MemeStreamDbContext context, IEmailService emailService)
+        private readonly ILaughScoreService _laughScoreService;
+        public UserController(MemeStreamDbContext context, IEmailService emailService, ILaughScoreService laughScoreService)
         {
             _context = context;
             _emailService = emailService;
+            _laughScoreService = laughScoreService;
         }
         public class RegisterDto
         {
@@ -480,7 +482,7 @@ namespace MemeStreamApi.controller
         }
         [Authorize]
         [HttpGet("profile")]
-        public IActionResult GetProfile()
+        public async Task<IActionResult> GetProfile()
         {
             try
             {
@@ -495,7 +497,25 @@ namespace MemeStreamApi.controller
                 {
                     return NotFound("User not found.");
                 }
-                return Ok(user);
+                
+                // Get detailed LaughScore breakdown
+                var laughScoreBreakdown = await _laughScoreService.GetDetailedLaughScoreAsync(userId);
+                
+                var userProfile = new
+                {
+                    user.Id,
+                    user.Name,
+                    user.Email,
+                    user.Image,
+                    user.Bio,
+                    user.CreatedAt,
+                    user.IsEmailVerified,
+                    user.LaughScore,
+                    user.LastLaughScoreUpdate,
+                    LaughScoreDetails = laughScoreBreakdown
+                };
+                
+                return Ok(userProfile);
             }
             catch (Exception ex)
             {
@@ -505,7 +525,7 @@ namespace MemeStreamApi.controller
 
         [Authorize]
         [HttpGet("profile/{userId}")]
-        public IActionResult GetPublicProfile(int userId)
+        public async Task<IActionResult> GetPublicProfile(int userId)
         {
             try
             {
@@ -557,6 +577,9 @@ namespace MemeStreamApi.controller
                     canSendRequest = false;
                 }
 
+                // Get LaughScore breakdown for public profile
+                var laughScoreBreakdown = await _laughScoreService.GetDetailedLaughScoreAsync(userId);
+                
                 var publicProfile = new PublicProfileDto
                 {
                     Id = user.Id,
@@ -565,7 +588,10 @@ namespace MemeStreamApi.controller
                     Image = user.Image,
                     FriendshipStatus = friendshipStatus,
                     CanSendRequest = canSendRequest,
-                    IsOwnProfile = currentUserId == userId
+                    IsOwnProfile = currentUserId == userId,
+                    LaughScore = user.LaughScore,
+                    FunninessLevel = laughScoreBreakdown.FunninessLevel,
+                    LastLaughScoreUpdate = user.LastLaughScoreUpdate
                 };
 
                 return Ok(publicProfile);
@@ -586,6 +612,9 @@ namespace MemeStreamApi.controller
             public string FriendshipStatus { get; set; } = string.Empty;
             public bool CanSendRequest { get; set; }
             public bool IsOwnProfile { get; set; }
+            public int LaughScore { get; set; }
+            public string FunninessLevel { get; set; } = string.Empty;
+            public DateTime? LastLaughScoreUpdate { get; set; }
         }
 
     }
