@@ -18,6 +18,7 @@ export const VirtualScrollFeed = ({
 }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(window.innerHeight);
+  const [showEndMessage, setShowEndMessage] = useState(false);
   const containerRef = useRef();
   const scrollElementRef = useRef();
 
@@ -87,6 +88,17 @@ export const VirtualScrollFeed = ({
     }
   }, [throttledHandleScroll]);
 
+  // Only show "all caught up" message when we're absolutely certain there are no more posts
+  useEffect(() => {
+    if (!hasMore && posts.length > 0 && !loading) {
+      // Longer delay to ensure posts are fully rendered
+      const timer = setTimeout(() => setShowEndMessage(true), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowEndMessage(false);
+    }
+  }, [hasMore, posts.length, loading]);
+
   const totalHeight = posts.length * ITEM_HEIGHT;
   const offsetY = visibleRange.startIndex * ITEM_HEIGHT;
 
@@ -137,7 +149,7 @@ export const VirtualScrollFeed = ({
         )}
 
         {/* End of feed indicator */}
-        {!hasMore && posts.length > 0 && (
+        {showEndMessage && (
           <div className="text-center py-8">
             <div className="text-2xl mb-2">✨</div>
             <p className="text-base-content/60 text-sm">
