@@ -32,15 +32,10 @@ namespace MemeStreamApi.data
 
         public DbSet<MessageReadReceipt> MessageReadReceipts { get; set; }
 
-        // public DbSet<GroupMessageRead> GroupMessageReads { get; set; }
-
-
-
-
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
@@ -49,6 +44,13 @@ namespace MemeStreamApi.data
                 .HasIndex(r => new { r.MessageId, r.ReactorId })
                 .IsUnique();
 
+            // Configure Comment self-referencing relationship for replies
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.ParentComment)
+                .WithMany(c => c.Replies)
+                .HasForeignKey(c => c.ParentCommentId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete issues
         }
     }
 }

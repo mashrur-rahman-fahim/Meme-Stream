@@ -1,385 +1,273 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { VerifyContext } from "../../context/create_verify_context";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/axios";
 import feedService from "../services/feedService";
+import { PostCard } from "../components/PostCard";
+import { ConfirmationModal } from "../components/ConfirmationModal";
+import { Navbar } from "../components/Navbar";
+import ProfileEditModal from "../components/ProfileEditModal";
+import toast from "react-hot-toast";
+import {
+  FaUserEdit,
+  FaClipboardList,
+  FaUserCircle,
+  FaUserFriends,
+} from "react-icons/fa";
 
 export const ProfilePage = () => {
-  const [user, setUser] = useState({
-    name: "",
-    email: "",
-    bio: "",
-    image: "",
-  });
+  const [user, setUser] = useState({ name: "", email: "", bio: "", image: "" });
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("posts"); // "posts" or "edit"
+  const [activeTab, setActiveTab] = useState("posts");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // for confirmation modal:
+  const [confirmState, setConfirmState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+    confirmText: 'Confirm',
+    confirmButtonClass: 'btn-primary',
+  });
+  const [isConfirming, setIsConfirming] = useState(false);
 
-  const {
-    isVerified,
-    verifyUser,
-    loading: verifyLoading,
-  } = useContext(VerifyContext);
+  const { isVerified, loading: verifyLoading } = useContext(VerifyContext);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    verifyUser();
+  const fetchUserData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const userRes = await api.get("/User/profile");
+      setUser(userRes.data);
+
+      const postsRes = await feedService.getUserPosts();
+      if (postsRes.success) {
+        setPosts(postsRes.data.allPosts || []);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Handle profile update from the modal
+  const handleProfileUpdate = useCallback((updatedUser) => {
+    setUser(updatedUser);
+    // Optionally refresh user data to ensure consistency
+    // fetchUserData();
+  }, []);
+
+  const handleDeletePost = useCallback(async (postId) => {
+    setConfirmState({
+      isOpen: true,
+      title: 'Delete Post',
+      message: 'Are you sure you want to permanently delete this post?',
+      onConfirm: () => performDeletePost(postId),
+      confirmText: 'Delete',
+      confirmButtonClass: 'btn-error',
+    });
+  }, []);
+
+  const performDeletePost = async (postId) => {
+    setIsConfirming(true);
+    const result = await feedService.deletePost(postId);
+    if (result.success) {
+      toast.success("Post deleted successfully!");
+      fetchUserData();
+    } else {
+      toast.error(`Failed to delete post`);
+    }
+    setIsConfirming(false);
+    setConfirmState({ isOpen: false });
+  };
+
+  const handleUnsharePost = useCallback(async (postId) => {
+    setConfirmState({
+      isOpen: true,
+      title: 'Unshare Post',
+      message: 'Are you sure you want to unshare this post?',
+      onConfirm: () => performUnsharePost(postId),
+      confirmText: 'Unshare',
+      confirmButtonClass: 'btn-warning',
+    });
+  }, []);
+
+  const performUnsharePost = async (postId) => {
+    setIsConfirming(true);
+    const result = await feedService.unsharePost(postId);
+    if (result.success) {
+      toast.success("Post unshared successfully!");
+      fetchUserData();
+    } else {
+      toast.error(`Failed to unshare post`);
+    }
+    setIsConfirming(false);
+    setConfirmState({ isOpen: false });
+  };
+
+  const handleEditPost = useCallback((postId, currentContent) => {
+    alert(`Editing Post ID: ${postId}\nCurrent Content: ${currentContent}`);
+  }, []);
+
+  const openEditModal = useCallback(() => {
+    setIsEditModalOpen(true);
   }, []);
 
   useEffect(() => {
-    if (!isVerified && !verifyLoading) {
+    if (isVerified === false && !verifyLoading) {
       navigate("/auth");
     }
   }, [isVerified, navigate, verifyLoading]);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true);
-        // Fetch user profile
-        const userRes = await api.get("/User/profile");
-        setUser(userRes.data);
-
-        // Fetch user posts (including shared posts)
-        const postsRes = await feedService.getUserPosts();
-        if (postsRes.success) {
-          setPosts(postsRes.data.allPosts || []);
-        }
-      } catch (error) {
-        console.log("Error fetching user data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (isVerified) {
       fetchUserData();
     }
-  }, [isVerified]);
+  }, [isVerified, fetchUserData]);
 
-  const handleDelete = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete your account? This action cannot be undone."
-      )
-    ) {
-      await api.delete("/User/delete");
-      localStorage.removeItem("token");
-      navigate("/auth");
-    }
-  };
+  if (verifyLoading || isVerified === null) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center transition-opacity duration-300">
+        <div className="text-center">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="mt-4 text-base-content animate-pulse">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await api.put("/User/profile", user);
-      alert("Profile updated successfully!");
-    } catch (error) {
-      console.log("Error updating profile:", error);
-      alert("Failed to update profile");
-    }
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now - date) / (1000 * 60 * 60);
-
-    if (diffInHours < 1) return "Just now";
-    if (diffInHours < 24) return `${Math.floor(diffInHours)}h ago`;
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
-    return `${Math.floor(diffInHours / 168)}w ago`;
-  };
+  if (isVerified === false) {
+    return null;
+  }
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="loading loading-spinner loading-lg text-green-400"></div>
+      <div className="flex justify-center items-center min-h-screen bg-base-300">
+        <div className="loading loading-bars loading-lg text-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Profile Header */}
-        <div className="card bg-slate-600/50 backdrop-blur-md border border-slate-500/50 mb-6">
-          <div className="card-body p-6">
+    <div className="bg-base-300 min-h-screen">
+      <Navbar />
+      <div className="max-w-5xl mx-auto pt-20">
+        <div className="bg-base-200 shadow-lg rounded-b-lg">
+          <div className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row items-center gap-6">
-              {/* Profile Image */}
               <div className="avatar">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-4xl font-bold">
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full ring-4 ring-primary ring-offset-base-100 ring-offset-2 bg-base-100">
                   {user.image ? (
-                    <img
-                      src={user.image}
-                      alt={user.name}
-                      className="w-full h-full rounded-full object-cover"
-                    />
+                    <img src={user.image} alt={user.name} />
                   ) : (
-                    user.name.charAt(0).toUpperCase()
+                    <span className="text-6xl text-base-content flex items-center justify-center w-full h-full">
+                      {user.name.charAt(0).toUpperCase()}
+                    </span>
                   )}
                 </div>
               </div>
 
-              {/* Profile Info */}
               <div className="text-center md:text-left flex-1">
-                <h1 className="text-3xl font-bold text-slate-100 mb-2">
-                  {user.name}
-                </h1>
-                <p className="text-slate-300 mb-2">{user.email}</p>
+                <h1 className="text-4xl font-bold text-base-content">{user.name}</h1>
+                <p className="text-base-content/60 mt-1">{user.email}</p>
                 {user.bio && (
-                  <p className="text-slate-400 max-w-md">{user.bio}</p>
+                  <p className="text-base-content/80 mt-3 max-w-lg">{user.bio}</p>
                 )}
-                <div className="flex gap-2 mt-4 justify-center md:justify-start">
-                  <div className="stat bg-slate-700/50 rounded-lg px-4 py-2">
-                    <div className="stat-value text-lg text-green-400">
-                      {posts.length}
-                    </div>
-                    <div className="stat-desc text-slate-300">Posts</div>
-                  </div>
-                </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Navigation Tabs */}
-        <div className="tabs tabs-boxed bg-slate-600/50 mb-6">
-          <button
-            className={`tab ${activeTab === "posts" ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("posts")}
-          >
-            📝 My Posts
-          </button>
-          <button
-            className={`tab ${activeTab === "edit" ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("edit")}
-          >
-            ⚙️ Edit Profile
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === "posts" ? (
-          // Posts Tab
-          <div>
-            <h2 className="text-2xl font-bold text-slate-100 mb-4">
-              My Posts & Shared Posts
-            </h2>
-
-            {posts.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">📝</div>
-                <h3 className="text-2xl font-bold text-slate-100 mb-2">
-                  No posts yet!
-                </h3>
-                <p className="text-slate-300 mb-6">
-                  Start sharing some memes to see them here.
-                </p>
+              <div className="flex-shrink-0">
                 <button
-                  onClick={() => navigate("/")}
-                  className="btn bg-green-500 hover:bg-green-600 text-white border-none"
+                  onClick={openEditModal}
+                  className="btn btn-outline btn-primary"
                 >
-                  Go to Home
+                  <FaUserEdit />
+                  Edit Profile
                 </button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {posts.map((post) => (
-                  <div
-                    key={`${post.isShared ? "shared" : "post"}-${post.id}`}
-                    className="card bg-slate-600/50 backdrop-blur-md border border-slate-500/50"
-                  >
-                    <div className="card-body p-4">
-                      {/* Post Header */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          {/* Show if it's a shared post */}
-                          {post.isShared && (
-                            <div className="w-full mb-2">
-                              <div className="flex items-center gap-2 text-sm">
-                                <span className="text-blue-400">🔄</span>
-                                <span className="font-medium text-blue-400">
-                                  You shared this post
-                                </span>
-                                <span className="text-slate-400">•</span>
-                                <span className="text-slate-400">
-                                  {formatDate(post.createdAt)}
-                                </span>
-                              </div>
-                              {post.originalPost && (
-                                <div className="text-xs text-slate-400 mt-1">
-                                  Originally by {post.originalPost.user.name} •{" "}
-                                  {formatDate(post.originalPost.createdAt)}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {!post.isShared && (
-                            <div className="flex items-center gap-3">
-                              <div className="avatar">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-bold">
-                                  {user.image ? (
-                                    <img
-                                      src={user.image}
-                                      alt={user.name}
-                                      className="w-full h-full rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    user.name.charAt(0).toUpperCase()
-                                  )}
-                                </div>
-                              </div>
-                              <div>
-                                <span className="font-semibold text-slate-100">
-                                  {user.name}
-                                </span>
-                                <p className="text-xs text-slate-400">
-                                  {formatDate(post.createdAt)}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {post.isShared ? (
-                            <div className="badge badge-info badge-sm">
-                              Shared
-                            </div>
-                          ) : (
-                            <div className="badge badge-success badge-sm">
-                              Original
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Post Content */}
-                      <div className="mb-4">
-                        {post.content && (
-                          <p className="text-slate-200 leading-relaxed mb-3">
-                            {post.content}
-                          </p>
-                        )}
-                        {post.image && (
-                          <div className="rounded-lg overflow-hidden">
-                            <img
-                              src={post.image}
-                              alt="Post content"
-                              className="w-full h-auto object-cover"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          // Edit Profile Tab
-          <div>
-            <h2 className="text-2xl font-bold text-slate-100 mb-4">
-              Edit Profile
-            </h2>
-
-            <div className="card bg-slate-600/50 backdrop-blur-md border border-slate-500/50">
-              <div className="card-body p-6">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text text-slate-300">Name</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your name"
-                      className="input input-bordered bg-slate-700 border-slate-600 text-slate-100"
-                      value={user.name}
-                      onChange={(e) =>
-                        setUser({ ...user, name: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text text-slate-300">Email</span>
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="Enter your email"
-                      className="input input-bordered bg-slate-700 border-slate-600 text-slate-100"
-                      value={user.email}
-                      onChange={(e) =>
-                        setUser({ ...user, email: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text text-slate-300">Bio</span>
-                    </label>
-                    <textarea
-                      placeholder="Tell us about yourself"
-                      className="textarea textarea-bordered bg-slate-700 border-slate-600 text-slate-100 h-24"
-                      value={user.bio}
-                      onChange={(e) =>
-                        setUser({ ...user, bio: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text text-slate-300">
-                        Profile Image URL
-                      </span>
-                    </label>
-                    <input
-                      type="url"
-                      placeholder="Enter image URL"
-                      className="input input-bordered bg-slate-700 border-slate-600 text-slate-100"
-                      value={user.image}
-                      onChange={(e) =>
-                        setUser({ ...user, image: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="form-control mt-6">
-                    <button
-                      type="submit"
-                      className="btn bg-green-500 hover:bg-green-600 text-white border-none"
-                    >
-                      Update Profile
-                    </button>
-                  </div>
-                </form>
-
-                <div className="divider text-slate-400"></div>
-
-                <div className="form-control">
-                  <button
-                    onClick={handleDelete}
-                    className="btn btn-error text-white"
-                  >
-                    Delete Account
-                  </button>
-                  <div className="label">
-                    <span className="label-text-alt text-slate-400">
-                      This action cannot be undone
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
-        )}
+          <div className="px-4 md:px-6 mt-4 border-t border-base-content/10">
+            <div className="flex items-center gap-4">
+              <TabButton
+                icon={<FaClipboardList />}
+                label="Posts"
+                isActive={activeTab === "posts"}
+                onClick={() => setActiveTab("posts")}
+              />
+              <TabButton
+                icon={<FaUserCircle />}
+                label="About"
+                isActive={activeTab === "about"}
+                onClick={() => setActiveTab("about")}
+              />
+              <TabButton
+                icon={<FaUserFriends />}
+                label="Friends"
+                isActive={activeTab === "friends"}
+                onClick={() => setActiveTab("friends")}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 md:p-6">
+          {activeTab === "posts" && (
+            <div className="grid grid-cols-1 gap-6">
+              {posts?.length === 0 ? (
+                <div className="mt-5 text-center text-base-content text-xl">
+                  No posts to show
+                </div>
+              ) : (
+                posts?.map((post) => (
+                  <PostCard
+                    key={`${post.isShared ? "shared" : "post"}-${post.id}`}
+                    post={post}
+                    currentUser={user}
+                    onEdit={handleEditPost}
+                    onDelete={handleDeletePost}
+                    onUnshare={handleUnsharePost}
+                    onChange={fetchUserData} // to refresh the page when needed
+                  />
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState({ isOpen: false })}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        confirmButtonClass={confirmState.confirmButtonClass}
+        isLoading={isConfirming}
+      />
+
+      {/* Modern Profile Edit Modal */}
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        currentUser={user}
+        onUpdate={handleProfileUpdate}
+      />
     </div>
   );
 };
+
+const TabButton = ({ icon, label, isActive, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-2 px-4 py-3 font-semibold border-b-4 transition-all duration-300 ${isActive
+      ? "border-primary text-primary"
+      : "border-transparent text-base-content/70 hover:text-base-content"
+      }`}
+  >
+    {icon}
+    {label}
+  </button>
+);

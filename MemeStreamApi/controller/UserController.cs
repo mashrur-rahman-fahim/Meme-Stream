@@ -80,8 +80,24 @@ namespace MemeStreamApi.controller
                 var Token = new JwtSecurityTokenHandler().WriteToken(token);
                 await _emailService.SendWelcomeEmailAsync(user.Email, user.Name);
 
+                var userResponse = new UserResponseDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Email = user.Email,
+                    Bio = user.Bio,
+                    Image = user.Image,
+                    IsEmailVerified = user.IsEmailVerified
+                };
+
+                var response = new RegisterResponseDto
+                {
+                    Token = Token,
+                    User = userResponse
+                };
+
                 transaction.Commit();
-                return Ok(new { Token = Token, User = user });
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -132,8 +148,24 @@ namespace MemeStreamApi.controller
                 );
                 var Token = new JwtSecurityTokenHandler().WriteToken(token);
 
+                var userResponse = new UserResponseDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Email = user.Email,
+                    Bio = user.Bio,
+                    Image = user.Image,
+                    IsEmailVerified = user.IsEmailVerified
+                };
+
+                var response = new LoginResponseDto
+                {
+                    Token = Token,
+                    User = userResponse
+                };
+
                 transaction.Commit();
-                return Ok(new { token  = Token, user = user });
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -163,7 +195,7 @@ namespace MemeStreamApi.controller
                      .Where(u => u.Id != currentUserId && 
                                 u.Name.ToLower().Contains(name.ToLower()) &&
                                 u.IsEmailVerified) // Only include verified users
-                     .Select(u => new {
+                     .Select(u => new UserSearchDto {
                          Id = u.Id,
                          Name = u.Name,
                          Email = u.Email,
@@ -211,9 +243,143 @@ namespace MemeStreamApi.controller
                 return BadRequest(ex.Message);
             }
         }    
+        public class UpdateProfileDto
+        {
+            public string Name { get; set; } = string.Empty;
+            public string Bio { get; set; } = string.Empty;
+            public string Image { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+        }
+
         [Authorize]
         [HttpPut("profile")]
-        public IActionResult UpdateProfile(User updatedUser)
+        public IActionResult UpdateProfile([FromBody] UpdateProfileDto updateDto)
+        {
+            try
+            {
+                // Validate input
+                if (updateDto == null)
+                {
+                    return BadRequest("Invalid profile data.");
+                }
+
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(updateDto.Name) || updateDto.Name.Length < 2)
+                {
+                    return BadRequest("Name must be at least 2 characters long.");
+                }
+
+                if (string.IsNullOrWhiteSpace(updateDto.Email) || !IsValidEmail(updateDto.Email))
+                {
+                    return BadRequest("Valid email is required.");
+                }
+
+                // Validate bio length (optional but if provided, should be reasonable)
+                if (!string.IsNullOrEmpty(updateDto.Bio) && updateDto.Bio.Length > 500)
+                {
+                    return BadRequest("Bio cannot exceed 500 characters.");
+                }
+
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+
+                int userId = int.Parse(userIdClaim);
+                var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                // Check if email is already taken by another user
+                var emailExists = _context.Users.Any(u => u.Email == updateDto.Email && u.Id != userId);
+                if (emailExists)
+                {
+                    return BadRequest("Email is already in use by another account.");
+                }
+
+                // Update user properties
+                user.Name = updateDto.Name.Trim();
+                user.Bio = updateDto.Bio?.Trim() ?? string.Empty;
+                user.Email = updateDto.Email.Trim().ToLower();
+                
+                // Always update image (including empty string to remove image)
+                user.Image = updateDto.Image?.Trim() ?? string.Empty;
+
+                _context.SaveChanges();
+
+                // Return updated user data (excluding sensitive information)
+                var updatedUserResponse = new UserResponseDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Email = user.Email,
+                    Bio = user.Bio,
+                    Image = user.Image,
+                    IsEmailVerified = user.IsEmailVerified
+                };
+
+                var response = new ProfileUpdateResponseDto
+                { 
+                    Message = "Profile updated successfully.",
+                    User = updatedUserResponse
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ErrorResponseDto { Error = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPatch("profile/image")]
+        public IActionResult UpdateProfileImage([FromBody] UpdateImageDto imageDto)
+        {
+            try
+            {
+                if (imageDto == null)
+                {
+                    return BadRequest("Image data is required.");
+                }
+
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+
+                int userId = int.Parse(userIdClaim);
+                var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                // Allow empty string to remove image
+                user.Image = imageDto.ImageUrl?.Trim() ?? string.Empty;
+                _context.SaveChanges();
+
+                var response = new ImageUpdateResponseDto
+                { 
+                    Message = string.IsNullOrEmpty(user.Image) ? "Profile image removed successfully." : "Profile image updated successfully.",
+                    ImageUrl = user.Image
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ErrorResponseDto { Error = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpDelete("profile/image")]
+        public IActionResult RemoveProfileImage()
         {
             try
             {
@@ -222,26 +388,94 @@ namespace MemeStreamApi.controller
                 {
                     return Unauthorized("User ID claim not found.");
                 }
+
                 int userId = int.Parse(userIdClaim);
                 var user = _context.Users.FirstOrDefault(u => u.Id == userId);
                 if (user == null)
                 {
                     return NotFound("User not found.");
                 }
-                user.Name = updatedUser.Name;
-                user.Bio = updatedUser.Bio;
-                user.Email = updatedUser.Email;
-                
-                if (!string.IsNullOrEmpty(updatedUser.Image))
-                {
-                    user.Image = updatedUser.Image;
-                }
+
+                user.Image = string.Empty;
                 _context.SaveChanges();
-                return Ok("Profile updated successfully.");
+
+                var response = new ImageUpdateResponseDto
+                { 
+                    Message = "Profile image removed successfully.",
+                    ImageUrl = string.Empty
+                };
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new ErrorResponseDto { Error = ex.Message });
+            }
+        }
+
+        public class UpdateImageDto
+        {
+            public string ImageUrl { get; set; } = string.Empty;
+        }
+
+        public class UserResponseDto
+        {
+            public int Id { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string Bio { get; set; } = string.Empty;
+            public string Image { get; set; } = string.Empty;
+            public bool IsEmailVerified { get; set; }
+        }
+
+        public class ProfileUpdateResponseDto
+        {
+            public string Message { get; set; } = string.Empty;
+            public UserResponseDto User { get; set; } = new UserResponseDto();
+        }
+
+        public class ImageUpdateResponseDto
+        {
+            public string Message { get; set; } = string.Empty;
+            public string ImageUrl { get; set; } = string.Empty;
+        }
+
+        public class ErrorResponseDto
+        {
+            public string Error { get; set; } = string.Empty;
+        }
+
+        public class LoginResponseDto
+        {
+            public string Token { get; set; } = string.Empty;
+            public UserResponseDto User { get; set; } = new UserResponseDto();
+        }
+
+        public class RegisterResponseDto
+        {
+            public string Token { get; set; } = string.Empty;
+            public UserResponseDto User { get; set; } = new UserResponseDto();
+        }
+
+        public class UserSearchDto
+        {
+            public int Id { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string Image { get; set; } = string.Empty;
+            public string Bio { get; set; } = string.Empty;
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
             }
         }
         [Authorize]
@@ -267,6 +501,91 @@ namespace MemeStreamApi.controller
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [Authorize]
+        [HttpGet("profile/{userId}")]
+        public IActionResult GetPublicProfile(int userId)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                var currentUserId = int.Parse(userIdClaim);
+
+                var user = _context.Users.FirstOrDefault(u => u.Id == userId && u.IsEmailVerified);
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                // Get friendship status if not viewing own profile
+                string friendshipStatus = "None";
+                bool canSendRequest = true;
+                
+                if (currentUserId != userId)
+                {
+                    var friendship = _context.FriendRequests.FirstOrDefault(fr => 
+                        (fr.SenderId == currentUserId && fr.ReceiverId == userId) ||
+                        (fr.SenderId == userId && fr.ReceiverId == currentUserId));
+
+                    if (friendship != null)
+                    {
+                        switch (friendship.Status)
+                        {
+                            case FriendRequest.RequestStatus.Accepted:
+                                friendshipStatus = "Friend";
+                                canSendRequest = false;
+                                break;
+                            case FriendRequest.RequestStatus.Pending:
+                                friendshipStatus = friendship.SenderId == currentUserId ? "Request Sent" : "Request Received";
+                                canSendRequest = false;
+                                break;
+                            case FriendRequest.RequestStatus.Rejected:
+                                friendshipStatus = "Request Declined";
+                                canSendRequest = true;
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    friendshipStatus = "Own Profile";
+                    canSendRequest = false;
+                }
+
+                var publicProfile = new PublicProfileDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Bio = user.Bio,
+                    Image = user.Image,
+                    FriendshipStatus = friendshipStatus,
+                    CanSendRequest = canSendRequest,
+                    IsOwnProfile = currentUserId == userId
+                };
+
+                return Ok(publicProfile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetPublicProfile: {ex.Message}");
+                return BadRequest("Error retrieving user profile.");
+            }
+        }
+
+        public class PublicProfileDto
+        {
+            public int Id { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Bio { get; set; } = string.Empty;
+            public string Image { get; set; } = string.Empty;
+            public string FriendshipStatus { get; set; } = string.Empty;
+            public bool CanSendRequest { get; set; }
+            public bool IsOwnProfile { get; set; }
         }
 
     }
