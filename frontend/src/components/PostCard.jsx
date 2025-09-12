@@ -21,6 +21,12 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  
+  // Lazy loading states
+  const [reactionsLoaded, setReactionsLoaded] = useState(false);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
+  const [isLoadingReactions, setIsLoadingReactions] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
 
   const isOriginalPost = !post.isShared;
   const targetPostId = isOriginalPost ? post.id : (post.originalPost?.id || post.id);
@@ -33,31 +39,73 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const canUnshare = !isOriginalPost && currentUser?.id === sharer?.id;
   const showOptions = canDeleteOrEdit || canUnshare;
 
-  const fetchPostInteractions = useCallback(async () => {
-    if (!targetPostId) return;
+  // Lazy load reactions when needed
+  const fetchReactions = useCallback(async () => {
+    if (!targetPostId || reactionsLoaded || isLoadingReactions) return;
+    setIsLoadingReactions(true);
     try {
       const reactionsRes = await feedService.getPostReactions(targetPostId);
       if (reactionsRes.success && reactionsRes.data) {
         setReactions(Array.isArray(reactionsRes.data.reactions) ? reactionsRes.data.reactions : []);
         setUserReaction(reactionsRes.data.userReaction || null);
+        setReactionsLoaded(true);
       }
+    } catch (error) {
+      console.error(`Error fetching reactions for post ${targetPostId}:`, error);
+    } finally {
+      setIsLoadingReactions(false);
+    }
+  }, [targetPostId, reactionsLoaded, isLoadingReactions]);
+
+  // Lazy load comments when needed
+  const fetchComments = useCallback(async () => {
+    if (!targetPostId || commentsLoaded || isLoadingComments) return;
+    setIsLoadingComments(true);
+    try {
       const commentsRes = await feedService.getPostComments(targetPostId);
+      if (commentsRes.success && commentsRes.data) {
+        setCommentCount(commentsRes.data.length);
+        setComments(commentsRes.data);
+        setCommentsLoaded(true);
+      }
+    } catch (error) {
+      console.error(`Error fetching comments for post ${targetPostId}:`, error);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  }, [targetPostId, commentsLoaded, isLoadingComments]);
+
+  // Refresh all interactions (used after optimistic updates)
+  const refreshInteractions = useCallback(async () => {
+    if (!targetPostId) return;
+    try {
+      const [reactionsRes, commentsRes] = await Promise.all([
+        feedService.getPostReactions(targetPostId),
+        feedService.getPostComments(targetPostId)
+      ]);
+      
+      if (reactionsRes.success && reactionsRes.data) {
+        setReactions(Array.isArray(reactionsRes.data.reactions) ? reactionsRes.data.reactions : []);
+        setUserReaction(reactionsRes.data.userReaction || null);
+      }
+      
       if (commentsRes.success && commentsRes.data) {
         setCommentCount(commentsRes.data.length);
         setComments(commentsRes.data);
       }
     } catch (error) {
-      console.error(`Error fetching interaction data for post ${targetPostId}:`, error);
+      console.error(`Error refreshing interactions for post ${targetPostId}:`, error);
     }
   }, [targetPostId]);
-
-  useEffect(() => {
-    fetchPostInteractions();
-  }, [fetchPostInteractions]);
 
 
   const handleReactionClick = async () => {
     if (!targetPostId) return;
+    
+    // Load reactions first if not loaded
+    if (!reactionsLoaded) {
+      await fetchReactions();
+    }
     
     // Optimistic update - immediately update UI
     const wasUserReacted = userReaction;
@@ -88,7 +136,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     try {
       await feedService.addReaction(targetPostId, 0);
       // If successful, refresh to get accurate data from server
-      fetchPostInteractions();
+      refreshInteractions();
     } catch (error) {
       // Rollback optimistic changes if API call fails
       if (wasUserReacted) {
@@ -134,10 +182,14 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
 
   const handleCloseModal = () => {
     setIsCommentModalOpen(false);
-    fetchPostInteractions();
+    refreshInteractions();
   };
 
-  const handleToggleComments = () => {
+  const handleToggleComments = async () => {
+    // If opening comments for the first time, load them
+    if (!showInlineComments && !commentsLoaded) {
+      await fetchComments();
+    }
     setShowInlineComments(!showInlineComments);
   };
 
@@ -167,7 +219,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
       const result = await feedService.addComment(targetPostId, commentContent);
       if (result.success) {
         // Replace optimistic comment with real comment from server
-        fetchPostInteractions();
+        refreshInteractions();
         toast.success("Comment added!");
       } else {
         // Remove optimistic comment if API call failed
@@ -221,7 +273,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
       const result = await feedService.addReply(replyingTo, replyContent);
       if (result.success) {
         // Replace optimistic reply with real data from server
-        fetchPostInteractions();
+        refreshInteractions();
         toast.success("Reply added!");
       } else {
         // Remove optimistic reply if API call failed
@@ -284,7 +336,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
               <div className="avatar">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary">
                   {author?.image ? (
-                    <img src={author.image} alt={author?.name || 'User'} />
+                    <img src={author.image} alt={author?.name || 'User'} loading="lazy" decoding="async" />
                   ) : (
                     <span className="text-lg sm:text-2xl text-primary-content flex items-center justify-center w-full h-full">
                       {(author?.name || 'U').charAt(0).toUpperCase()}
@@ -328,15 +380,33 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
             {post.content && <p className="text-sm sm:text-base text-base-content mb-3 whitespace-pre-wrap">{post.content}</p>}
             {post.image && (
               <div className="relative w-full max-h-[300px] sm:max-h-[450px] rounded-lg bg-base-300/20 flex justify-center">
-                <img src={post.image} alt="Post content" className="max-h-[300px] sm:max-h-[450px] w-auto h-auto object-contain rounded-lg" loading="lazy" />
+                <img 
+                  src={post.image} 
+                  alt="Post content" 
+                  className="max-h-[300px] sm:max-h-[450px] w-auto h-auto object-contain rounded-lg" 
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
             )}
           </div>
 
           {/* Interactions */}
           <div className="flex justify-between items-center text-xs sm:text-sm text-base-content/90 mt-3 px-1 sm:px-2">
-            <div>{reactions.length > 0 && `😂 ${reactions.length} Laughs`}</div>
-            <div>{commentCount > 0 && `${commentCount} Comments`}</div>
+            <div>
+              {isLoadingReactions ? (
+                <span className="loading loading-dots loading-xs">Loading reactions...</span>
+              ) : (
+                reactions.length > 0 && `😂 ${reactions.length} Laughs`
+              )}
+            </div>
+            <div>
+              {isLoadingComments ? (
+                <span className="loading loading-dots loading-xs">Loading comments...</span>
+              ) : (
+                commentCount > 0 && `${commentCount} Comments`
+              )}
+            </div>
           </div>
           <div className="divider my-1"></div>
           <div className="flex justify-around items-center text-base-content">
@@ -362,7 +432,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                 <div className="avatar">
                   <div className="w-8 h-8 rounded-full bg-primary">
                     {currentUser?.image ? (
-                      <img src={currentUser.image} alt={currentUser?.name} className="rounded-full" />
+                      <img src={currentUser.image} alt={currentUser?.name} className="rounded-full" loading="lazy" decoding="async" />
                     ) : (
                       <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
                         {currentUser?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -391,7 +461,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                       <div className="avatar">
                         <div className="w-8 h-8 rounded-full bg-primary">
                           {comment.user?.image ? (
-                            <img src={comment.user.image} alt={comment.user?.name} className="rounded-full" />
+                            <img src={comment.user.image} alt={comment.user?.name} className="rounded-full" loading="lazy" decoding="async" />
                           ) : (
                             <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
                               {comment.user?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -425,7 +495,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                             <div className="avatar">
                               <div className="w-7 h-7 rounded-full bg-primary">
                                 {reply.user?.image ? (
-                                  <img src={reply.user.image} alt={reply.user?.name} className="rounded-full" />
+                                  <img src={reply.user.image} alt={reply.user?.name} className="rounded-full" loading="lazy" decoding="async" />
                                 ) : (
                                   <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
                                     {reply.user?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -455,7 +525,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                           <div className="avatar">
                             <div className="w-7 h-7 rounded-full bg-primary">
                               {currentUser?.image ? (
-                                <img src={currentUser.image} alt={currentUser?.name} className="rounded-full" />
+                                <img src={currentUser.image} alt={currentUser?.name} className="rounded-full" loading="lazy" decoding="async" />
                               ) : (
                                 <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
                                   {currentUser?.name?.charAt(0)?.toUpperCase() || 'U'}
