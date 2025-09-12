@@ -59,7 +59,7 @@ export const SinglePostPage = () => {
 
   const handleEdit = (postId, currentContent) => {
     // For now, just show a toast - you can implement edit functionality later
-    toast.success("Edit functionality coming soon!");
+    toast.success("Edit feature is still in the oven! Coming soon... 🔥");
   };
 
   const handleDelete = async (postId) => {
@@ -69,7 +69,7 @@ export const SinglePostPage = () => {
     try {
       const result = await feedService.deletePost(postId);
       if (result.success) {
-        toast.success("Post deleted successfully!");
+        toast.success("Post yeeted into the void! ✨🗑️");
         navigate("/"); // Redirect to home after deletion
       } else {
         toast.error(result.error || "Failed to delete post");

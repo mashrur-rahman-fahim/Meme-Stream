@@ -100,7 +100,7 @@ export const SettingsPage = () => {
     });
     
     if (result.success) {
-      toast.success('Notification settings updated');
+      toast.success('Notification vibes updated! 📱✨');
     } else {
       toast.error(result.error);
       // Revert on error
@@ -114,12 +114,12 @@ export const SettingsPage = () => {
     e.preventDefault();
     
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match');
+      toast.error('Passwords are having commitment issues! Make them match 💔');
       return;
     }
 
     if (passwordForm.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      toast.error('Password too short! Even memes need more than 6 characters 📏');
       return;
     }
 
@@ -130,7 +130,7 @@ export const SettingsPage = () => {
     );
     
     if (result.success) {
-      toast.success('Password changed successfully');
+      toast.success('Password upgraded! Your account is now more secure than Fort Knox 🔐');
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
       setIsPasswordModalOpen(false);
     } else {
@@ -141,17 +141,17 @@ export const SettingsPage = () => {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== requiredConfirmText) {
-      toast.error("The confirmation text does not match.");
+      toast.error("Text doesn't match! Are you really sure about this life choice? 🤔");
       return;
     }
 
     setIsDeleting(true);
-    const toastId = toast.loading("Deleting your account...");
+    const toastId = toast.loading("Nuking your digital existence... 💥");
 
     const result = await userService.deleteAccount();
     
     if (result.success) {
-      toast.success("Account deleted successfully.", { id: toastId });
+      toast.success("Account successfully yeeted from existence! See ya! 👋", { id: toastId });
       logout();
       navigate("/auth");
     } else {
@@ -161,7 +161,7 @@ export const SettingsPage = () => {
   };
 
   const handleExportData = async () => {
-    const toastId = toast.loading("Preparing your data export...");
+    const toastId = toast.loading("Packaging your digital memories... 📦");
     
     const result = await userService.exportUserData();
     
@@ -176,7 +176,7 @@ export const SettingsPage = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      toast.success("Data export downloaded successfully", { id: toastId });
+      toast.success("Your meme history has been downloaded! Archive complete 📁✨", { id: toastId });
     } else {
       toast.error(result.error, { id: toastId });
     }
@@ -272,7 +272,7 @@ export const SettingsPage = () => {
                         <div className="flex-1">
                           <h3 className="text-lg font-semibold">{user?.name}</h3>
                           <p className="text-base-content/70">{user?.email}</p>
-                          <p className="text-sm text-base-content/60 mt-1">{user?.bio || 'No bio set'}</p>
+                          <p className="text-sm text-base-content/60 mt-1">{user?.bio || 'No bio yet... still figuring out life 🤷‍♂️'}</p>
                         </div>
                         <button
                           onClick={() => setIsProfileModalOpen(true)}
@@ -296,13 +296,13 @@ export const SettingsPage = () => {
 
                     <div className="space-y-4">
                       {Object.entries({
-                        likes: 'Reactions on your posts',
-                        comments: 'Comments on your posts',
-                        shares: 'Shares of your posts',
-                        friendRequests: 'Friend requests',
-                        mentions: 'When someone mentions you',
-                        emailNotifications: 'Email notifications',
-                        pushNotifications: 'Push notifications'
+                        likes: 'When your memes get appreciated 😂',
+                        comments: 'When people roast your content 💬',
+                        shares: 'When your memes go viral 🚀',
+                        friendRequests: 'New meme squad requests 👥',
+                        mentions: 'When you get tagged in chaos @',
+                        emailNotifications: 'Old school email pings 📧',
+                        pushNotifications: 'Those annoying popups 📱'
                       }).map(([key, label]) => (
                         <div key={key} className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
                           <div>
@@ -338,7 +338,7 @@ export const SettingsPage = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="font-medium">Change Password</h3>
-                            <p className="text-sm text-base-content/70">Update your account password</p>
+                            <p className="text-sm text-base-content/70">Switch up your secret code 🔑</p>
                           </div>
                           <button
                             onClick={() => setIsPasswordModalOpen(true)}
@@ -354,7 +354,7 @@ export const SettingsPage = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="font-medium">Download Your Data</h3>
-                            <p className="text-sm text-base-content/70">Export all your account data</p>
+                            <p className="text-sm text-base-content/70">Get your meme archive for safekeeping 📦</p>
                           </div>
                           <button
                             onClick={handleExportData}
