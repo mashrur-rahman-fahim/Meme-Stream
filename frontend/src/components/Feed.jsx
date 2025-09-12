@@ -29,6 +29,7 @@ export const Feed = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [useVirtualScroll, setUseVirtualScroll] = useState(false);
+  const [showEndMessage, setShowEndMessage] = useState(false);
 
   // Flatten pages into posts array
   const posts = useMemo(() => {
@@ -37,6 +38,17 @@ export const Feed = () => {
   }, [feedData]);
 
   const error = isError ? feedError?.message || "Failed to load posts" : "";
+
+  // Only show "all caught up" message when we're absolutely certain there are no more posts
+  useEffect(() => {
+    if (!hasNextPage && posts.length > 0 && !isLoading && !isFetchingNextPage && feedData?.pages?.length > 0) {
+      // Longer delay to ensure posts are fully rendered
+      const timer = setTimeout(() => setShowEndMessage(true), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowEndMessage(false);
+    }
+  }, [hasNextPage, posts.length, isLoading, isFetchingNextPage, feedData?.pages]);
   
   // Refs for infinite scroll
   const observerRef = useRef();
@@ -109,8 +121,8 @@ export const Feed = () => {
     fetchCurrentUser();
   }, [fetchCurrentUser]);
 
-  // Show loading skeleton for initial load
-  if (isLoading && posts.length === 0) {
+  // Show loading skeleton until posts are actually loaded and ready
+  if ((isLoading && posts.length === 0) || (posts.length === 0 && !isError && feedData?.pages === undefined)) {
     return (
       <div>
         {/* Refresh button placeholder */}
@@ -167,7 +179,7 @@ export const Feed = () => {
         </div>
       )}
 
-      {posts.length === 0 && !isLoading ? (
+      {posts.length === 0 && !isLoading && !isFetchingNextPage && feedData?.pages?.length > 0 ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">😴</div>
           <h3 className="text-xl font-bold text-base-content mb-2">
@@ -240,7 +252,7 @@ export const Feed = () => {
             </div>
           )}
 
-          {!useVirtualScroll && !hasNextPage && posts.length > 0 && (
+          {!useVirtualScroll && showEndMessage && (
             <div className="text-center py-8">
               <div className="text-2xl mb-2">✨</div>
               <p className="text-base-content/60 text-sm">
