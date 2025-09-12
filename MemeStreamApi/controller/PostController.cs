@@ -732,7 +732,7 @@ namespace MemeStreamApi.controller
                 
                 // 4. Delete notifications related to this post
                 var notifications = await _context.Notifications
-                    .Where(n => n.RelatedPostId == id)
+                    .Where(n => n.PostId == id)
                     .ToListAsync();
                 _context.Notifications.RemoveRange(notifications);
                 

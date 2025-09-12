@@ -292,7 +292,6 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                         </div>
                         <div className="flex gap-4 mt-1 text-xs text-base-content/60">
                           <span>{formatDate(comment.createdAt)}</span>
-                          <button className="hover:underline font-medium">Like</button>
                           <button 
                             className="hover:underline font-medium"
                             onClick={() => setReplyingTo(comment.id)}
@@ -326,7 +325,6 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                               </div>
                               <div className="flex gap-4 mt-1 text-xs text-base-content/60">
                                 <span>{formatDate(reply.createdAt)}</span>
-                                <button className="hover:underline font-medium">Like</button>
                               </div>
                             </div>
                           </div>

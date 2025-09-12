@@ -406,26 +406,30 @@ namespace MemeStreamApi.controller
                     return BadRequest("Search query must be at least 2 characters long.");
                 }
 
-                // Search only among current user's friends
-                var friends = _context.FriendRequests
-                    .Include(fr => fr.Sender)
-                    .Include(fr => fr.Receiver)
+                // First, get all accepted friend relationships for the user
+                var friendRelationships = _context.FriendRequests
                     .Where(fr => (fr.ReceiverId == userId || fr.SenderId == userId) && 
                                 fr.Status == FriendRequest.RequestStatus.Accepted)
-                    .Select(fr => new {
-                        Friend = fr.ReceiverId == userId ? fr.Sender : fr.Receiver,
-                        FriendId = fr.ReceiverId == userId ? fr.SenderId : fr.ReceiverId
-                    })
-                    .Where(f => f.Friend.Name.ToLower().Contains(query.ToLower()))
-                    .Select(f => new {
-                        Id = f.FriendId,
-                        Name = f.Friend.Name,
-                        Email = f.Friend.Email,
-                        Image = f.Friend.Image,
-                        Bio = f.Friend.Bio,
+                    .ToList();
+
+                // Extract friend IDs
+                var friendIds = friendRelationships
+                    .Select(fr => fr.ReceiverId == userId ? fr.SenderId : fr.ReceiverId)
+                    .ToList();
+
+                // Search among friends by name
+                var friends = _context.Users
+                    .Where(u => friendIds.Contains(u.Id) && 
+                               u.Name.ToLower().Contains(query.ToLower()))
+                    .Select(u => new {
+                        Id = u.Id,
+                        Name = u.Name,
+                        Email = u.Email,
+                        Image = u.Image,
+                        Bio = u.Bio,
                         FriendshipStatus = "Friend"
                     })
-                    .Take(20) // Limit results for performance
+                    .Take(20)
                     .ToList();
 
                 return Ok(friends);
@@ -502,6 +506,7 @@ namespace MemeStreamApi.controller
                 return BadRequest("Error declining friend request.");
             }
         }
+
 
         public class AcceptDeclineRequestDto
         {
