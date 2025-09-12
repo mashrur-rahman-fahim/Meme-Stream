@@ -35,6 +35,9 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const [shareDetails, setShareDetails] = useState(null);
   const [isLoadingShares, setIsLoadingShares] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  
+  // Reactions modal states
+  const [showReactionsModal, setShowReactionsModal] = useState(false);
 
   const isOriginalPost = !post.isShared;
   const targetPostId = isOriginalPost ? post.id : (post.originalPost?.id || post.id);
@@ -405,6 +408,15 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     setShowShareModal(false);
   };
 
+  const handleReactionsClick = async (e) => {
+    e.stopPropagation(); // Prevent post click navigation
+    setShowReactionsModal(true);
+  };
+
+  const closeReactionsModal = () => {
+    setShowReactionsModal(false);
+  };
+
   // Format share text for display
   const formatShareText = (shares, hasUserShared, currentUserId) => {
     if (!shares || shares.length === 0) return null;
@@ -441,6 +453,14 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     <>
       <div className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow duration-200 border border-base-300 cursor-pointer" onClick={handlePostClick}>
         <div className="card-body p-3 sm:p-5">
+          {/* You shared indicator - shows at top */}
+          {hasUserShared && (
+            <div className="flex items-center gap-2 text-sm text-primary mb-3 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2">
+              <FaShareSquare className="text-primary" />
+              <span className="font-semibold">You shared this</span>
+            </div>
+          )}
+
           {!isOriginalPost && sharer && (
             <div className="flex items-center gap-2 text-sm text-base-content/70 mb-3">
               <FaShareSquare className="text-primary" />
@@ -515,7 +535,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
           {/* Interactions */}
           <div className="flex justify-between items-center text-xs sm:text-sm text-base-content/90 mt-3 px-1 sm:px-2">
             <div className="flex items-center gap-4">
-              <div>
+              <div 
+                className={`${reactions.length > 0 ? 'cursor-pointer hover:underline text-primary' : ''}`}
+                onClick={reactions.length > 0 ? handleReactionsClick : undefined}
+              >
                 {isLoadingReactions ? (
                   <span className="loading loading-dots loading-xs">Loading reactions...</span>
                 ) : (
@@ -531,13 +554,6 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                   <span>🔄 {shareDetails.totalShares} Shares</span>
                 )}
               </div>
-              
-              {/* You shared indicator */}
-              {hasUserShared && (
-                <div className="text-primary text-xs">
-                  <span>You shared this</span>
-                </div>
-              )}
             </div>
             <div>
               {isLoadingComments ? (
@@ -715,6 +731,70 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
           )}
         </div>
       </div>
+
+      {/* Reactions Modal */}
+      {showReactionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={closeReactionsModal}
+          />
+          <div className="relative bg-base-100 rounded-2xl shadow-xl max-w-md w-full mx-4 border border-base-300 max-h-[70vh] overflow-hidden">
+            <div className="p-4 border-b border-base-300">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-base-content">Who reacted</h3>
+                <button
+                  onClick={closeReactionsModal}
+                  className="btn btn-ghost btn-circle btn-sm"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[50vh]">
+              {reactions && reactions.length > 0 ? (
+                <div className="space-y-3">
+                  {(() => {
+                    // Sort reactions to show current user first if they reacted
+                    const currentUserReaction = reactions.find(r => r.userId === currentUser?.id);
+                    const otherReactions = reactions.filter(r => r.userId !== currentUser?.id);
+                    const sortedReactions = currentUserReaction ? [currentUserReaction, ...otherReactions] : reactions;
+                    
+                    return sortedReactions.map((reaction) => (
+                      <div key={reaction.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200">
+                        <div className="avatar">
+                          <div className="w-12 h-12 rounded-full bg-primary">
+                            {reaction.user?.image ? (
+                              <img src={reaction.user.image} alt={reaction.user?.name} className="rounded-full w-full h-full object-cover" loading="lazy" decoding="async" />
+                            ) : (
+                              <span className="text-primary-content text-lg flex items-center justify-center w-full h-full">
+                                {reaction.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-base-content">
+                            {reaction.userId === currentUser?.id ? 'You' : (reaction.user?.name || 'Unknown User')}
+                          </div>
+                          <div className="text-sm text-base-content/60">{formatDate(reaction.createdAt)}</div>
+                        </div>
+                        <div className="text-2xl">
+                          😂
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              ) : (
+                <div className="text-center text-base-content/60 py-8">
+                  No reactions yet
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Share Details Modal */}
       {showShareModal && (
