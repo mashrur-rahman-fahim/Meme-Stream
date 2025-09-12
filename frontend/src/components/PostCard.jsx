@@ -534,7 +534,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
 
           {/* Interactions */}
           <div className="flex justify-between items-center text-xs sm:text-sm text-base-content/90 mt-3 px-1 sm:px-2">
-            <div className="flex items-center gap-4">
+            <div>
               <div 
                 className={`${reactions.length > 0 ? 'cursor-pointer hover:underline text-primary' : ''}`}
                 onClick={reactions.length > 0 ? handleReactionsClick : undefined}
@@ -543,6 +543,15 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                   <span className="loading loading-dots loading-xs">Loading reactions...</span>
                 ) : (
                   reactions.length > 0 && `😂 ${reactions.length} Laughs`
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div>
+                {isLoadingComments ? (
+                  <span className="loading loading-dots loading-xs">Loading comments...</span>
+                ) : (
+                  commentCount > 0 && `${commentCount} Comments`
                 )}
               </div>
               {/* Share information - clickable */}
@@ -554,13 +563,6 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                   <span>🔄 {shareDetails.totalShares} Shares</span>
                 )}
               </div>
-            </div>
-            <div>
-              {isLoadingComments ? (
-                <span className="loading loading-dots loading-xs">Loading comments...</span>
-              ) : (
-                commentCount > 0 && `${commentCount} Comments`
-              )}
             </div>
           </div>
           <div className="divider my-1"></div>
