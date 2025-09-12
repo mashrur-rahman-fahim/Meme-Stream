@@ -20,7 +20,8 @@
       "Bash(dotnet ef dbcontext script:*)",
       "Bash(rm:*)",
       "Bash(git reset:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

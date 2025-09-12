@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { VerifyContext } from '../../context/create_verify_context';
-import { FaHome, FaUserFriends, FaCommentAlt, FaBell, FaUser, FaSignOutAlt, FaBars, FaTimes, FaSearch, FaUserCircle } from 'react-icons/fa';
+import { FaHome, FaUserFriends, FaCommentAlt, FaBell, FaUser, FaSignOutAlt, FaBars, FaTimes, FaSearch, FaUserCircle, FaCog } from 'react-icons/fa';
 import api from '../utils/axios';
 import ThemeSwitcher from './ThemeSwitcher';
 import NotificationBell from './NotificationBell';
@@ -346,6 +346,13 @@ export const Navbar = () => {
                         >
                           <FaUserFriends className="text-gray-600 dark:text-gray-400" />
                           <span className="text-gray-900 dark:text-white">Friends</span>
+                        </button>
+                        <button
+                          onClick={() => { navigate('/settings'); setIsProfileOpen(false); }}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                        >
+                          <FaCog className="text-gray-600 dark:text-gray-400" />
+                          <span className="text-gray-900 dark:text-white">Settings</span>
                         </button>
                         
                         <hr className="border-gray-200 dark:border-gray-700 my-2" />
