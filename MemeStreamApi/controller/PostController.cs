@@ -464,7 +464,7 @@ namespace MemeStreamApi.controller
                 var allFeedItems = regularPosts.Cast<dynamic>().Concat(sharedPosts.Cast<dynamic>()).ToList();
                 
                 // Calculate feed score using complex algorithm
-                var feedPosts = allFeedItems
+                var scoredPosts = allFeedItems
                     .Select(p => new {
                         Id = (int)p.Id,
                         Content = (string?)p.Content,
@@ -482,6 +482,13 @@ namespace MemeStreamApi.controller
                     })
                     .OrderByDescending(p => p.FeedScore)
                     .ThenByDescending(p => p.CreatedAt)
+                    .ToList();
+                
+                // Apply diverse feed algorithm to prevent consecutive posts from same user
+                var diverseFeedPosts = ApplyDiverseFeedAlgorithm(scoredPosts);
+                
+                // Apply pagination after diversification
+                var feedPosts = diverseFeedPosts
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
@@ -552,6 +559,68 @@ namespace MemeStreamApi.controller
             }
             
             return baseScore;
+        }
+
+        private List<dynamic> ApplyDiverseFeedAlgorithm(List<dynamic> scoredPosts)
+        {
+            if (scoredPosts.Count <= 1) return scoredPosts;
+            
+            var result = new List<dynamic>();
+            var remaining = new List<dynamic>(scoredPosts);
+            
+            // Algorithm: Smart interleaving to prevent consecutive posts from same user
+            while (remaining.Count > 0)
+            {
+                dynamic selectedPost = null;
+                int lastUserId = result.Count > 0 ? (int)result.Last().UserId : -1;
+                int lastSharedById = result.Count > 0 && (bool)result.Last().IsShared ? 
+                    (int)result.Last().SharedBy.Id : -1;
+                
+                // Find the highest-scored post that's NOT from the last user (or sharer)
+                foreach (var post in remaining.OrderByDescending(p => (double)p.FeedScore))
+                {
+                    int currentUserId = (int)post.UserId;
+                    int currentSharedById = (bool)post.IsShared ? (int)post.SharedBy.Id : -1;
+                    
+                    // Check if this post is from a different user than the last post
+                    bool differentFromLastUser = currentUserId != lastUserId;
+                    bool differentFromLastSharer = currentSharedById != lastSharedById;
+                    
+                    // Prefer posts from different users, but allow same user if significant score gap
+                    if (differentFromLastUser && differentFromLastSharer)
+                    {
+                        selectedPost = post;
+                        break;
+                    }
+                }
+                
+                // If no different user found, or if we're at the start, take the highest scoring
+                if (selectedPost == null)
+                {
+                    // If we couldn't find a different user, check if the score gap is significant enough
+                    var topPost = remaining.OrderByDescending(p => (double)p.FeedScore).First();
+                    double topScore = (double)topPost.FeedScore;
+                    
+                    // Look for posts from different users within 20% score range
+                    var alternativePosts = remaining
+                        .Where(p => {
+                            int currentUserId = (int)p.UserId;
+                            int currentSharedById = (bool)p.IsShared ? (int)p.SharedBy.Id : -1;
+                            bool differentFromLastUser = currentUserId != lastUserId;
+                            bool differentFromLastSharer = currentSharedById != lastSharedById;
+                            return (differentFromLastUser && differentFromLastSharer) && 
+                                   ((double)p.FeedScore >= topScore * 0.8);
+                        })
+                        .OrderByDescending(p => (double)p.FeedScore);
+                    
+                    selectedPost = alternativePosts.FirstOrDefault() ?? topPost;
+                }
+                
+                result.Add(selectedPost);
+                remaining.Remove(selectedPost);
+            }
+            
+            return result;
         }
 
         [Authorize]
