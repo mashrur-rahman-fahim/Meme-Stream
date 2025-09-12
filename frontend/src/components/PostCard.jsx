@@ -1,10 +1,12 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { FaLaughSquint, FaComment, FaShare, FaEllipsisH, FaShareSquare } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { CommentModal } from "./CommentModal";
+import { CommentsSkeleton } from "./LoadingSkeleton";
 import feedService from "../services/feedService";
 import toast from 'react-hot-toast';
 import { formatDate } from "../utils/formatDate";
+import LazyImage from "./LazyImage";
 
 
 export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onChange }) => {
@@ -35,8 +37,14 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const sharer = post.sharedBy || (post.isShared ? post.user : null);
   const timestamp = isOriginalPost ? post.createdAt : (post.originalPost?.createdAt || post.createdAt);
 
-  const canDeleteOrEdit = isOriginalPost && currentUser?.id === post.user?.id;
-  const canUnshare = !isOriginalPost && currentUser?.id === sharer?.id;
+  const canDeleteOrEdit = useMemo(() => 
+    isOriginalPost && currentUser?.id === post.user?.id, 
+    [isOriginalPost, currentUser?.id, post.user?.id]
+  );
+  const canUnshare = useMemo(() => 
+    !isOriginalPost && currentUser?.id === sharer?.id,
+    [isOriginalPost, currentUser?.id, sharer?.id]
+  );
   const showOptions = canDeleteOrEdit || canUnshare;
 
   // Lazy load reactions when needed
@@ -405,12 +413,15 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
             {post.content && <p className="text-sm sm:text-base text-base-content mb-3 whitespace-pre-wrap">{post.content}</p>}
             {post.image && (
               <div className="relative w-full max-h-[300px] sm:max-h-[450px] rounded-lg bg-base-300/20 flex justify-center">
-                <img 
-                  src={post.image} 
-                  alt="Post content" 
-                  className="max-h-[300px] sm:max-h-[450px] w-auto h-auto object-contain rounded-lg" 
-                  loading="lazy"
-                  decoding="async"
+                <LazyImage
+                  src={post.image}
+                  alt="Post content"
+                  className="max-h-[300px] sm:max-h-[450px] w-auto h-auto object-contain rounded-lg"
+                  placeholder={
+                    <div className="max-h-[300px] sm:max-h-[450px] w-full bg-base-200 animate-pulse rounded-lg flex items-center justify-center">
+                      <div className="loading loading-spinner loading-lg"></div>
+                    </div>
+                  }
                 />
               </div>
             )}
@@ -457,7 +468,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                 <div className="avatar">
                   <div className="w-8 h-8 rounded-full bg-primary">
                     {currentUser?.image ? (
-                      <img src={currentUser.image} alt={currentUser?.name} className="rounded-full" loading="lazy" decoding="async" />
+                      <LazyImage src={currentUser.image} alt={currentUser?.name} className="rounded-full w-full h-full object-cover" />
                     ) : (
                       <span className="text-primary-content text-xs flex items-center justify-center w-full h-full">
                         {currentUser?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -479,7 +490,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
 
               {/* Comments List */}
               <div className="space-y-3">
-                {comments.map((comment) => (
+                {isLoadingComments ? (
+                  <CommentsSkeleton count={3} />
+                ) : (
+                  comments.map((comment) => (
                   <div key={comment.id}>
                     {/* Main Comment */}
                     <div className="flex gap-2">
@@ -583,7 +597,8 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                       </div>
                     )}
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
