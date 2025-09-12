@@ -202,6 +202,61 @@ namespace MemeStreamApi.controller
         }
         
         [Authorize]
+        [HttpGet("post-shares/{postId}")]
+        public async Task<IActionResult> GetPostShares(int postId)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                
+                // Check if post exists
+                var post = await _context.Posts
+                    .FirstOrDefaultAsync(p => p.Id == postId);
+                    
+                if (post == null)
+                {
+                    return NotFound("Post not found.");
+                }
+                
+                // Get all users who shared this post
+                var shares = await _context.SharedPosts
+                    .Include(sp => sp.User)
+                    .Where(sp => sp.PostId == postId)
+                    .OrderByDescending(sp => sp.SharedAt)
+                    .Select(sp => new
+                    {
+                        Id = sp.Id,
+                        SharedAt = sp.SharedAt,
+                        User = new
+                        {
+                            Id = sp.User.Id,
+                            Name = sp.User.Name,
+                            Image = sp.User.Image
+                        }
+                    })
+                    .ToListAsync();
+                
+                var totalShares = shares.Count;
+                
+                return Ok(new { 
+                    postId = postId,
+                    totalShares = totalShares,
+                    shares = shares,
+                    success = true 
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetPostShares: {ex.Message}");
+                return BadRequest("Error retrieving post shares.");
+            }
+        }
+        
+        [Authorize]
         [HttpDelete("unshare/{postId}")]
         public async Task<IActionResult> UnsharePost(int postId)
         {

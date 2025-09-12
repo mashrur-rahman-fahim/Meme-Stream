@@ -339,6 +339,25 @@ export const feedService = {
       };
     }
   },
+
+  // Get who shared a post
+  getPostShares: async (postId) => {
+    try {
+      const response = await api.get(`/SharedPost/post-shares/${postId}`);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to fetch post shares",
+      };
+    }
+  },
 };
 
 export default feedService;

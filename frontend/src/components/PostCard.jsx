@@ -30,6 +30,11 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const [isLoadingReactions, setIsLoadingReactions] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [hasUserShared, setHasUserShared] = useState(post.hasUserShared || false);
+  
+  // Share tracking states
+  const [shareDetails, setShareDetails] = useState(null);
+  const [isLoadingShares, setIsLoadingShares] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const isOriginalPost = !post.isShared;
   const targetPostId = isOriginalPost ? post.id : (post.originalPost?.id || post.id);
@@ -92,9 +97,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const refreshInteractions = useCallback(async () => {
     if (!targetPostId) return;
     try {
-      const [reactionsRes, commentsRes] = await Promise.all([
+      const [reactionsRes, commentsRes, sharesRes] = await Promise.all([
         feedService.getPostReactions(targetPostId),
-        feedService.getPostComments(targetPostId)
+        feedService.getPostComments(targetPostId),
+        feedService.getPostShares(targetPostId)
       ]);
       
       if (reactionsRes.success && reactionsRes.data) {
@@ -105,6 +111,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
       if (commentsRes.success && commentsRes.data) {
         setCommentCount(commentsRes.data.length);
         setComments(commentsRes.data);
+      }
+
+      if (sharesRes.success && sharesRes.data) {
+        setShareDetails(sharesRes.data);
       }
     } catch (error) {
       console.error(`Error refreshing interactions for post ${targetPostId}:`, error);
@@ -117,9 +127,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
       // Load just the basic interaction counts on mount
       const fetchInteractionCounts = async () => {
         try {
-          const [reactionsRes, commentsRes] = await Promise.all([
+          const [reactionsRes, commentsRes, sharesRes] = await Promise.all([
             feedService.getPostReactions(targetPostId),
-            feedService.getPostComments(targetPostId)
+            feedService.getPostComments(targetPostId),
+            feedService.getPostShares(targetPostId)
           ]);
           
           if (reactionsRes.success && reactionsRes.data) {
@@ -133,6 +144,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
             // Don't set comments array yet - only when user clicks to view them
             setCommentsLoaded(false); // Keep this false so comments load when clicked
           }
+
+          if (sharesRes.success && sharesRes.data) {
+            setShareDetails(sharesRes.data);
+          }
         } catch (error) {
           console.error(`Error fetching interaction counts for post ${targetPostId}:`, error);
         }
@@ -141,6 +156,22 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
       fetchInteractionCounts();
     }
   }, [targetPostId]);
+
+  // Fetch share details when needed
+  const fetchShareDetails = useCallback(async () => {
+    if (!targetPostId || isLoadingShares) return;
+    setIsLoadingShares(true);
+    try {
+      const sharesRes = await feedService.getPostShares(targetPostId);
+      if (sharesRes.success && sharesRes.data) {
+        setShareDetails(sharesRes.data);
+      }
+    } catch (error) {
+      console.error(`Error fetching shares for post ${targetPostId}:`, error);
+    } finally {
+      setIsLoadingShares(false);
+    }
+  }, [targetPostId, isLoadingShares]);
 
   const handleReactionClick = async () => {
     if (!targetPostId) return;
@@ -358,6 +389,31 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     navigate(`/posts/${targetPostId}`);
   };
 
+  const handleSharesClick = async (e) => {
+    e.stopPropagation(); // Prevent post click navigation
+    await fetchShareDetails();
+    setShowShareModal(true);
+  };
+
+  const closeShareModal = () => {
+    setShowShareModal(false);
+  };
+
+  // Format share text for display
+  const formatShareText = (shares) => {
+    if (!shares || shares.length === 0) return null;
+    
+    if (shares.length === 1) {
+      return `${shares[0].user.name} shared this`;
+    } else if (shares.length === 2) {
+      return `${shares[0].user.name} and ${shares[1].user.name} shared this`;
+    } else if (shares.length === 3) {
+      return `${shares[0].user.name}, ${shares[1].user.name} and ${shares[2].user.name} shared this`;
+    } else {
+      return `${shares[0].user.name}, ${shares[1].user.name} and ${shares.length - 2} others shared this`;
+    }
+  };
+
   return (
     <>
       <div className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow duration-200 border border-base-300 cursor-pointer" onClick={handlePostClick}>
@@ -435,12 +491,23 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
 
           {/* Interactions */}
           <div className="flex justify-between items-center text-xs sm:text-sm text-base-content/90 mt-3 px-1 sm:px-2">
-            <div>
-              {isLoadingReactions ? (
-                <span className="loading loading-dots loading-xs">Loading reactions...</span>
-              ) : (
-                reactions.length > 0 && `😂 ${reactions.length} Laughs`
-              )}
+            <div className="flex items-center gap-4">
+              <div>
+                {isLoadingReactions ? (
+                  <span className="loading loading-dots loading-xs">Loading reactions...</span>
+                ) : (
+                  reactions.length > 0 && `😂 ${reactions.length} Laughs`
+                )}
+              </div>
+              {/* Share information - clickable */}
+              <div 
+                className="cursor-pointer hover:underline text-primary"
+                onClick={handleSharesClick}
+              >
+                {shareDetails && shareDetails.totalShares > 0 && (
+                  <span>🔄 {shareDetails.totalShares} Shares</span>
+                )}
+              </div>
             </div>
             <div>
               {isLoadingComments ? (
@@ -612,6 +679,62 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
           )}
         </div>
       </div>
+
+      {/* Share Details Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={closeShareModal}
+          />
+          <div className="relative bg-base-100 rounded-2xl shadow-xl max-w-md w-full mx-4 border border-base-300 max-h-[70vh] overflow-hidden">
+            <div className="p-4 border-b border-base-300">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-base-content">Who shared this</h3>
+                <button
+                  onClick={closeShareModal}
+                  className="btn btn-ghost btn-circle btn-sm"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[50vh]">
+              {isLoadingShares ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="loading loading-spinner loading-md"></div>
+                </div>
+              ) : shareDetails && shareDetails.shares && shareDetails.shares.length > 0 ? (
+                <div className="space-y-3">
+                  {shareDetails.shares.map((share) => (
+                    <div key={share.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200">
+                      <div className="avatar">
+                        <div className="w-12 h-12 rounded-full bg-primary">
+                          {share.user?.image ? (
+                            <img src={share.user.image} alt={share.user?.name} className="rounded-full w-full h-full object-cover" loading="lazy" decoding="async" />
+                          ) : (
+                            <span className="text-primary-content text-lg flex items-center justify-center w-full h-full">
+                              {share.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-base-content">{share.user?.name || 'Unknown User'}</div>
+                        <div className="text-sm text-base-content/60">{formatDate(share.sharedAt)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-base-content/60 py-8">
+                  No shares yet
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Share Confirmation Dialog */}
       {isShareDialogOpen && (

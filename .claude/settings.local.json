@@ -24,7 +24,9 @@
       "Bash(npm run build:*)",
       "Bash(dir F:MemeStream)",
       "Bash(git rev-parse:*)",
-      "Bash(dotnet clean:*)"
+      "Bash(dotnet clean:*)",
+      "Bash(dir)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []
