@@ -153,6 +153,105 @@ namespace MemeStreamApi.controller
         }
 
         /// <summary>
+        /// Analyze image for meme characteristics
+        /// </summary>
+        [HttpPost("analyze-image")]
+        public async Task<IActionResult> AnalyzeImage([FromBody] MemeDetectionRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrEmpty(request.ImageUrl))
+            {
+                return BadRequest(new { error = "ImageUrl is required for image analysis" });
+            }
+
+            request.DetectionMode = "image";
+            var result = await _memeDetectionService.AnalyzeImageAsync(request);
+            
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result);
+            }
+        }
+
+        /// <summary>
+        /// Analyze both text and image together for comprehensive meme detection
+        /// </summary>
+        [HttpPost("analyze-combined")]
+        public async Task<IActionResult> AnalyzeCombined([FromBody] MemeDetectionRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrEmpty(request.Text) && string.IsNullOrEmpty(request.ImageUrl))
+            {
+                return BadRequest(new { error = "Either text or image URL (or both) is required for analysis" });
+            }
+
+            request.DetectionMode = "combined";
+            var result = await _memeDetectionService.AnalyzeCombinedAsync(request);
+            
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result);
+            }
+        }
+
+        /// <summary>
+        /// Main analysis endpoint that automatically routes based on provided data
+        /// </summary>
+        [HttpPost("analyze")]
+        public async Task<IActionResult> Analyze([FromBody] MemeDetectionRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Determine analysis mode based on available data
+            if (!string.IsNullOrEmpty(request.Text) && !string.IsNullOrEmpty(request.ImageUrl))
+            {
+                request.DetectionMode = "combined";
+            }
+            else if (!string.IsNullOrEmpty(request.ImageUrl))
+            {
+                request.DetectionMode = "image";
+            }
+            else if (!string.IsNullOrEmpty(request.Text))
+            {
+                request.DetectionMode = "text";
+            }
+            else
+            {
+                return BadRequest(new { error = "Either text, image URL, or both must be provided" });
+            }
+
+            var result = await _memeDetectionService.AnalyzeAsync(request);
+            
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result);
+            }
+        }
+
+        /// <summary>
         /// Legacy method for backward compatibility
         /// </summary>
         [HttpPost("detect")]

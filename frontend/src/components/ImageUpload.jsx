@@ -176,6 +176,7 @@ const ImageUpload = ({ onImageUpload, currentImageUrl, onImageRemove, className 
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  triggerFileSelect();
                 }}
                 className="btn btn-outline btn-primary btn-sm"
                 disabled={uploading}

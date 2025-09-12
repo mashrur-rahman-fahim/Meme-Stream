@@ -51,19 +51,35 @@ namespace MemeStreamApi.controller
                     return NotFound("User not found.");
                 }
 
-                // Perform meme detection on the content
-                if (!string.IsNullOrWhiteSpace(postDto.Content))
+                // Perform comprehensive meme detection on the content
+                if (!string.IsNullOrWhiteSpace(postDto.Content) || !string.IsNullOrWhiteSpace(postDto.Image))
                 {
                     var memeDetectionRequest = new MemeDetectionRequest
                     {
                         Text = postDto.Content,
+                        ImageUrl = postDto.Image,
                         IncludeSentiment = true,
                         IncludeHumorScore = true,
                         IncludeMemeReferences = true,
                         IncludeCulturalContext = true
                     };
 
-                    var memeDetectionResult = await _memeDetectionService.AnalyzeTextAsync(memeDetectionRequest);
+                    // Determine analysis mode based on available data
+                    if (!string.IsNullOrEmpty(memeDetectionRequest.Text) && !string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                    {
+                        memeDetectionRequest.DetectionMode = "combined";
+                    }
+                    else if (!string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                    {
+                        memeDetectionRequest.DetectionMode = "image";
+                    }
+                    else if (!string.IsNullOrEmpty(memeDetectionRequest.Text))
+                    {
+                        memeDetectionRequest.DetectionMode = "text";
+                    }
+
+                    // Use the unified analysis method that automatically determines the mode
+                    var memeDetectionResult = await _memeDetectionService.AnalyzeAsync(memeDetectionRequest);
                     
                     if (!memeDetectionResult.Success)
                     {
@@ -79,9 +95,17 @@ namespace MemeStreamApi.controller
                         return BadRequest(new { 
                             error = "Non-meme content detected", 
                             message = "This post does not contain meme content and cannot be published. Only memes are allowed!",
-                            memeAnalysis = memeDetectionResult.Result
+                            memeAnalysis = memeDetectionResult.Result,
+                            analysisMode = memeDetectionResult.Result?.DetectionMode ?? "unknown"
                         });
                     }
+                }
+                else
+                {
+                    return BadRequest(new { 
+                        error = "No content provided", 
+                        message = "Please provide either text content, an image, or both to create a post."
+                    });
                 }
 
                 // If not a meme, proceed to create the post
@@ -111,25 +135,42 @@ namespace MemeStreamApi.controller
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(postDto.Content))
+                if (string.IsNullOrWhiteSpace(postDto.Content) && string.IsNullOrWhiteSpace(postDto.Image))
                 {
                     return Ok(new { 
                         isMeme = false, 
-                        message = "No content to analyze - only memes are allowed!",
-                        canPost = false // Can't post without content, and content must be meme
+                        message = "No content to analyze - provide text, image, or both. Only memes are allowed!",
+                        canPost = false,
+                        analysisMode = "none"
                     });
                 }
 
                 var memeDetectionRequest = new MemeDetectionRequest
                 {
                     Text = postDto.Content,
+                    ImageUrl = postDto.Image,
                     IncludeSentiment = true,
                     IncludeHumorScore = true,
                     IncludeMemeReferences = true,
                     IncludeCulturalContext = true
                 };
 
-                var memeDetectionResult = await _memeDetectionService.AnalyzeTextAsync(memeDetectionRequest);
+                // Determine analysis mode based on available data
+                if (!string.IsNullOrEmpty(memeDetectionRequest.Text) && !string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                {
+                    memeDetectionRequest.DetectionMode = "combined";
+                }
+                else if (!string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                {
+                    memeDetectionRequest.DetectionMode = "image";
+                }
+                else if (!string.IsNullOrEmpty(memeDetectionRequest.Text))
+                {
+                    memeDetectionRequest.DetectionMode = "text";
+                }
+
+                // Use unified analysis that automatically determines the best mode
+                var memeDetectionResult = await _memeDetectionService.AnalyzeAsync(memeDetectionRequest);
                 
                 if (!memeDetectionResult.Success)
                 {
@@ -140,10 +181,21 @@ namespace MemeStreamApi.controller
                 }
 
                 var isMeme = memeDetectionResult.Result?.IsMeme == true;
+                var analysisMode = memeDetectionResult.Result?.DetectionMode ?? "unknown";
+                
+                string message = analysisMode switch
+                {
+                    "text" => isMeme ? "Great! Your text is meme content and can be posted." : "Your text is not a meme and cannot be posted. Only memes are allowed!",
+                    "image" => isMeme ? "Great! Your image contains meme elements and can be posted." : "Your image doesn't contain meme elements and cannot be posted. Only memes are allowed!",
+                    "combined" => isMeme ? "Perfect! Your text and image together create meme content and can be posted." : "Your content combination is not a meme and cannot be posted. Only memes are allowed!",
+                    _ => isMeme ? "Content detected as meme and can be posted." : "Content is not a meme and cannot be posted. Only memes are allowed!"
+                };
+
                 return Ok(new { 
                     isMeme = isMeme,
-                    canPost = isMeme, // Can only post if it IS a meme
-                    message = isMeme ? "Great! This is meme content and can be posted." : "This content is not a meme and cannot be posted. Only memes are allowed!",
+                    canPost = isMeme,
+                    message = message,
+                    analysisMode = analysisMode,
                     analysis = memeDetectionResult.Result
                 });
             }
