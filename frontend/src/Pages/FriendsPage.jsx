@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context";
 import { Navbar } from "../components/Navbar";
 import api from "../utils/axios";
-import { FaUserPlus, FaSearch, FaUserFriends, FaBell, FaTimes } from "react-icons/fa";
+import { FaSearch, FaUserFriends, FaBell, FaTimes } from "react-icons/fa";
 
 export const FriendsPage = () => {
   const { isVerified, loading: verifyLoading } = useContext(VerifyContext);
@@ -61,6 +61,7 @@ export const FriendsPage = () => {
     []
   );
 
+
   useEffect(() => {
     if (searchQuery) {
       searchUsersDebounced(searchQuery);
@@ -68,6 +69,7 @@ export const FriendsPage = () => {
       setSearchResults([]);
     }
   }, [searchQuery, searchUsersDebounced]);
+
 
   useEffect(() => {
     fetchFriends(1, false);
@@ -143,15 +145,23 @@ export const FriendsPage = () => {
   const sendFriendRequest = async (receiverId) => {
     try {
       await api.post("/FriendRequest/send", { receiverId });
-      setMessage("Friend request sent!");
+      setMessage("Friend request sent! Now wait for them to accept your awesomeness 🎉");
+      
+      // Update search results state
       setSearchResults((prev) =>
         prev.map((u) =>
           u.id === receiverId ? { ...u, friendshipStatus: "Request Sent", canSendRequest: false } : u
         )
       );
+      
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      setMessage("Error sending request");
+      console.error("Error sending friend request:", error);
+      if (error.response?.data) {
+        setMessage(error.response.data || "Error sending request");
+      } else {
+        setMessage("Error sending request - Try again later! 😅");
+      }
       setTimeout(() => setMessage(""), 3000);
     }
   };
@@ -187,19 +197,23 @@ export const FriendsPage = () => {
   };
 
   const unfriendUser = async (id, name) => {
-    if (!window.confirm(`Remove ${name} from friends?`)) return;
+    if (!window.confirm(`Remove ${name} from friends? This will end your beautiful friendship 💔`)) return;
     try {
       await api.delete(`/FriendRequest/unfriend/${id}`);
-      setMessage(`${name} removed from friends`);
+      setMessage(`${name} removed from friends. Friendship status: It's complicated 😢`);
+      
       // Reset pagination and refetch
       setFriendsPage(1);
       fetchFriends(1, false);
+      
+      // Update search results state
       setSearchResults((prev) =>
         prev.map((u) => (u.id === id ? { ...u, friendshipStatus: "None", canSendRequest: true } : u))
       );
+      
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      setMessage("Error removing friend");
+      setMessage("Error removing friend - Maybe they don't want to let you go! 😅");
       setTimeout(() => setMessage(""), 3000);
     }
   };
@@ -376,18 +390,18 @@ export const FriendsPage = () => {
                   </div>
                 </div>
 
-                {/* Find Friends Section */}
+                {/* Search Friends Section */}
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">
                     <h2 className="text-lg font-bold text-base-content flex items-center gap-2 mb-4">
                       <FaSearch className="text-primary" />
-                      Search Friends
+                      Search Your Friends
                     </h2>
                     
                     <div className="form-control mb-4">
                       <input
                         type="text"
-                        placeholder="Search your friends..."
+                        placeholder="Search among your friends..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="input input-bordered input-sm w-full"
@@ -458,7 +472,7 @@ export const FriendsPage = () => {
                       </p>
                     ) : (
                       <p className="text-base-content/60 text-sm text-center py-4">
-                        Search among your friends
+                        Search among your existing friends 👥
                       </p>
                     )}
                   </div>
