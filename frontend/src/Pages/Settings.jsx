@@ -8,7 +8,6 @@ import {
   FaUser, 
   FaBell, 
   FaLock, 
-  FaEye, 
   FaPalette, 
   FaTrashAlt, 
   FaExclamationTriangle,
@@ -16,7 +15,6 @@ import {
   FaSpinner,
   FaEdit,
   FaKey,
-  FaEyeSlash,
   FaDownload,
   FaCog,
   FaToggleOn,
@@ -50,12 +48,6 @@ export const SettingsPage = () => {
     pushNotifications: true
   });
   
-  const [privacySettings, setPrivacySettings] = useState({
-    profileVisibility: 'public', // public, friends, private
-    showOnlineStatus: true,
-    allowDirectMessages: true,
-    showActivityStatus: true
-  });
 
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
@@ -65,7 +57,6 @@ export const SettingsPage = () => {
 
   const [isLoading, setIsLoading] = useState({
     notifications: false,
-    privacy: false,
     password: false
   });
 
@@ -94,12 +85,6 @@ export const SettingsPage = () => {
       if (notifResult.success) {
         setNotificationSettings(prev => ({ ...prev, ...notifResult.data }));
       }
-
-      // Load privacy settings
-      const privacyResult = await userService.getPrivacySettings();
-      if (privacyResult.success) {
-        setPrivacySettings(prev => ({ ...prev, ...privacyResult.data }));
-      }
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -124,24 +109,6 @@ export const SettingsPage = () => {
     setIsLoading(prev => ({ ...prev, notifications: false }));
   };
 
-  const handlePrivacyChange = async (setting, value) => {
-    setPrivacySettings(prev => ({ ...prev, [setting]: value }));
-    
-    setIsLoading(prev => ({ ...prev, privacy: true }));
-    const result = await userService.updatePrivacySettings({
-      ...privacySettings,
-      [setting]: value
-    });
-    
-    if (result.success) {
-      toast.success('Privacy settings updated');
-    } else {
-      toast.error(result.error);
-      // Revert on error
-      setPrivacySettings(prev => ({ ...prev, [setting]: prev[setting] }));
-    }
-    setIsLoading(prev => ({ ...prev, privacy: false }));
-  };
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
@@ -226,7 +193,6 @@ export const SettingsPage = () => {
   const tabs = [
     { id: 'profile', label: 'Profile', icon: FaUser },
     { id: 'notifications', label: 'Notifications', icon: FaBell },
-    { id: 'privacy', label: 'Privacy', icon: FaEye },
     { id: 'security', label: 'Security', icon: FaLock },
     { id: 'appearance', label: 'Appearance', icon: FaPalette },
     { id: 'account', label: 'Account', icon: FaCog },
@@ -348,60 +314,6 @@ export const SettingsPage = () => {
                             className="btn btn-ghost btn-sm"
                           >
                             {notificationSettings[key] ? (
-                              <FaToggleOn className="text-2xl text-primary" />
-                            ) : (
-                              <FaToggleOff className="text-2xl text-base-content/50" />
-                            )}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Privacy Settings */}
-                {activeTab === 'privacy' && (
-                  <div className="p-6">
-                    <div className="flex items-center gap-3 mb-6">
-                      <FaEye className="text-2xl text-primary" />
-                      <h2 className="text-xl font-semibold">Privacy Settings</h2>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="p-4 bg-base-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium">Profile Visibility</h3>
-                            <p className="text-sm text-base-content/70">Who can see your profile</p>
-                          </div>
-                          <select
-                            value={privacySettings.profileVisibility}
-                            onChange={(e) => handlePrivacyChange('profileVisibility', e.target.value)}
-                            className="select select-bordered"
-                            disabled={isLoading.privacy}
-                          >
-                            <option value="public">Public</option>
-                            <option value="friends">Friends Only</option>
-                            <option value="private">Private</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {Object.entries({
-                        showOnlineStatus: 'Show when you\'re online',
-                        allowDirectMessages: 'Allow direct messages',
-                        showActivityStatus: 'Show activity status'
-                      }).map(([key, label]) => (
-                        <div key={key} className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-                          <div>
-                            <h3 className="font-medium">{label}</h3>
-                          </div>
-                          <button
-                            onClick={() => handlePrivacyChange(key, !privacySettings[key])}
-                            disabled={isLoading.privacy}
-                            className="btn btn-ghost btn-sm"
-                          >
-                            {privacySettings[key] ? (
                               <FaToggleOn className="text-2xl text-primary" />
                             ) : (
                               <FaToggleOff className="text-2xl text-base-content/50" />
