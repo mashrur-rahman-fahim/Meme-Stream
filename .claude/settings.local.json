@@ -16,7 +16,10 @@
       "Bash(cmd /c:*)",
       "Bash(cat:*)",
       "Bash(psql:*)",
-      "Bash(tasklist)"
+      "Bash(tasklist)",
+      "Bash(dotnet ef dbcontext script:*)",
+      "Bash(rm:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

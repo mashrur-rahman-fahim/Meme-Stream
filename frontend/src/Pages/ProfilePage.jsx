@@ -64,8 +64,10 @@ export const ProfilePage = () => {
       }
       
       if (leaderboardRes.success) {
+        console.log("Leaderboard response:", leaderboardRes.data);
         // Handle the nested structure - API returns { title, leaderboard }
         const leaderboardData = leaderboardRes.data?.leaderboard || leaderboardRes.data || [];
+        console.log("Extracted leaderboard data:", leaderboardData);
         setLeaderboard(Array.isArray(leaderboardData) ? leaderboardData : []);
       } else {
         console.error("Failed to fetch leaderboard:", leaderboardRes.error);
@@ -79,6 +81,36 @@ export const ProfilePage = () => {
       setLoading(false);
     }
   }, []);
+  
+  const handleRecalculateAllScores = async () => {
+    const toastId = toast.loading("Recalculating all scores...");
+    try {
+      const response = await api.post("/LaughScore/recalculate-all");
+      if (response.status === 200) {
+        toast.success("All scores recalculated successfully!", { id: toastId });
+        // Refresh the data to show updated leaderboard
+        await fetchUserData();
+      }
+    } catch (error) {
+      console.error("Failed to recalculate scores:", error);
+      toast.error("Failed to recalculate scores", { id: toastId });
+    }
+  };
+  
+  const handleInitializeMyScore = async () => {
+    const toastId = toast.loading("Initializing your score...");
+    try {
+      const response = await api.post("/LaughScore/initialize");
+      if (response.status === 200) {
+        toast.success(`Score initialized: ${response.data.laughScore} points!`, { id: toastId });
+        // Refresh the data to show updated leaderboard
+        await fetchUserData();
+      }
+    } catch (error) {
+      console.error("Failed to initialize score:", error);
+      toast.error("Failed to initialize score", { id: toastId });
+    }
+  };
 
   // Handle profile update from the modal
   const handleProfileUpdate = useCallback((updatedUser) => {
@@ -363,16 +395,33 @@ export const ProfilePage = () => {
               </div>
               
               {!Array.isArray(leaderboard) || leaderboard.length === 0 ? (
-                <div className="text-center text-base-content text-xl">
-                  No leaderboard data available
+                <div className="text-center text-base-content">
+                  <p className="text-xl mb-4">No leaderboard data available</p>
+                  <div className="flex gap-4 justify-center">
+                    <button 
+                      onClick={handleInitializeMyScore}
+                      className="btn btn-primary"
+                    >
+                      Initialize My Score
+                    </button>
+                    <button 
+                      onClick={handleRecalculateAllScores}
+                      className="btn btn-secondary"
+                    >
+                      Initialize All Scores
+                    </button>
+                  </div>
+                  <p className="text-sm text-base-content/60 mt-2">
+                    Initialize your score first to appear in the leaderboard
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
                   {leaderboard.map((userItem, index) => (
                     <div
-                      key={userItem.id}
+                      key={userItem.userId || userItem.id}
                       className={`p-4 rounded-lg border flex items-center justify-between ${
-                        userItem.id === user.id 
+                        (userItem.userId || userItem.id) === user.id 
                           ? 'bg-primary/10 border-primary/30' 
                           : 'bg-base-100 border-base-300'
                       }`}
@@ -402,7 +451,7 @@ export const ProfilePage = () => {
                         <div>
                           <div className="font-semibold text-base-content">
                             {userItem.name}
-                            {userItem.id === user.id && (
+                            {(userItem.userId || userItem.id) === user.id && (
                               <span className="ml-2 text-sm text-primary">(You)</span>
                             )}
                           </div>

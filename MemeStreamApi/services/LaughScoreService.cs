@@ -135,6 +135,18 @@ namespace MemeStreamApi.services
 
                 // Get funniness level
                 breakdown.FunninessLevel = GetFunninessLevel(breakdown.TotalScore);
+                
+                // Auto-update the user's LaughScore in the database if it's different
+                var user = await _context.Users.FindAsync(userId);
+                if (user != null && user.LaughScore != breakdown.TotalScore)
+                {
+                    var oldScore = user.LaughScore;
+                    user.LaughScore = breakdown.TotalScore;
+                    user.LastLaughScoreUpdate = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Auto-updated LaughScore for user {UserId}: {OldScore} -> {NewScore}", 
+                        userId, oldScore, breakdown.TotalScore);
+                }
 
                 return breakdown;
             }
@@ -220,15 +232,16 @@ namespace MemeStreamApi.services
                         Name = u.Name,
                         Image = u.Image,
                         LaughScore = u.LaughScore,
-                        FunninessLevel = GetFunninessLevel(u.LaughScore),
+                        FunninessLevel = "",
                         LastUpdated = u.LastLaughScoreUpdate
                     })
                     .ToListAsync();
 
-                // Add ranking positions
+                // Add ranking positions and funniness levels
                 for (int i = 0; i < leaderboard.Count; i++)
                 {
                     leaderboard[i].Rank = i + 1;
+                    leaderboard[i].FunninessLevel = GetFunninessLevel(leaderboard[i].LaughScore);
                 }
 
                 return leaderboard;

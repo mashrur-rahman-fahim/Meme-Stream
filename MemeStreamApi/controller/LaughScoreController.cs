@@ -1,6 +1,9 @@
+using MemeStreamApi.data;
 using MemeStreamApi.services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Security.Claims;
 
 namespace MemeStreamApi.controller
@@ -11,11 +14,13 @@ namespace MemeStreamApi.controller
     {
         private readonly ILaughScoreService _laughScoreService;
         private readonly ILogger<LaughScoreController> _logger;
+        private readonly MemeStreamDbContext _context;
 
-        public LaughScoreController(ILaughScoreService laughScoreService, ILogger<LaughScoreController> logger)
+        public LaughScoreController(ILaughScoreService laughScoreService, ILogger<LaughScoreController> logger, MemeStreamDbContext context)
         {
             _laughScoreService = laughScoreService;
             _logger = logger;
+            _context = context;
         }
 
         /// <summary>
@@ -34,6 +39,10 @@ namespace MemeStreamApi.controller
                 }
 
                 var breakdown = await _laughScoreService.GetDetailedLaughScoreAsync(userId);
+                
+                // Also ensure the score is saved to the database
+                await _laughScoreService.UpdateLaughScoreAsync(userId);
+                
                 return Ok(breakdown);
             }
             catch (Exception ex)
@@ -79,6 +88,39 @@ namespace MemeStreamApi.controller
             }
         }
 
+        /// <summary>
+        /// Initialize current user's LaughScore in the database
+        /// </summary>
+        [HttpPost("initialize")]
+        [Authorize]
+        public async Task<IActionResult> InitializeMyLaughScore()
+        {
+            try
+            {
+                var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized(new { error = "Invalid user authentication" });
+                }
+
+                await _laughScoreService.UpdateLaughScoreAsync(userId);
+                var newScore = await _laughScoreService.CalculateLaughScoreAsync(userId);
+                
+                _logger.LogInformation("Initialized LaughScore for user {UserId}: {Score}", userId, newScore);
+                
+                return Ok(new { 
+                    message = "LaughScore initialized successfully", 
+                    userId, 
+                    laughScore = newScore 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error initializing LaughScore");
+                return StatusCode(500, new { error = "Failed to initialize LaughScore" });
+            }
+        }
+        
         /// <summary>
         /// Update LaughScore for a specific user
         /// </summary>
@@ -145,6 +187,49 @@ namespace MemeStreamApi.controller
             }
         }
 
+        /// <summary>
+        /// Debug endpoint to check and fix user scores in database
+        /// </summary>
+        [HttpGet("debug/check-scores")]
+        public async Task<IActionResult> CheckDatabaseScores()
+        {
+            try
+            {
+                var users = await _context.Users.ToListAsync();
+                var result = new List<object>();
+                
+                foreach (var user in users)
+                {
+                    var calculatedScore = await _laughScoreService.CalculateLaughScoreAsync(user.Id);
+                    result.Add(new 
+                    {
+                        userId = user.Id,
+                        name = user.Name,
+                        databaseScore = user.LaughScore,
+                        calculatedScore = calculatedScore,
+                        needsUpdate = user.LaughScore != calculatedScore
+                    });
+                }
+                
+                return Ok(new 
+                { 
+                    message = "Database score check",
+                    users = result,
+                    summary = new
+                    {
+                        totalUsers = result.Count,
+                        usersNeedingUpdate = result.Count(r => ((dynamic)r).needsUpdate),
+                        usersWithScores = result.Count(r => ((dynamic)r).databaseScore > 0)
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking database scores");
+                return StatusCode(500, new { error = "Failed to check scores" });
+            }
+        }
+        
         /// <summary>
         /// Get LaughScore algorithm information and scoring rules
         /// </summary>
