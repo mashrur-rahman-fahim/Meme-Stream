@@ -291,6 +291,25 @@ export const feedService = {
       };
     }
   },
+
+  // Get a single post by ID
+  getSinglePost: async (postId) => {
+    try {
+      const response = await api.get(`/Post/single/${postId}`);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to fetch post",
+      };
+    }
+  },
 };
 
 export default feedService;
