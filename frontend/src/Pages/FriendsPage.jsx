@@ -143,20 +143,32 @@ export const FriendsPage = () => {
   };
 
   const sendFriendRequest = async (receiverId) => {
+    // Optimistic update - immediately show request as sent
+    const previousSearchResults = searchResults;
+    setSearchResults((prev) =>
+      prev.map((u) =>
+        u.id === receiverId ? { ...u, friendshipStatus: "Request Sent", canSendRequest: false, isOptimistic: true } : u
+      )
+    );
+    setMessage("Friend request sent! Now wait for them to accept your awesomeness 🎉");
+
     try {
       await api.post("/FriendRequest/send", { receiverId });
-      setMessage("Friend request sent! Now wait for them to accept your awesomeness 🎉");
       
-      // Update search results state
+      // Update to remove optimistic flag on success
       setSearchResults((prev) =>
         prev.map((u) =>
-          u.id === receiverId ? { ...u, friendshipStatus: "Request Sent", canSendRequest: false } : u
+          u.id === receiverId ? { ...u, isOptimistic: false } : u
         )
       );
       
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error("Error sending friend request:", error);
+      
+      // Rollback optimistic changes
+      setSearchResults(previousSearchResults);
+      
       if (error.response?.data) {
         setMessage(error.response.data || "Error sending request");
       } else {
@@ -167,30 +179,57 @@ export const FriendsPage = () => {
   };
 
   const acceptFriendRequest = async (id) => {
+    // Find the request being accepted
+    const requestToAccept = friendRequests.find(req => req.id === id);
+    if (!requestToAccept) return;
+
+    // Optimistic update - immediately move to friends list and remove from requests
+    const previousRequests = friendRequests;
+    const previousFriends = friends;
+    
+    setFriendRequests(prev => prev.filter(req => req.id !== id));
+    setFriends(prev => [{
+      id: requestToAccept.sender.id,
+      name: requestToAccept.sender.name,
+      image: requestToAccept.sender.image,
+      isOptimistic: true
+    }, ...prev]);
+    setMessage("Friend request accepted!");
+
     try {
       await api.put(`/FriendRequest/accept/${id}`);
-      setMessage("Friend request accepted!");
-      // Reset pagination and refetch
+      
+      // Remove optimistic flag on success and refresh data
       setFriendsPage(1);
       setRequestsPage(1);
       fetchFriends(1, false);
       fetchFriendRequests(1, false);
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
+      // Rollback optimistic changes
+      setFriendRequests(previousRequests);
+      setFriends(previousFriends);
       setMessage("Error accepting request");
       setTimeout(() => setMessage(""), 3000);
     }
   };
 
   const declineFriendRequest = async (id) => {
+    // Optimistic update - immediately remove from requests
+    const previousRequests = friendRequests;
+    setFriendRequests(prev => prev.filter(req => req.id !== id));
+    setMessage("Friend request declined");
+
     try {
       await api.delete(`/FriendRequest/delete/${id}`);
-      setMessage("Friend request declined");
-      // Reset pagination and refetch
+      
+      // Reset pagination and refetch to ensure consistency
       setRequestsPage(1);
       fetchFriendRequests(1, false);
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
+      // Rollback optimistic changes
+      setFriendRequests(previousRequests);
       setMessage("Error declining request");
       setTimeout(() => setMessage(""), 3000);
     }
@@ -198,21 +237,34 @@ export const FriendsPage = () => {
 
   const unfriendUser = async (id, name) => {
     if (!window.confirm(`Remove ${name} from friends? This will end your beautiful friendship 💔`)) return;
+    
+    // Optimistic update - immediately remove from friends and update search results
+    const previousFriends = friends;
+    const previousSearchResults = searchResults;
+    
+    setFriends(prev => prev.filter(friend => friend.id !== id));
+    setSearchResults((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, friendshipStatus: "None", canSendRequest: true, isOptimistic: true } : u))
+    );
+    setMessage(`${name} removed from friends. Friendship status: It's complicated 😢`);
+
     try {
       await api.delete(`/FriendRequest/unfriend/${id}`);
-      setMessage(`${name} removed from friends. Friendship status: It's complicated 😢`);
       
-      // Reset pagination and refetch
+      // Remove optimistic flag and refresh data
+      setSearchResults((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, isOptimistic: false } : u))
+      );
+      
+      // Reset pagination and refetch to ensure consistency
       setFriendsPage(1);
       fetchFriends(1, false);
       
-      // Update search results state
-      setSearchResults((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, friendshipStatus: "None", canSendRequest: true } : u))
-      );
-      
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
+      // Rollback optimistic changes
+      setFriends(previousFriends);
+      setSearchResults(previousSearchResults);
       setMessage("Error removing friend - Maybe they don't want to let you go! 😅");
       setTimeout(() => setMessage(""), 3000);
     }
