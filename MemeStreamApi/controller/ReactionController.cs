@@ -24,14 +24,17 @@ namespace MemeStreamApi.controller
         private readonly MemeStreamDbContext _context;
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly ILaughScoreService _laughScoreService;
         
         public ReactionController(MemeStreamDbContext context, 
             INotificationService notificationService,
-            IHubContext<NotificationHub> hubContext)
+            IHubContext<NotificationHub> hubContext,
+            ILaughScoreService laughScoreService)
         {
             this._context = context;
             this._notificationService = notificationService;
             this._hubContext = hubContext;
+            this._laughScoreService = laughScoreService;
         }
         public class ReactionDto
         {
@@ -63,6 +66,10 @@ namespace MemeStreamApi.controller
                 // Remove the existing reaction (toggle behavior)
                 _context.Reactions.Remove(existingReaction);
                 _context.SaveChanges();
+                
+                // Update LaughScore for post owner
+                _ = Task.Run(async () => await _laughScoreService.UpdateLaughScoreAsync(post.UserId));
+                
                 return Ok(new { message = "Reaction removed", removed = true });
             }
             
@@ -83,6 +90,9 @@ namespace MemeStreamApi.controller
             };
             _context.Reactions.Add(reaction);
             _context.SaveChanges();
+            
+            // Update LaughScore for post owner
+            _ = Task.Run(async () => await _laughScoreService.UpdateLaughScoreAsync(post.UserId));
             
             // Create notification for post owner (don't notify self)
             if (post.UserId != userId)
@@ -138,13 +148,21 @@ namespace MemeStreamApi.controller
                     return Unauthorized("User ID claim not found.");
                 }
                 var userId = int.Parse(userIdClaim);
-                var reaction = _context.Reactions.FirstOrDefault(r => r.Id == id && r.UserId == userId);
+                var reaction = _context.Reactions
+                    .Include(r => r.Post)
+                    .FirstOrDefault(r => r.Id == id && r.UserId == userId);
                 if (reaction == null)
                 {
                     return NotFound("Reaction not found.");
                 }
+                
+                var postOwnerId = reaction.Post.UserId;
                 _context.Reactions.Remove(reaction);
                 _context.SaveChanges();
+                
+                // Update LaughScore for post owner
+                _ = Task.Run(async () => await _laughScoreService.UpdateLaughScoreAsync(postOwnerId));
+                
                 return Ok("Reaction deleted successfully.");
             }
             catch (Exception ex){

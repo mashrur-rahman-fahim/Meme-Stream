@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../context/NotificationContext';
-import { FaBell, FaTimes, FaHeart, FaComment, FaUserPlus, FaAt, FaShare, FaUsers } from 'react-icons/fa';
+import { FaBell, FaTimes, FaHeart, FaComment, FaUserPlus, FaAt, FaShare, FaUsers, FaLaughSquint } from 'react-icons/fa';
 
 const NotificationBell = () => {
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ const NotificationBell = () => {
     
     switch (type) {
       case 'like':
-        return <FaHeart {...iconProps} style={{ color: '#ef4444' }} />;
+        return <FaLaughSquint {...iconProps} style={{ color: '#f59e0b' }} />;
       case 'comment':
         return <FaComment {...iconProps} style={{ color: '#3b82f6' }} />;
       case 'follow':

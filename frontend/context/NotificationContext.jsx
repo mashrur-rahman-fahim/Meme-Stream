@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import * as signalR from '@microsoft/signalr';
 import api from '../src/utils/axios';
+import { getWebSocketUrl } from '../src/utils/api-config';
 
 // Initial state
 const initialState = {
@@ -156,7 +157,7 @@ export const NotificationProvider = ({ children }) => {
       }
 
       const connection = new signalR.HubConnectionBuilder()
-        .withUrl(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/notificationhub`, {
+        .withUrl(`${getWebSocketUrl()}/notificationhub`, {
           accessTokenFactory: () => token
         })
         .withAutomaticReconnect()

@@ -3,6 +3,7 @@ import { VerifyContext } from "../../context/create_verify_context";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/axios";
 import feedService from "../services/feedService";
+import laughScoreService from "../services/laughScoreService";
 import { PostCard } from "../components/PostCard";
 import { ConfirmationModal } from "../components/ConfirmationModal";
 import { Navbar } from "../components/Navbar";
@@ -13,11 +14,15 @@ import {
   FaClipboardList,
   FaUserCircle,
   FaUserFriends,
+  FaLaugh,
+  FaTrophy,
 } from "react-icons/fa";
 
 export const ProfilePage = () => {
   const [user, setUser] = useState({ name: "", email: "", bio: "", image: "" });
   const [posts, setPosts] = useState([]);
+  const [laughScore, setLaughScore] = useState(null);
+  const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -38,19 +43,74 @@ export const ProfilePage = () => {
   const fetchUserData = useCallback(async () => {
     try {
       setLoading(true);
-      const userRes = await api.get("/User/profile");
+      const [userRes, postsRes, laughScoreRes, leaderboardRes] = await Promise.all([
+        api.get("/User/profile"),
+        feedService.getUserPosts(),
+        laughScoreService.getDetailedScore(),
+        laughScoreService.getLeaderboard(10)
+      ]);
+      
       setUser(userRes.data);
-
-      const postsRes = await feedService.getUserPosts();
+      
       if (postsRes.success) {
         setPosts(postsRes.data.allPosts || []);
       }
+      
+      if (laughScoreRes.success) {
+        console.log("LaughScore data received:", laughScoreRes.data);
+        setLaughScore(laughScoreRes.data);
+      } else {
+        console.error("Failed to fetch LaughScore:", laughScoreRes.error);
+      }
+      
+      if (leaderboardRes.success) {
+        console.log("Leaderboard response:", leaderboardRes.data);
+        // Handle the nested structure - API returns { title, leaderboard }
+        const leaderboardData = leaderboardRes.data?.leaderboard || leaderboardRes.data || [];
+        console.log("Extracted leaderboard data:", leaderboardData);
+        setLeaderboard(Array.isArray(leaderboardData) ? leaderboardData : []);
+      } else {
+        console.error("Failed to fetch leaderboard:", leaderboardRes.error);
+      }
     } catch (error) {
       console.error("Error fetching user data:", error);
+      // Set default values on error
+      setLeaderboard([]);
+      setLaughScore(null);
     } finally {
       setLoading(false);
     }
   }, []);
+  
+  const handleRecalculateAllScores = async () => {
+    const toastId = toast.loading("Recalculating all scores...");
+    try {
+      const response = await api.post("/LaughScore/recalculate-all");
+      if (response.status === 200) {
+        toast.success("All scores recalculated successfully!", { id: toastId });
+        // Refresh the data to show updated leaderboard
+        await fetchUserData();
+      }
+    } catch (error) {
+      console.error("Failed to recalculate scores:", error);
+      toast.error("Failed to recalculate scores", { id: toastId });
+    }
+  };
+  
+  const handleInitializeMyScore = async () => {
+    const toastId = toast.loading("Initializing your score...");
+    try {
+      const response = await api.post("/LaughScore/initialize");
+      if (response.status === 200) {
+        toast.success(`Score initialized: ${response.data.laughScore} points!`, { id: toastId });
+        // Refresh the data to show updated leaderboard
+        await fetchUserData();
+      }
+    } catch (error) {
+      console.error("Failed to initialize score:", error);
+      toast.error("Failed to initialize score", { id: toastId });
+    }
+  };
 
   // Handle profile update from the modal
   const handleProfileUpdate = useCallback((updatedUser) => {
@@ -208,6 +268,12 @@ export const ProfilePage = () => {
                 isActive={activeTab === "friends"}
                 onClick={() => setActiveTab("friends")}
               />
+              <TabButton
+                icon={<FaTrophy />}
+                label="Leaderboard"
+                isActive={activeTab === "leaderboard"}
+                onClick={() => setActiveTab("leaderboard")}
+              />
             </div>
           </div>
         </div>
@@ -231,6 +297,177 @@ export const ProfilePage = () => {
                     onChange={fetchUserData} // to refresh the page when needed
                   />
                 ))
+              )}
+            </div>
+          )}
+          
+          {activeTab === "about" && (
+            <div className="space-y-6">
+              <div className="bg-base-100 rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
+                  <FaUserCircle className="text-primary" />
+                  About Me
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-medium text-base-content mb-2">Bio</h3>
+                    <p className="text-base-content/70">
+                      {user.bio || "No bio available."}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-base-content mb-2">Member Since</h3>
+                    <p className="text-base-content/70">
+                      {new Date(user.createdAt).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      }) || "Recently joined"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Comedy Level Section */}
+              {laughScore && (
+                <div className="bg-base-100 rounded-lg p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FaLaugh className="text-primary text-xl" />
+                    <h2 className="text-xl font-semibold text-base-content">Comedy Level</h2>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="text-center md:text-left">
+                        <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                          <span className="text-4xl font-bold text-primary">{laughScore.totalScore}</span>
+                          <span className="text-base-content/60 text-lg">points</span>
+                        </div>
+                        <div className="text-lg font-medium text-primary">
+                          {laughScore.funninessLevel}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-base-200 rounded-lg p-4">
+                        <h3 className="font-medium text-base-content mb-3">Activity Breakdown</h3>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-base-content/70">Posts:</span>
+                            <span className="font-medium">{laughScore.totalPosts}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-base-content/70">Reactions:</span>
+                            <span className="font-medium">{laughScore.uniqueReactions}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-base-content/70">Shares:</span>
+                            <span className="font-medium">{laughScore.uniqueShares}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-base-content/70">Comments:</span>
+                            <span className="font-medium">{laughScore.uniqueComments}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-base-200 rounded-lg p-4">
+                        <h3 className="font-medium text-base-content mb-2">Performance</h3>
+                        <div className="text-sm text-base-content/70">
+                          <p>Average per meme: <span className="font-medium">{laughScore.averageScorePerMeme?.toFixed(1) || 0} pts</span></p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {activeTab === "leaderboard" && (
+            <div className="space-y-4">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-base-content flex items-center justify-center gap-2">
+                  <FaTrophy className="text-yellow-500" />
+                  Comedy Leaderboard
+                </h2>
+                <p className="text-base-content/60 mt-1">The funniest users on MemeStream</p>
+              </div>
+              
+              {!Array.isArray(leaderboard) || leaderboard.length === 0 ? (
+                <div className="text-center text-base-content">
+                  <p className="text-xl mb-4">No leaderboard data available</p>
+                  <div className="flex gap-4 justify-center">
+                    <button 
+                      onClick={handleInitializeMyScore}
+                      className="btn btn-primary"
+                    >
+                      Initialize My Score
+                    </button>
+                    <button 
+                      onClick={handleRecalculateAllScores}
+                      className="btn btn-secondary"
+                    >
+                      Initialize All Scores
+                    </button>
+                  </div>
+                  <p className="text-sm text-base-content/60 mt-2">
+                    Initialize your score first to appear in the leaderboard
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {leaderboard.map((userItem, index) => (
+                    <div
+                      key={userItem.userId || userItem.id}
+                      className={`p-4 rounded-lg border flex items-center justify-between ${
+                        (userItem.userId || userItem.id) === user.id 
+                          ? 'bg-primary/10 border-primary/30' 
+                          : 'bg-base-100 border-base-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`text-2xl font-bold w-8 text-center ${
+                          index === 0 ? 'text-yellow-500' :
+                          index === 1 ? 'text-gray-400' :
+                          index === 2 ? 'text-yellow-600' :
+                          'text-base-content/60'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        
+                        <div className="avatar">
+                          <div className="w-12 h-12 rounded-full bg-base-200">
+                            {userItem.image ? (
+                              <img src={userItem.image} alt={userItem.name} />
+                            ) : (
+                              <span className="text-lg flex items-center justify-center w-full h-full">
+                                {userItem.name?.charAt(0)?.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="font-semibold text-base-content">
+                            {userItem.name}
+                            {(userItem.userId || userItem.id) === user.id && (
+                              <span className="ml-2 text-sm text-primary">(You)</span>
+                            )}
+                          </div>
+                          <div className="text-sm text-primary">
+                            {userItem.funninessLevel}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary">{userItem.laughScore}</div>
+                        <div className="text-sm text-base-content/60">points</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}

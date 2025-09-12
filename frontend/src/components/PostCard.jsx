@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { FaLaughSquint, FaComment, FaShare, FaEllipsisH, FaShareSquare } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import { CommentModal } from "./CommentModal";
 import feedService from "../services/feedService";
 import toast from 'react-hot-toast';
@@ -7,6 +8,7 @@ import { formatDate } from "../utils/formatDate";
 
 
 export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onChange }) => {
+  const navigate = useNavigate();
   const [reactions, setReactions] = useState([]);
   const [commentCount, setCommentCount] = useState(0);
   const [userReaction, setUserReaction] = useState(null);
@@ -143,9 +145,17 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     setReplyText('');
   };
 
+  const handlePostClick = (e) => {
+    // Don't navigate if clicking on buttons, links, or form elements
+    if (e.target.closest('button, a, input, textarea, .dropdown')) {
+      return;
+    }
+    navigate(`/posts/${targetPostId}`);
+  };
+
   return (
     <>
-      <div className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow duration-200 border border-base-300">
+      <div className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow duration-200 border border-base-300 cursor-pointer" onClick={handlePostClick}>
         <div className="card-body p-3 sm:p-5">
           {!isOriginalPost && sharer && (
             <div className="flex items-center gap-2 text-sm text-base-content/70 mb-3">

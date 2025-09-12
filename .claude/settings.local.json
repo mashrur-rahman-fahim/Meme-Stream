@@ -11,7 +11,17 @@
       "Bash(taskkill:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(curl:*)",
+      "Bash(cmd /c:*)",
+      "Bash(cat:*)",
+      "Bash(psql:*)",
+      "Bash(tasklist)",
+      "Bash(dotnet ef dbcontext script:*)",
+      "Bash(rm:*)",
+      "Bash(git reset:*)",
+      "Bash(tasklist:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

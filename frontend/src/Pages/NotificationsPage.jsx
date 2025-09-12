@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../../context/NotificationContext';
-import { FaHeart, FaComment, FaUserPlus, FaAt, FaShare, FaUsers, FaBell, FaEllipsisV, FaTrash, FaCheck, FaCheckDouble } from 'react-icons/fa';
+import { FaHeart, FaComment, FaUserPlus, FaAt, FaShare, FaUsers, FaBell, FaEllipsisV, FaTrash, FaCheck, FaCheckDouble, FaLaughSquint } from 'react-icons/fa';
 import { Navbar } from '../components/Navbar';
 
 const NotificationsPage = () => {
@@ -26,7 +26,7 @@ const NotificationsPage = () => {
     
     switch (type) {
       case 'like':
-        return <FaHeart {...iconProps} style={{ color: '#ef4444' }} />;
+        return <FaLaughSquint {...iconProps} style={{ color: '#f59e0b' }} />;
       case 'comment':
         return <FaComment {...iconProps} style={{ color: '#3b82f6' }} />;
       case 'follow':

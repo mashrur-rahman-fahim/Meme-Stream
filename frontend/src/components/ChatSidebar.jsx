@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/axios";
 
 const ChatSidebar = () => {
   const [friends, setFriends] = useState([]);
@@ -9,16 +9,12 @@ const ChatSidebar = () => {
 
   useEffect(() => {
     const fetchFriends = async () => {
-        const res = await axios.get("http://localhost:5216/api/ChatSidebar/friends", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/ChatSidebar/friends");
         setFriends(res.data);
       };
       
       const fetchGroups = async () => {
-        const res = await axios.get("http://localhost:5216/api/ChatSidebar/groups", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/ChatSidebar/groups");
         setGroups(res.data);
       };
       

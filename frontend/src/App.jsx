@@ -18,6 +18,7 @@ import { FriendsPage } from "./Pages/FriendsPage";
 import { PublicProfile } from "./components/PublicProfile";
 import { SettingsPage } from "./Pages/Settings";
 import NotificationsPage from "./Pages/NotificationsPage";
+import { SinglePostPage } from "./Pages/SinglePostPage";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
         <Route path="/profile/:userId" element={<PublicProfile />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/posts/:postId" element={<SinglePostPage />} />
         
       </Routes>
     </Router>

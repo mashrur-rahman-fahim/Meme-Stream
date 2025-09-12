@@ -22,14 +22,17 @@ namespace MemeStreamApi.controller
         private readonly MemeStreamDbContext _context;
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly ILaughScoreService _laughScoreService;
         
         public SharedPostController(MemeStreamDbContext context,
             INotificationService notificationService,
-            IHubContext<NotificationHub> hubContext)
+            IHubContext<NotificationHub> hubContext,
+            ILaughScoreService laughScoreService)
         {
             this._context = context;
             this._notificationService = notificationService;
             this._hubContext = hubContext;
+            this._laughScoreService = laughScoreService;
         }
         
         public class SharePostDto
@@ -75,6 +78,9 @@ namespace MemeStreamApi.controller
                 _context.SharedPosts.Add(sharedPost);
                 await _context.SaveChangesAsync();
                 
+                // Update LaughScore for post owner
+                _ = Task.Run(async () => await _laughScoreService.UpdateLaughScoreAsync(post.UserId));
+                
                 // Create notification for post owner (don't notify self)
                 if (post.UserId != userId)
                 {
@@ -101,7 +107,7 @@ namespace MemeStreamApi.controller
                             createdAt = notification.CreatedAt,
                             relatedUser = new { id = userId, name = sharerUser?.Name, image = sharerUser?.Image },
                             actionUrl = notification.ActionUrl
-                        });
+                        }, _notificationService);
                     }
                 }
                 

@@ -230,6 +230,54 @@ namespace MemeStreamApi.controller
                 return BadRequest("Error retrieving post.");
             }
         }
+
+        [Authorize]
+        [HttpGet("single/{id}")]
+        public IActionResult GetSinglePost(int id)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                
+                var post = _context.Posts
+                    .Include(p => p.User)
+                    .FirstOrDefault(p => p.Id == id);
+                    
+                if (post == null)
+                {
+                    return NotFound("Post not found.");
+                }
+                
+                // Format the response similar to the feed format
+                var formattedPost = new {
+                    Id = post.Id,
+                    Content = post.Content,
+                    Image = post.Image,
+                    CreatedAt = post.CreatedAt,
+                    UserId = post.UserId,
+                    User = new {
+                        Id = post.User.Id,
+                        Name = post.User.Name,
+                        Email = post.User.Email,
+                        Image = post.User.Image,
+                        Bio = post.User.Bio
+                    },
+                    IsShared = false,
+                    SharedBy = (object?)null,
+                    SharedAt = (DateTime?)null
+                };
+                
+                return Ok(formattedPost);
+            }
+            catch (System.Exception)
+            {
+                return BadRequest("Error retrieving post.");
+            }
+        }
         [Authorize]
         [HttpGet("posts")]
         public IActionResult GetPostsByUser()

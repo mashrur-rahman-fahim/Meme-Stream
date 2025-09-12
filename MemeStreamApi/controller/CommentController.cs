@@ -22,14 +22,17 @@ namespace MemeStreamApi.controller
         private readonly MemeStreamDbContext _context;
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly ILaughScoreService _laughScoreService;
         
         public CommentController(MemeStreamDbContext context,
             INotificationService notificationService,
-            IHubContext<NotificationHub> hubContext)
+            IHubContext<NotificationHub> hubContext,
+            ILaughScoreService laughScoreService)
         {
             this._context = context;
             this._notificationService = notificationService;
             this._hubContext = hubContext;
+            this._laughScoreService = laughScoreService;
         }
         
         public class CommentDto
@@ -69,6 +72,9 @@ namespace MemeStreamApi.controller
                 _context.Comments.Add(comment);
                 _context.SaveChanges();
                 
+                // Update LaughScore for post owner
+                _ = Task.Run(async () => await _laughScoreService.UpdateLaughScoreAsync(post.UserId));
+                
                 // Create notification for post owner (don't notify self)
                 if (post.UserId != userId)
                 {
@@ -95,7 +101,7 @@ namespace MemeStreamApi.controller
                             createdAt = notification.CreatedAt,
                             relatedUser = new { id = userId, name = commenterUser?.Name, image = commenterUser?.Image },
                             actionUrl = notification.ActionUrl
-                        });
+                        }, _notificationService);
                     }
                 }
                 
@@ -116,13 +122,21 @@ namespace MemeStreamApi.controller
                     return Unauthorized("User ID claim not found.");
                 }
                 var userId = int.Parse(userIdClaim);
-                var comment = _context.Comments.FirstOrDefault(c => c.Id == id && c.UserId == userId);
+                var comment = _context.Comments
+                    .Include(c => c.Post)
+                    .FirstOrDefault(c => c.Id == id && c.UserId == userId);
                 if (comment == null)
                 {
                     return NotFound("Comment not found.");
                 }
+                
+                var postOwnerId = comment.Post.UserId;
                 _context.Comments.Remove(comment);
                 _context.SaveChanges();
+                
+                // Update LaughScore for post owner
+                _ = Task.Run(async () => await _laughScoreService.UpdateLaughScoreAsync(postOwnerId));
+                
                 return Ok("Comment deleted successfully.");
             }
             catch (Exception ex){
@@ -265,7 +279,7 @@ namespace MemeStreamApi.controller
                             createdAt = notification.CreatedAt,
                             relatedUser = new { id = userId, name = replyingUser?.Name, image = replyingUser?.Image },
                             actionUrl = notification.ActionUrl
-                        });
+                        }, _notificationService);
                     }
                 }
                 
@@ -293,7 +307,7 @@ namespace MemeStreamApi.controller
                             createdAt = notification.CreatedAt,
                             relatedUser = new { id = userId, name = replyingUser?.Name, image = replyingUser?.Image },
                             actionUrl = notification.ActionUrl
-                        });
+                        }, _notificationService);
                     }
                 }
 
