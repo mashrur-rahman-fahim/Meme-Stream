@@ -101,7 +101,7 @@ namespace MemeStreamApi.controller
                             createdAt = notification.CreatedAt,
                             relatedUser = new { id = userId, name = commenterUser?.Name, image = commenterUser?.Image },
                             actionUrl = notification.ActionUrl
-                        });
+                        }, _notificationService);
                     }
                 }
                 
@@ -279,7 +279,7 @@ namespace MemeStreamApi.controller
                             createdAt = notification.CreatedAt,
                             relatedUser = new { id = userId, name = replyingUser?.Name, image = replyingUser?.Image },
                             actionUrl = notification.ActionUrl
-                        });
+                        }, _notificationService);
                     }
                 }
                 
@@ -307,7 +307,7 @@ namespace MemeStreamApi.controller
                             createdAt = notification.CreatedAt,
                             relatedUser = new { id = userId, name = replyingUser?.Name, image = replyingUser?.Image },
                             actionUrl = notification.ActionUrl
-                        });
+                        }, _notificationService);
                     }
                 }
 
