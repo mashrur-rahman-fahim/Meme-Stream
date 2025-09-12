@@ -163,7 +163,17 @@ export const Navbar = () => {
                 onClick={() => navigate('/')}
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">M</span>
+                  {currentUser?.image ? (
+                    <img 
+                      src={currentUser.image} 
+                      alt={currentUser?.name || 'User'} 
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-lg">
+                      {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'M'}
+                    </span>
+                  )}
                 </div>
                 <span className="hidden lg:block text-xl font-bold text-blue-600 dark:text-blue-400">MemeStream</span>
               </button>
