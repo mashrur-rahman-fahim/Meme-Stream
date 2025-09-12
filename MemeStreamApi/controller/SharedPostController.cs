@@ -58,6 +58,12 @@ namespace MemeStreamApi.controller
                     return NotFound("Post not found.");
                 }
                 
+                // Check if user is trying to share their own post
+                if (post.UserId == userId)
+                {
+                    return BadRequest("You cannot share your own post.");
+                }
+                
                 // Check if user already shared this post
                 var existingShare = await _context.SharedPosts
                     .FirstOrDefaultAsync(sp => sp.PostId == shareDto.PostId && sp.UserId == userId);

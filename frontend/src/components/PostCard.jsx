@@ -45,6 +45,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     !isOriginalPost && currentUser?.id === sharer?.id,
     [isOriginalPost, currentUser?.id, sharer?.id]
   );
+  const canShare = useMemo(() => 
+    currentUser?.id !== author?.id, // User can't share their own post
+    [currentUser?.id, author?.id]
+  );
   const showOptions = canDeleteOrEdit || canUnshare;
 
   // Lazy load reactions when needed
@@ -454,10 +458,12 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
               <FaComment className="text-sm sm:text-base" />
               <span className="hidden sm:inline">Comment</span>
             </button>
-            <button onClick={handleShareClick} className="btn btn-ghost btn-sm sm:btn-md flex-1 gap-1 sm:gap-2">
-              <FaShare className="text-sm sm:text-base" />
-              <span className="hidden sm:inline">Share</span>
-            </button>
+            {canShare && (
+              <button onClick={handleShareClick} className="btn btn-ghost btn-sm sm:btn-md flex-1 gap-1 sm:gap-2">
+                <FaShare className="text-sm sm:text-base" />
+                <span className="hidden sm:inline">Share</span>
+              </button>
+            )}
           </div>
 
           {/* Inline Comments Section (Facebook Style) */}
