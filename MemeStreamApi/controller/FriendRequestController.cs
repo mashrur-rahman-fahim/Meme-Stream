@@ -88,7 +88,7 @@ namespace MemeStreamApi.controller
                     userId,
                     null,
                     null,
-                    "/friends/requests"
+                    "/friends"
                 );
                 
                 // Send real-time notification
@@ -102,7 +102,7 @@ namespace MemeStreamApi.controller
                         createdAt = notification.CreatedAt,
                         relatedUser = new { id = userId, name = senderUser?.Name, image = senderUser?.Image },
                         actionUrl = notification.ActionUrl
-                    });
+                    }, _notificationService);
                 }
                 
                 return Ok(friendRequest);
@@ -186,7 +186,7 @@ namespace MemeStreamApi.controller
                         createdAt = notification.CreatedAt,
                         relatedUser = new { id = userId, name = receiverUser?.Name, image = receiverUser?.Image },
                         actionUrl = notification.ActionUrl
-                    });
+                    }, _notificationService);
                 }
                 
                 return Ok(friendRequest);

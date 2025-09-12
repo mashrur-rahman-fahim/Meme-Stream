@@ -165,11 +165,13 @@ export const NotificationProvider = ({ children }) => {
 
       // Set up event handlers
       connection.on('ReceiveNotification', (notification) => {
+        console.log('Received real-time notification:', notification);
         dispatch({ type: actionTypes.ADD_NOTIFICATION, payload: notification });
         showBrowserNotification(notification);
       });
 
       connection.on('UpdateUnreadCount', (count) => {
+        console.log('Received unread count update:', count);
         dispatch({ type: actionTypes.SET_UNREAD_COUNT, payload: count });
       });
 
@@ -329,18 +331,31 @@ export const NotificationProvider = ({ children }) => {
     dispatch({ type: actionTypes.CLEAR_ALL });
   }, []);
 
+  // Fetch initial unread count
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      console.log('Fetching unread count...');
+      const response = await api.get('/notification/unread-count');
+      console.log('Unread count response:', response.data);
+      dispatch({ type: actionTypes.SET_UNREAD_COUNT, payload: response.data.unreadCount || 0 });
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  }, []);
+
   // Initialize connection when component mounts
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       initializeSignalR();
       requestNotificationPermission();
+      fetchUnreadCount(); // Fetch initial count
     }
 
     return () => {
       disconnectSignalR();
     };
-  }, []);
+  }, [initializeSignalR, requestNotificationPermission, fetchUnreadCount]);
 
   const value = {
     ...state,
@@ -348,6 +363,7 @@ export const NotificationProvider = ({ children }) => {
     disconnectSignalR,
     fetchNotifications,
     fetchRecentNotifications,
+    fetchUnreadCount,
     markAsRead,
     markAllAsRead,
     deleteNotification,

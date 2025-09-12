@@ -116,7 +116,7 @@ namespace MemeStreamApi.controller
                         createdAt = notification.CreatedAt,
                         relatedUser = new { id = userId, name = reactorUser?.Name, image = reactorUser?.Image },
                         actionUrl = notification.ActionUrl
-                    });
+                    }, _notificationService);
                 }
             }
             

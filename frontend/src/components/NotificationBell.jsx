@@ -12,6 +12,7 @@ const NotificationBell = () => {
     unreadCount,
     recentNotifications,
     fetchRecentNotifications,
+    fetchUnreadCount,
     markAsRead,
     markAllAsRead,
     deleteNotification,
@@ -22,6 +23,7 @@ const NotificationBell = () => {
     setShowDropdown(!showDropdown);
     if (!showDropdown) {
       fetchRecentNotifications();
+      fetchUnreadCount(); // Refresh the count when opening
     }
   };
 

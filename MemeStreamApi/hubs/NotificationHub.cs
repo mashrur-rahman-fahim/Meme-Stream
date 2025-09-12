@@ -91,23 +91,24 @@ namespace MemeStreamApi.hubs
         }
 
         // Static method to send notification to specific user
-        public static async Task SendNotificationToUser(IHubContext<NotificationHub> hubContext, int userId, object notification)
+        public static async Task SendNotificationToUser(IHubContext<NotificationHub> hubContext, int userId, object notification, INotificationService notificationService = null)
         {
             await hubContext.Clients.Group($"user-{userId}").SendAsync("ReceiveNotification", notification);
             
-            // Also update unread count
-            if (UserConnections.ContainsKey(userId))
+            // Also update unread count with actual count from database
+            if (notificationService != null)
             {
-                await hubContext.Clients.Client(UserConnections[userId]).SendAsync("IncrementUnreadCount");
+                var unreadCount = await notificationService.GetUnreadCountAsync(userId);
+                await hubContext.Clients.Group($"user-{userId}").SendAsync("UpdateUnreadCount", unreadCount);
             }
         }
 
         // Send notification to multiple users
-        public static async Task SendNotificationToUsers(IHubContext<NotificationHub> hubContext, List<int> userIds, object notification)
+        public static async Task SendNotificationToUsers(IHubContext<NotificationHub> hubContext, List<int> userIds, object notification, INotificationService notificationService = null)
         {
             foreach (var userId in userIds)
             {
-                await SendNotificationToUser(hubContext, userId, notification);
+                await SendNotificationToUser(hubContext, userId, notification, notificationService);
             }
         }
     }
