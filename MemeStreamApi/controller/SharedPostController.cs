@@ -241,11 +241,14 @@ namespace MemeStreamApi.controller
                     .ToListAsync();
                 
                 var totalShares = shares.Count;
+                int userId = int.Parse(userIdClaim);
+                var hasUserShared = shares.Any(s => s.User.Id == userId);
                 
                 return Ok(new { 
                     postId = postId,
                     totalShares = totalShares,
                     shares = shares,
+                    hasUserShared = hasUserShared,
                     success = true 
                 });
             }

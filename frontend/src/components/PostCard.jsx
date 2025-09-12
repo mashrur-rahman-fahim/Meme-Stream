@@ -29,7 +29,7 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   const [commentsLoaded, setCommentsLoaded] = useState(false);
   const [isLoadingReactions, setIsLoadingReactions] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [hasUserShared, setHasUserShared] = useState(post.hasUserShared || false);
+  const [hasUserShared, setHasUserShared] = useState(post.hasUserShared || post.HasUserShared || false);
   
   // Share tracking states
   const [shareDetails, setShareDetails] = useState(null);
@@ -115,6 +115,8 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
 
       if (sharesRes.success && sharesRes.data) {
         setShareDetails(sharesRes.data);
+        // Update hasUserShared state based on API response
+        setHasUserShared(sharesRes.data.hasUserShared || false);
       }
     } catch (error) {
       console.error(`Error refreshing interactions for post ${targetPostId}:`, error);
@@ -147,6 +149,8 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
 
           if (sharesRes.success && sharesRes.data) {
             setShareDetails(sharesRes.data);
+            // Update hasUserShared state based on API response
+            setHasUserShared(sharesRes.data.hasUserShared || false);
           }
         } catch (error) {
           console.error(`Error fetching interaction counts for post ${targetPostId}:`, error);
@@ -165,6 +169,8 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
       const sharesRes = await feedService.getPostShares(targetPostId);
       if (sharesRes.success && sharesRes.data) {
         setShareDetails(sharesRes.data);
+        // Update hasUserShared state based on API response
+        setHasUserShared(sharesRes.data.hasUserShared || false);
       }
     } catch (error) {
       console.error(`Error fetching shares for post ${targetPostId}:`, error);
@@ -400,17 +406,34 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   };
 
   // Format share text for display
-  const formatShareText = (shares) => {
+  const formatShareText = (shares, hasUserShared, currentUserId) => {
     if (!shares || shares.length === 0) return null;
     
-    if (shares.length === 1) {
-      return `${shares[0].user.name} shared this`;
-    } else if (shares.length === 2) {
-      return `${shares[0].user.name} and ${shares[1].user.name} shared this`;
-    } else if (shares.length === 3) {
-      return `${shares[0].user.name}, ${shares[1].user.name} and ${shares[2].user.name} shared this`;
+    // Check if current user is in the shares list
+    const userShare = shares.find(s => s.user.id === currentUserId);
+    const otherShares = shares.filter(s => s.user.id !== currentUserId);
+    
+    if (hasUserShared && userShare) {
+      if (otherShares.length === 0) {
+        return "You shared this";
+      } else if (otherShares.length === 1) {
+        return `You and ${otherShares[0].user.name} shared this`;
+      } else if (otherShares.length === 2) {
+        return `You, ${otherShares[0].user.name} and ${otherShares[1].user.name} shared this`;
+      } else {
+        return `You, ${otherShares[0].user.name} and ${otherShares.length - 1} others shared this`;
+      }
     } else {
-      return `${shares[0].user.name}, ${shares[1].user.name} and ${shares.length - 2} others shared this`;
+      // Fallback to original logic if user hasn't shared
+      if (shares.length === 1) {
+        return `${shares[0].user.name} shared this`;
+      } else if (shares.length === 2) {
+        return `${shares[0].user.name} and ${shares[1].user.name} shared this`;
+      } else if (shares.length === 3) {
+        return `${shares[0].user.name}, ${shares[1].user.name} and ${shares[2].user.name} shared this`;
+      } else {
+        return `${shares[0].user.name}, ${shares[1].user.name} and ${shares.length - 2} others shared this`;
+      }
     }
   };
 
@@ -508,6 +531,13 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                   <span>🔄 {shareDetails.totalShares} Shares</span>
                 )}
               </div>
+              
+              {/* You shared indicator */}
+              {hasUserShared && (
+                <div className="text-primary text-xs">
+                  <span>You shared this</span>
+                </div>
+              )}
             </div>
             <div>
               {isLoadingComments ? (
@@ -527,10 +557,16 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
               <FaComment className="text-sm sm:text-base" />
               <span className="hidden sm:inline">Comment</span>
             </button>
-            {canShare && (
+            {canShare && !hasUserShared && (
               <button onClick={handleShareClick} className="btn btn-ghost btn-sm sm:btn-md flex-1 gap-1 sm:gap-2">
                 <FaShare className="text-sm sm:text-base" />
                 <span className="hidden sm:inline">Share</span>
+              </button>
+            )}
+            {hasUserShared && (
+              <button className="btn btn-ghost btn-sm sm:btn-md flex-1 gap-1 sm:gap-2 text-primary cursor-default">
+                <FaShareSquare className="text-sm sm:text-base" />
+                <span className="hidden sm:inline">Shared</span>
               </button>
             )}
           </div>
@@ -706,25 +742,34 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                 </div>
               ) : shareDetails && shareDetails.shares && shareDetails.shares.length > 0 ? (
                 <div className="space-y-3">
-                  {shareDetails.shares.map((share) => (
-                    <div key={share.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200">
-                      <div className="avatar">
-                        <div className="w-12 h-12 rounded-full bg-primary">
-                          {share.user?.image ? (
-                            <img src={share.user.image} alt={share.user?.name} className="rounded-full w-full h-full object-cover" loading="lazy" decoding="async" />
-                          ) : (
-                            <span className="text-primary-content text-lg flex items-center justify-center w-full h-full">
-                              {share.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </span>
-                          )}
+                  {(() => {
+                    // Sort shares to show current user first if they shared
+                    const currentUserShare = shareDetails.shares.find(s => s.user.id === currentUser?.id);
+                    const otherShares = shareDetails.shares.filter(s => s.user.id !== currentUser?.id);
+                    const sortedShares = currentUserShare ? [currentUserShare, ...otherShares] : shareDetails.shares;
+                    
+                    return sortedShares.map((share) => (
+                      <div key={share.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200">
+                        <div className="avatar">
+                          <div className="w-12 h-12 rounded-full bg-primary">
+                            {share.user?.image ? (
+                              <img src={share.user.image} alt={share.user?.name} className="rounded-full w-full h-full object-cover" loading="lazy" decoding="async" />
+                            ) : (
+                              <span className="text-primary-content text-lg flex items-center justify-center w-full h-full">
+                                {share.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-base-content">
+                            {share.user.id === currentUser?.id ? 'You' : (share.user?.name || 'Unknown User')}
+                          </div>
+                          <div className="text-sm text-base-content/60">{formatDate(share.sharedAt)}</div>
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-base-content">{share.user?.name || 'Unknown User'}</div>
-                        <div className="text-sm text-base-content/60">{formatDate(share.sharedAt)}</div>
-                      </div>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               ) : (
                 <div className="text-center text-base-content/60 py-8">
