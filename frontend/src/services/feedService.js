@@ -310,6 +310,25 @@ export const feedService = {
       };
     }
   },
+
+  // Edit a post
+  editPost: async (postId, postData) => {
+    try {
+      const response = await api.put(`/Post/edit/${postId}`, postData);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to edit post",
+      };
+    }
+  },
 };
 
 export default feedService;
