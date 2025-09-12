@@ -4,6 +4,7 @@ import { VerifyContext } from '../../context/create_verify_context';
 import { FaHome, FaUserFriends, FaCommentAlt, FaBell, FaUser, FaSignOutAlt, FaBars, FaTimes, FaSearch, FaUserCircle } from 'react-icons/fa';
 import api from '../utils/axios';
 import ThemeSwitcher from './ThemeSwitcher';
+import NotificationBell from './NotificationBell';
 
 export const Navbar = () => {
   const { logout } = useContext(VerifyContext);
@@ -222,43 +223,7 @@ export const Navbar = () => {
                       ) : null}
                     </div>
                   )}
-<<<<<<< HEAD
                 </div>
-=======
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Profile & Mobile Menu */}
-        <div className="navbar-end">
-          {/* Theme Switcher - Desktop/Mobile */}
-          <div className="mr-2">
-            <ThemeSwitcher />
-          </div>
-          
-          {/* Profile Dropdown - Desktop */}
-          <div className="dropdown dropdown-end hidden lg:block">
-            <div 
-              tabIndex={0} 
-              role="button" 
-              className="btn btn-ghost btn-circle avatar hover:bg-base-300 transition-colors"
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-            >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-content font-bold shadow-lg">
-                {currentUser?.image ? (
-                  <img 
-                    src={currentUser.image} 
-                    alt={currentUser?.name || 'User'} 
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm">
-                    {(currentUser?.name || 'U').charAt(0).toUpperCase()}
-                  </span>
-                )}
->>>>>>> ea631ac38a4b4403b1f522a17a07367803227679
               </div>
             </div>
 
@@ -305,14 +270,7 @@ export const Navbar = () => {
               </div>
 
               {/* Notifications */}
-              <button className="relative p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                <FaBell className="text-gray-600 dark:text-gray-400" />
-                {notificationCount > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                  </div>
-                )}
-              </button>
+              <NotificationBell />
 
               {/* Profile Dropdown */}
               <div className="relative">
@@ -479,11 +437,7 @@ export const Navbar = () => {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
             onClick={() => setIsMobileMenuOpen(false)}
           />
-<<<<<<< HEAD
           <div className="absolute top-14 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-xl">
-=======
-          <div className="absolute top-16 left-0 right-0 bg-base-100 border-b border-base-300 shadow-xl max-h-[calc(100vh-4rem)] overflow-y-auto">
->>>>>>> ea631ac38a4b4403b1f522a17a07367803227679
             <div className="p-4">
               <div className="space-y-2">
                 {navItems.map((item) => (
@@ -506,41 +460,6 @@ export const Navbar = () => {
                   </button>
                 ))}
               </div>
-<<<<<<< HEAD
-=======
-
-              {/* Profile Actions */}
-              <div className="space-y-2 pt-4 border-t border-base-300">
-                <button 
-                  onClick={() => handleNavClick('/profile')}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors"
-                >
-                  <FaUser />
-                  Profile
-                </button>
-                <button 
-                  onClick={() => handleNavClick('/settings')}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors"
-                >
-                  <FaCog />
-                  Settings
-                </button>
-                <button 
-                  onClick={() => handleNavClick('/help')}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors"
-                >
-                  <FaQuestionCircle />
-                  Help & Support
-                </button>
-                <button 
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg text-error hover:bg-error/10 transition-colors"
-                >
-                  <FaSignOutAlt />
-                  Sign Out
-                </button>
-              </div>
->>>>>>> ea631ac38a4b4403b1f522a17a07367803227679
             </div>
           </div>
         </div>

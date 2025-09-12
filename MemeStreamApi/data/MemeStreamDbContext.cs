@@ -30,6 +30,9 @@ namespace MemeStreamApi.data
 
         public DbSet<ChatFile> ChatFiles { get; set; }
         public DbSet<MessageReadReceipt> MessageReadReceipts { get; set; }
+        
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<NotificationPreference> NotificationPreferences { get; set; }
 
 
 

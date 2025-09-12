@@ -5,15 +5,18 @@ import App from "./App.jsx";
 import VerifyProvider from "../context/verify_context.jsx";
 import { Toaster } from "react-hot-toast";
 import { ChatProvider } from "../context/ChatContext.jsx";
+import { NotificationProvider } from "../context/NotificationContext.jsx";
 
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <VerifyProvider>
-      <ChatProvider>
-        <App />
-        <Toaster position="bottom-right" />
-      </ChatProvider>
+      <NotificationProvider>
+        <ChatProvider>
+          <App />
+          <Toaster position="bottom-right" />
+        </ChatProvider>
+      </NotificationProvider>
     </VerifyProvider>
   </StrictMode>
 );

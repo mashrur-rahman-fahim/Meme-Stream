@@ -76,7 +76,7 @@ export const useNotificationStore = defineStore('notification', {
         }
 
         this.connection = new signalR.HubConnectionBuilder()
-          .withUrl(`${API_URL}/hubs/notification`, {
+          .withUrl(`${API_URL}/notificationhub`, {
             accessTokenFactory: () => token
           })
           .withAutomaticReconnect()

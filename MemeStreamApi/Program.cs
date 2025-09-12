@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using MemeStreamApi.services;
+using MemeStreamApi.hubs;
 using Microsoft.AspNetCore.SignalR;
 
 Env.Load();
@@ -92,6 +93,10 @@ builder.Services.AddDbContext<MemeStreamDbContext>(options =>
 // Register meme detection service
 builder.Services.AddScoped<IMemeDetectionService, MemeDetectionService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Register notification services
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
 
@@ -135,6 +140,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub");
+app.MapHub<NotificationHub>("/notificationhub");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
