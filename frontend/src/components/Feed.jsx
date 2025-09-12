@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import feedService from "../services/feedService";
 import { PostCard } from "./PostCard";
+import { EditPostModal } from "./EditPostModal";
 import api from "../utils/axios";
 import toast from "react-hot-toast";
 
@@ -13,6 +14,8 @@ export const Feed = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isInitialFetch, setIsInitialFetch] = useState(true);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
   
   // Refs for infinite scroll
   const observerRef = useRef();
@@ -99,17 +102,26 @@ export const Feed = () => {
 
   // Handler functions for PostCard
   const handleEditPost = useCallback((postId, currentContent) => {
-    toast.info(`Edit functionality coming soon!`);
-  }, []);
+    const postToEdit = posts.find(p => p.id === postId);
+    if (postToEdit) {
+      setEditingPost(postToEdit);
+      setEditModalOpen(true);
+    } else {
+      toast.error("Post not found for editing! It might have vanished into the meme void 👻");
+    }
+  }, [posts]);
 
   const handleDeletePost = useCallback(async (postId) => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
+    if (window.confirm("Are you sure you want to delete this post? This will remove all reactions, comments, and shares permanently!")) {
+      const loadingToast = toast.loading("Deleting your meme from existence... 🗑️");
       const result = await feedService.deletePost(postId);
+      toast.dismiss(loadingToast);
+      
       if (result.success) {
-        toast.success("Post deleted successfully!");
+        toast.success(result.data.message || "Post deleted successfully! 🗑️✨");
         refreshFeed();
       } else {
-        toast.error("Failed to delete post");
+        toast.error(result.error || "Failed to delete post");
       }
     }
   }, []);
@@ -252,6 +264,19 @@ export const Feed = () => {
           )}
         </>
       )}
+      
+      {/* Edit Post Modal */}
+      <EditPostModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditingPost(null);
+        }}
+        post={editingPost}
+        onSuccess={() => {
+          refreshFeed();
+        }}
+      />
     </div>
   );
 };

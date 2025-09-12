@@ -114,7 +114,16 @@ builder.Services.AddCors(options =>
             .WithOrigins(frontendUrl, "http://localhost:5173") // Production and development URLs
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials());
+            .AllowCredentials()
+            .SetIsOriginAllowed(origin => 
+            {
+                // Allow localhost and your production domain for development and production
+                return origin == frontendUrl || 
+                       origin == "http://localhost:5173" ||
+                       origin.StartsWith("https://memestream") || // Allow any memestream subdomain
+                       origin.StartsWith("http://localhost:") ||  // Allow any localhost port
+                       origin.StartsWith("https://localhost:");   // Allow https localhost
+            }));
 });
 var app = builder.Build();
 
