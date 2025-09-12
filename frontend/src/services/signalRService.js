@@ -10,11 +10,25 @@ export const startSignalRConnection = async (
   onNotify,
   onTypingStatus
 ) => {
+  const webSocketUrl = getWebSocketUrl();
+  console.log('Connecting to SignalR chat hub at:', `${webSocketUrl}/chathub`);
+  
+  // Check if we're in production (Render.com has WebSocket issues)
+  const isProduction = webSocketUrl.includes('onrender.com') || webSocketUrl.includes('render.com');
+  
+  const connectionOptions = {
+    accessTokenFactory: () => token,
+  };
+  
+  // For production, skip WebSockets due to proxy issues
+  if (isProduction) {
+    console.log('Production environment detected - using fallback transports for chat');
+    connectionOptions.transport = signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling;
+  }
+
   connection = new signalR.HubConnectionBuilder()
-    .withUrl(`${getWebSocketUrl()}/chathub`, {
-      accessTokenFactory: () => token,
-    })
-    .withAutomaticReconnect()
+    .withUrl(`${webSocketUrl}/chathub`, connectionOptions)
+    .withAutomaticReconnect([0, 2000, 10000, 30000])
     .configureLogging(signalR.LogLevel.Information)
     .build();
 

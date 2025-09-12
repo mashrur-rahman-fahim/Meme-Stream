@@ -156,11 +156,25 @@ export const NotificationProvider = ({ children }) => {
         await state.connection.stop();
       }
 
+      const webSocketUrl = getWebSocketUrl();
+      console.log('Connecting to SignalR hub at:', `${webSocketUrl}/notificationhub`);
+      
+      // Check if we're in production (Render.com has WebSocket issues)
+      const isProduction = webSocketUrl.includes('onrender.com') || webSocketUrl.includes('render.com');
+      
+      const connectionOptions = {
+        accessTokenFactory: () => token,
+      };
+      
+      // For production, skip WebSockets due to proxy issues
+      if (isProduction) {
+        console.log('Production environment detected - using fallback transports');
+        connectionOptions.transport = signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling;
+      }
+      
       const connection = new signalR.HubConnectionBuilder()
-        .withUrl(`${getWebSocketUrl()}/notificationhub`, {
-          accessTokenFactory: () => token
-        })
-        .withAutomaticReconnect()
+        .withUrl(`${webSocketUrl}/notificationhub`, connectionOptions)
+        .withAutomaticReconnect([0, 2000, 10000, 30000])
         .configureLogging(signalR.LogLevel.Information)
         .build();
 
@@ -182,6 +196,22 @@ export const NotificationProvider = ({ children }) => {
 
       connection.on('AllNotificationsRead', () => {
         dispatch({ type: actionTypes.MARK_ALL_AS_READ });
+      });
+
+      // Connection state change handlers
+      connection.onclose((error) => {
+        console.log('SignalR connection closed:', error);
+        dispatch({ type: actionTypes.SET_CONNECTION_STATUS, payload: false });
+      });
+
+      connection.onreconnecting((error) => {
+        console.log('SignalR reconnecting:', error);
+        dispatch({ type: actionTypes.SET_CONNECTION_STATUS, payload: false });
+      });
+
+      connection.onreconnected((connectionId) => {
+        console.log('SignalR reconnected:', connectionId);
+        dispatch({ type: actionTypes.SET_CONNECTION_STATUS, payload: true });
       });
 
       // Start connection
