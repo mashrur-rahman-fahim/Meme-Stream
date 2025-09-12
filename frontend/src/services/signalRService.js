@@ -17,13 +17,14 @@ export const startSignalRConnection = async (
     .configureLogging(signalR.LogLevel.Information)
     .build();
 
-  connection.on("ReceiveMessage", (senderId, message) => {
-    if (onPrivateMessage) onPrivateMessage(senderId, message);
+  // Updated to receive full payload
+  connection.on("ReceiveMessage", (senderId, message, messageId, sentAt) => {
+    if (onPrivateMessage) onPrivateMessage(senderId, message, messageId, sentAt);
     if (onNotify) onNotify({ type: "private", senderId, message });
   });
 
-  connection.on("ReceiveGroupMessage", (senderId, message) => {
-    if (onGroupMessage) onGroupMessage(senderId, message);
+  connection.on("ReceiveGroupMessage", (senderId, message, messageId, sentAt) => {
+    if (onGroupMessage) onGroupMessage(senderId, message, messageId, sentAt);
     if (onNotify) onNotify({ type: "group", senderId, message });
   });
 
@@ -41,6 +42,7 @@ export const startSignalRConnection = async (
   }
 };
 
+// Message actions
 export const sendPrivateMessage = async (receiverId, message) => {
   if (connection && connection.state === signalR.HubConnectionState.Connected) {
     await connection.invoke("SendPrivateMessage", receiverId, message);

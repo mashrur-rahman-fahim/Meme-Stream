@@ -4,7 +4,6 @@ using MemeStreamApi.model;
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 
-
 public class ChatHub : Hub
 {
     private readonly MemeStreamDbContext _context;
@@ -49,12 +48,13 @@ public class ChatHub : Hub
         _context.Messages.Add(newMessage);
         await _context.SaveChangesAsync();
 
+        // Send full payload including messageId and sentAt
         if (userConnections.TryGetValue(receiverUserId, out var connectionId))
         {
-            await Clients.Client(connectionId).SendAsync("ReceiveMessage", senderId, message);
+            await Clients.Client(connectionId).SendAsync("ReceiveMessage", senderId, message, newMessage.Id, newMessage.SentAt);
         }
 
-        await Clients.Client(Context.ConnectionId).SendAsync("ReceiveMessage", senderId, message);
+        await Clients.Client(Context.ConnectionId).SendAsync("ReceiveMessage", senderId, message, newMessage.Id, newMessage.SentAt);
     }
 
     public async Task SendGroupMessage(string groupName, string message)
@@ -75,7 +75,7 @@ public class ChatHub : Hub
         _context.Messages.Add(newMessage);
         await _context.SaveChangesAsync();
 
-        await Clients.Group(groupName).SendAsync("ReceiveGroupMessage", senderId, message);
+        await Clients.Group(groupName).SendAsync("ReceiveGroupMessage", senderId, message, newMessage.Id, newMessage.SentAt);
     }
 
     public async Task SendTypingStatus(int receiverUserId, bool isTyping)
