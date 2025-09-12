@@ -485,7 +485,7 @@ namespace MemeStreamApi.controller
                     .ToList();
                 
                 // Apply diverse feed algorithm to prevent consecutive posts from same user
-                var diverseFeedPosts = ApplyDiverseFeedAlgorithm(scoredPosts);
+                var diverseFeedPosts = ApplyDiverseFeedAlgorithm(scoredPosts.Cast<dynamic>().ToList());
                 
                 // Apply pagination after diversification
                 var feedPosts = diverseFeedPosts
