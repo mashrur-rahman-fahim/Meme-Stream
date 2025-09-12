@@ -443,7 +443,7 @@ namespace MemeStreamApi.controller
 
         [Authorize]
         [HttpPost("accept")]
-        public IActionResult AcceptFriendRequestBySender([FromBody] AcceptDeclineRequestDto dto)
+        public async Task<IActionResult> AcceptFriendRequestBySender([FromBody] AcceptDeclineRequestDto dto)
         {
             try
             {
@@ -454,8 +454,11 @@ namespace MemeStreamApi.controller
                 }
                 var receiverId = int.Parse(userIdClaim);
                 
-                var friendRequest = _context.FriendRequests.FirstOrDefault(fr => 
-                    fr.SenderId == dto.SenderId && fr.ReceiverId == receiverId && fr.Status == FriendRequest.RequestStatus.Pending);
+                var friendRequest = await _context.FriendRequests
+                    .Include(fr => fr.Sender)
+                    .Include(fr => fr.Receiver)
+                    .FirstOrDefaultAsync(fr => 
+                        fr.SenderId == dto.SenderId && fr.ReceiverId == receiverId && fr.Status == FriendRequest.RequestStatus.Pending);
                 
                 if (friendRequest == null)
                 {
@@ -463,7 +466,34 @@ namespace MemeStreamApi.controller
                 }
                 
                 friendRequest.Status = FriendRequest.RequestStatus.Accepted;
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
+                
+                // Create notification for the sender (person who sent the original request)
+                var receiverUser = await _context.Users.FindAsync(receiverId);
+                var notification = await _notificationService.CreateNotificationAsync(
+                    dto.SenderId,
+                    "friend_request_accepted",
+                    $"{receiverUser?.Name ?? "Someone"} accepted your friend request! 🎉",
+                    "Friend Request Accepted",
+                    receiverId,
+                    null,
+                    null,
+                    "/friends"
+                );
+                
+                // Send real-time notification to the sender
+                if (notification != null)
+                {
+                    await NotificationHub.SendNotificationToUser(_hubContext, dto.SenderId, new {
+                        id = notification.Id,
+                        type = notification.Type,
+                        message = notification.Message,
+                        title = notification.Title,
+                        createdAt = notification.CreatedAt,
+                        relatedUser = new { id = receiverId, name = receiverUser?.Name, image = receiverUser?.Image },
+                        actionUrl = notification.ActionUrl
+                    }, _notificationService);
+                }
                 
                 return Ok(new { message = "Friend request accepted successfully." });
             }
@@ -476,7 +506,7 @@ namespace MemeStreamApi.controller
 
         [Authorize]
         [HttpPost("decline")]
-        public IActionResult DeclineFriendRequestBySender([FromBody] AcceptDeclineRequestDto dto)
+        public async Task<IActionResult> DeclineFriendRequestBySender([FromBody] AcceptDeclineRequestDto dto)
         {
             try
             {
@@ -487,8 +517,11 @@ namespace MemeStreamApi.controller
                 }
                 var receiverId = int.Parse(userIdClaim);
                 
-                var friendRequest = _context.FriendRequests.FirstOrDefault(fr => 
-                    fr.SenderId == dto.SenderId && fr.ReceiverId == receiverId && fr.Status == FriendRequest.RequestStatus.Pending);
+                var friendRequest = await _context.FriendRequests
+                    .Include(fr => fr.Sender)
+                    .Include(fr => fr.Receiver)
+                    .FirstOrDefaultAsync(fr => 
+                        fr.SenderId == dto.SenderId && fr.ReceiverId == receiverId && fr.Status == FriendRequest.RequestStatus.Pending);
                 
                 if (friendRequest == null)
                 {
@@ -496,7 +529,34 @@ namespace MemeStreamApi.controller
                 }
                 
                 friendRequest.Status = FriendRequest.RequestStatus.Rejected;
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
+                
+                // Create notification for the sender (person who sent the original request)
+                var receiverUser = await _context.Users.FindAsync(receiverId);
+                var notification = await _notificationService.CreateNotificationAsync(
+                    dto.SenderId,
+                    "friend_request_declined",
+                    $"{receiverUser?.Name ?? "Someone"} declined your friend request",
+                    "Friend Request Declined",
+                    receiverId,
+                    null,
+                    null,
+                    "/friends"
+                );
+                
+                // Send real-time notification to the sender
+                if (notification != null)
+                {
+                    await NotificationHub.SendNotificationToUser(_hubContext, dto.SenderId, new {
+                        id = notification.Id,
+                        type = notification.Type,
+                        message = notification.Message,
+                        title = notification.Title,
+                        createdAt = notification.CreatedAt,
+                        relatedUser = new { id = receiverId, name = receiverUser?.Name, image = receiverUser?.Image },
+                        actionUrl = notification.ActionUrl
+                    }, _notificationService);
+                }
                 
                 return Ok(new { message = "Friend request declined successfully." });
             }
