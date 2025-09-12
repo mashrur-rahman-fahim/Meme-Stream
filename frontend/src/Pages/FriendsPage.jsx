@@ -84,7 +84,7 @@ export const FriendsPage = () => {
     }
     
     try {
-      const res = await api.get(`/FriendRequest/get/friends?page=${page}&limit=${PAGE_SIZE}`);
+      const res = await api.get(`/FriendRequest/get/friends`);
       const newFriends = res.data;
       
       if (loadMore) {
@@ -111,7 +111,7 @@ export const FriendsPage = () => {
     }
     
     try {
-      const res = await api.get(`/FriendRequest/get/friend-requests?page=${page}&limit=${PAGE_SIZE}`);
+      const res = await api.get(`/FriendRequest/get/friend-requests`);
       const newRequests = res.data;
       
       if (loadMore) {

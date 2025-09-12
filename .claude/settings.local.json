@@ -23,7 +23,8 @@
       "Bash(tasklist:*)",
       "Bash(npm run build:*)",
       "Bash(dir F:MemeStream)",
-      "Bash(git rev-parse:*)"
+      "Bash(git rev-parse:*)",
+      "Bash(dotnet clean:*)"
     ],
     "deny": [],
     "ask": []
