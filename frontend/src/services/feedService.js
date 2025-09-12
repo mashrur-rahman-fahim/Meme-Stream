@@ -238,16 +238,26 @@ export const feedService = {
   // Share a post
   sharePost: async (postId) => {
     try {
-      const response = await api.post("/SharedPost/share", { postId });
+      console.log("Sharing post with ID:", postId);
+      console.log("Request payload:", { PostId: postId });
+      
+      const response = await api.post("/SharedPost/share", { PostId: postId });
+      console.log("Share response:", response.data);
+      
       return {
         success: true,
         data: response.data,
       };
     } catch (error) {
+      console.error("Share error:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      
       return {
         success: false,
         error:
           error.response?.data?.message ||
+          error.response?.data ||
           error.message ||
           "Failed to share post",
       };
@@ -326,6 +336,25 @@ export const feedService = {
           error.response?.data?.message ||
           error.message ||
           "Failed to edit post",
+      };
+    }
+  },
+
+  // Get who shared a post
+  getPostShares: async (postId) => {
+    try {
+      const response = await api.get(`/SharedPost/post-shares/${postId}`);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to fetch post shares",
       };
     }
   },

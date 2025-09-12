@@ -46,7 +46,27 @@ namespace MemeStreamApi.controller
         {
             try
             {
-                var userId = User.GetUserId();
+                // Validate shareDto
+                if (shareDto == null)
+                {
+                    return BadRequest("Invalid request data.");
+                }
+                
+                if (shareDto.PostId <= 0)
+                {
+                    return BadRequest("Invalid post ID.");
+                }
+                
+                int userId;
+                try
+                {
+                    userId = User.GetUserId();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.WriteLine($"Error getting user ID: {ex.Message}");
+                    return Unauthorized("Invalid authentication token.");
+                }
                 
                 // Check if post exists and get post author info
                 var post = await _context.Posts
@@ -56,6 +76,12 @@ namespace MemeStreamApi.controller
                 if (post == null)
                 {
                     return NotFound("Post not found.");
+                }
+                
+                // Check if user is trying to share their own post
+                if (post.UserId == userId)
+                {
+                    return BadRequest("You cannot share your own post.");
                 }
                 
                 // Check if user already shared this post
@@ -172,6 +198,64 @@ namespace MemeStreamApi.controller
             {
                 Console.WriteLine($"Error in GetUserSharedPosts: {ex.Message}");
                 return BadRequest("Error retrieving shared posts.");
+            }
+        }
+        
+        [Authorize]
+        [HttpGet("post-shares/{postId}")]
+        public async Task<IActionResult> GetPostShares(int postId)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                
+                // Check if post exists
+                var post = await _context.Posts
+                    .FirstOrDefaultAsync(p => p.Id == postId);
+                    
+                if (post == null)
+                {
+                    return NotFound("Post not found.");
+                }
+                
+                // Get all users who shared this post
+                var shares = await _context.SharedPosts
+                    .Include(sp => sp.User)
+                    .Where(sp => sp.PostId == postId)
+                    .OrderByDescending(sp => sp.SharedAt)
+                    .Select(sp => new
+                    {
+                        Id = sp.Id,
+                        SharedAt = sp.SharedAt,
+                        User = new
+                        {
+                            Id = sp.User.Id,
+                            Name = sp.User.Name,
+                            Image = sp.User.Image
+                        }
+                    })
+                    .ToListAsync();
+                
+                var totalShares = shares.Count;
+                int userId = int.Parse(userIdClaim);
+                var hasUserShared = shares.Any(s => s.User.Id == userId);
+                
+                return Ok(new { 
+                    postId = postId,
+                    totalShares = totalShares,
+                    shares = shares,
+                    hasUserShared = hasUserShared,
+                    success = true 
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetPostShares: {ex.Message}");
+                return BadRequest("Error retrieving post shares.");
             }
         }
         
