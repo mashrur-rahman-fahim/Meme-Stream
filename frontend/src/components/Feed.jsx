@@ -1,31 +1,52 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import feedService from "../services/feedService";
 import { PostCard } from "./PostCard";
 import { EditPostModal } from "./EditPostModal";
+import VirtualScrollFeed from "./VirtualScrollFeed";
+import { FeedSkeleton } from "./LoadingSkeleton";
+import { useFeedQuery, useDeletePostMutation, useSharePostMutation } from "../hooks/useFeedQuery";
 import api from "../utils/axios";
 import toast from "react-hot-toast";
 
 export const Feed = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(false);  // Start with false to prevent initial loading state
-  const [error, setError] = useState("");
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  // React Query hooks
+  const {
+    data: feedData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    error: feedError,
+    refetch
+  } = useFeedQuery();
+
+  const deletePostMutation = useDeletePostMutation();
+  const sharePostMutation = useSharePostMutation();
+
+  // Local state
   const [currentUser, setCurrentUser] = useState(null);
-  const [isInitialFetch, setIsInitialFetch] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
+  const [useVirtualScroll, setUseVirtualScroll] = useState(false);
+
+  // Flatten pages into posts array
+  const posts = useMemo(() => {
+    if (!feedData?.pages) return [];
+    return feedData.pages.flatMap(page => page.data?.posts || []);
+  }, [feedData]);
+
+  const error = isError ? feedError?.message || "Failed to load posts" : "";
   
   // Refs for infinite scroll
   const observerRef = useRef();
   const lastPostElementRef = useCallback(node => {
-    if (loadingMore) return;
+    if (isFetchingNextPage) return;
     if (observerRef.current) observerRef.current.disconnect();
     
     observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loadingMore) {
-        loadMore();
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
       }
     }, {
       root: null,
@@ -34,7 +55,12 @@ export const Feed = () => {
     });
     
     if (node) observerRef.current.observe(node);
-  }, [loadingMore, hasMore]);
+  }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
+
+  // Enable virtual scrolling when there are many posts
+  useEffect(() => {
+    setUseVirtualScroll(posts.length > 50);
+  }, [posts.length]);
 
   // Fetch current user data
   const fetchCurrentUser = useCallback(async () => {
@@ -46,58 +72,8 @@ export const Feed = () => {
     }
   }, []);
 
-  const fetchFeed = useCallback(
-    async (pageNum = 1, isLoadMore = false) => {
-      try {
-        // Only set loading for user-initiated actions, not initial load
-        if (!isLoadMore && !isInitialFetch) {
-          setLoading(true);
-        } else if (isLoadMore) {
-          setLoadingMore(true);
-        }
-
-        const result = await feedService.getFeed(pageNum, 20);
-
-        if (result.success) {
-          const newPosts = result.data.posts;
-
-          if (isLoadMore) {
-            setPosts((prevPosts) => [...prevPosts, ...newPosts]);
-          } else {
-            setPosts(newPosts);
-          }
-
-          setHasMore(newPosts.length === 20);
-          setError("");
-        } else {
-          setError(result.error);
-        }
-      } catch (err) {
-        console.error("Error fetching feed:", err);
-        setError("Failed to load posts. Please try again.");
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-        if (isInitialFetch) {
-          setIsInitialFetch(false);
-        }
-      }
-    },
-    [isInitialFetch]
-  );
-
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchFeed(nextPage, true);
-    }
-  }, [page, loadingMore, hasMore, fetchFeed]);
-
   const refreshFeed = () => {
-    setPage(1);
-    setPosts([]);
-    fetchFeed(1, false);
+    refetch();
   };
 
   // Handler functions for PostCard
@@ -113,18 +89,9 @@ export const Feed = () => {
 
   const handleDeletePost = useCallback(async (postId) => {
     if (window.confirm("Are you sure you want to delete this post? This will remove all reactions, comments, and shares permanently!")) {
-      const loadingToast = toast.loading("Deleting your meme from existence... 🗑️");
-      const result = await feedService.deletePost(postId);
-      toast.dismiss(loadingToast);
-      
-      if (result.success) {
-        toast.success(result.data.message || "Post deleted successfully! 🗑️✨");
-        refreshFeed();
-      } else {
-        toast.error(result.error || "Failed to delete post");
-      }
+      deletePostMutation.mutate(postId);
     }
-  }, []);
+  }, [deletePostMutation]);
 
   const handleUnsharePost = useCallback(async (postId) => {
     if (window.confirm("Are you sure you want to unshare this post?")) {
@@ -140,14 +107,17 @@ export const Feed = () => {
 
   useEffect(() => {
     fetchCurrentUser();
-    fetchFeed();
-  }, []);
+  }, [fetchCurrentUser]);
 
-  // Show loading spinner only for user-initiated refreshes, not initial load
-  if (loading && posts.length === 0) {
+  // Show loading skeleton for initial load
+  if (isLoading && posts.length === 0) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="loading loading-spinner loading-lg text-primary"></div>
+      <div>
+        {/* Refresh button placeholder */}
+        <div className="flex justify-end mb-4">
+          <div className="w-8 h-8 rounded-full bg-base-200 animate-pulse"></div>
+        </div>
+        <FeedSkeleton count={5} />
       </div>
     );
   }
@@ -158,12 +128,12 @@ export const Feed = () => {
       <div className="flex justify-end mb-4">
         <button
           onClick={refreshFeed}
-          disabled={loading}
+          disabled={isLoading}
           className="btn btn-sm btn-ghost btn-circle"
           aria-label="Refresh posts"
         >
           <svg 
-            className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} 
+            className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -197,7 +167,7 @@ export const Feed = () => {
         </div>
       )}
 
-      {posts.length === 0 && !loading ? (
+      {posts.length === 0 && !isLoading ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">😴</div>
           <h3 className="text-xl font-bold text-base-content mb-2">
@@ -215,13 +185,41 @@ export const Feed = () => {
         </div>
       ) : (
         <>
-          <div className="space-y-4 sm:space-y-6">
-            {currentUser && posts.map((post, index) => {
-              // Add ref to last post for infinite scroll
-              if (index === posts.length - 1) {
-                return (
-                  <div ref={lastPostElementRef} key={`${post.isShared ? "shared" : "post"}-${post.id}`}>
+          {useVirtualScroll && currentUser ? (
+            <div className="h-[calc(100vh-200px)]">
+              <VirtualScrollFeed
+                posts={posts}
+                currentUser={currentUser}
+                onEdit={handleEditPost}
+                onDelete={handleDeletePost}
+                onUnshare={handleUnsharePost}
+                onChange={refreshFeed}
+                hasMore={hasNextPage}
+                onLoadMore={fetchNextPage}
+                loading={isFetchingNextPage}
+              />
+            </div>
+          ) : (
+            <div className="space-y-4 sm:space-y-6">
+              {currentUser && posts.map((post, index) => {
+                // Add ref to last post for infinite scroll
+                if (index === posts.length - 1) {
+                  return (
+                    <div ref={lastPostElementRef} key={`${post.isShared ? "shared" : "post"}-${post.id}`}>
+                      <PostCard
+                        post={post}
+                        currentUser={currentUser}
+                        onEdit={handleEditPost}
+                        onDelete={handleDeletePost}
+                        onUnshare={handleUnsharePost}
+                        onChange={refreshFeed}
+                      />
+                    </div>
+                  );
+                } else {
+                  return (
                     <PostCard
+                      key={`${post.isShared ? "shared" : "post"}-${post.id}`}
                       post={post}
                       currentUser={currentUser}
                       onEdit={handleEditPost}
@@ -229,32 +227,20 @@ export const Feed = () => {
                       onUnshare={handleUnsharePost}
                       onChange={refreshFeed}
                     />
-                  </div>
-                );
-              } else {
-                return (
-                  <PostCard
-                    key={`${post.isShared ? "shared" : "post"}-${post.id}`}
-                    post={post}
-                    currentUser={currentUser}
-                    onEdit={handleEditPost}
-                    onDelete={handleDeletePost}
-                    onUnshare={handleUnsharePost}
-                    onChange={refreshFeed}
-                  />
-                );
-              }
-            })}
-          </div>
+                  );
+                }
+              })}
+            </div>
+          )}
 
           {/* Loading indicator for infinite scroll */}
-          {loadingMore && (
+          {!useVirtualScroll && isFetchingNextPage && (
             <div className="flex justify-center py-8">
               <div className="loading loading-spinner loading-md text-primary"></div>
             </div>
           )}
 
-          {!hasMore && posts.length > 0 && (
+          {!useVirtualScroll && !hasNextPage && posts.length > 0 && (
             <div className="text-center py-8">
               <div className="text-2xl mb-2">✨</div>
               <p className="text-base-content/60 text-sm">

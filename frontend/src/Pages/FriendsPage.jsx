@@ -182,9 +182,9 @@ export const FriendsPage = () => {
     }
   };
 
-  const declineFriendRequest = async (id) => {
+  const declineFriendRequest = async (senderId) => {
     try {
-      await api.delete(`/FriendRequest/delete/${id}`);
+      await api.post("/FriendRequest/decline", { senderId });
       setMessage("Friend request declined");
       // Reset pagination and refetch
       setRequestsPage(1);
@@ -334,7 +334,7 @@ export const FriendsPage = () => {
                                 Accept
                               </button>
                               <button
-                                onClick={() => declineFriendRequest(request.id)}
+                                onClick={() => declineFriendRequest(request.senderId)}
                                 className="btn btn-ghost btn-xs flex-1"
                               >
                                 Decline
