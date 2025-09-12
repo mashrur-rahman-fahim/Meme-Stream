@@ -25,19 +25,40 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   const [searchParams] = useSearchParams();
   const anchorMessageId = parseInt(searchParams.get("msg"));
   const scrollRef = useRef(null);
+  const messagesEndRef = useRef(null); // New ref for auto-scroll
+  const chatContainerRef = useRef(null); // Ref for chat container
   const ding = new Audio("/sounds/ding.mp3");
   const connectionRef = useRef(null);
+  
+  // Create a ref for currentUserId to avoid stale closures
+  const userIdRef = useRef(currentUserId);
+  useEffect(() => {
+    userIdRef.current = currentUserId;
+  }, [currentUserId]);
+
+  // Auto-scroll to bottom when new messages arrive
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Check if user is scrolled to bottom (to decide whether to auto-scroll)
+  const isScrolledToBottom = () => {
+    if (!chatContainerRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    return scrollHeight - scrollTop - clientHeight < 50; // 50px tolerance
+  };
 
   useEffect(() => {
+    console.log("ChatWindow mounted with:", { receiverId, groupName, currentUserId });
+    
     const key = receiverId || `group-${groupName}`;
 
     const fetchHistory = async () => {
       try {
+        console.log("Fetching message history for:", key);
         const res = await axios.get(
           groupName
-            // Changed from /api/chat/group/{groupId}/messages to /api/GroupMessage/group/{groupId}/messages
             ? `http://localhost:5216/api/GroupMessage/group/${groupName.replace("group-", "")}/messages`
-            // Changed from /api/chat/private/{userId} to /api/PrivateMessage/private/{userId}
             : `http://localhost:5216/api/PrivateMessage/private/${receiverId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -53,6 +74,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
           editedAt: m.editedAt,
           isDeleted: m.isDeleted,
         }));
+        console.log("Fetched history:", history.length, "messages");
         setChatLog(history);
       } catch (err) {
         console.error("Error fetching message history:", err);
@@ -63,30 +85,69 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
       const conn = await startSignalRConnection(
         token,
         (senderId, msg, messageId, sentAt) => {
-          // Add message to chat log immediately
-          setChatLog((prev) => [
-            ...prev,
-            {
-              id: messageId || Date.now(),
-              senderId,
-              msg,
-              sentAt: sentAt || new Date().toISOString(),
-            },
-          ]);
+          console.log("Received private message:", { senderId, msg, messageId, sentAt });
+          
+          // Check if user is scrolled to bottom before adding new message
+          const shouldAutoScroll = isScrolledToBottom();
+          
+          // Add message to chat log from server response only
+          setChatLog((prev) => {
+            const messageExists = prev.some(m => m.id === messageId);
+            if (messageExists) {
+              console.log("Message already exists, skipping:", messageId);
+              return prev;
+            }
+            
+            console.log("Adding new private message to chat log:", messageId);
+            return [
+              ...prev,
+              {
+                id: messageId,
+                senderId: parseInt(senderId),
+                msg,
+                sentAt: sentAt,
+              },
+            ];
+          });
+
+          // Auto-scroll if user was at bottom or if it's their own message
+          if (shouldAutoScroll || parseInt(senderId) === userIdRef.current) {
+            setTimeout(scrollToBottom, 100);
+          }
         },
         (senderId, msg, messageId, sentAt) => {
-          // Add group message to chat log immediately
-          setChatLog((prev) => [
-            ...prev,
-            {
-              id: messageId || Date.now(),
-              senderId,
-              msg,
-              sentAt: sentAt || new Date().toISOString(),
-            },
-          ]);
+          console.log("Received group message:", { senderId, msg, messageId, sentAt });
+          
+          // Check if user is scrolled to bottom before adding new message
+          const shouldAutoScroll = isScrolledToBottom();
+          
+          // Add group message to chat log from server response only
+          setChatLog((prev) => {
+            const messageExists = prev.some(m => m.id === messageId);
+            if (messageExists) {
+              console.log("Group message already exists, skipping:", messageId);
+              return prev;
+            }
+            
+            console.log("Adding new group message to chat log:", messageId);
+            return [
+              ...prev,
+              {
+                id: messageId,
+                senderId: parseInt(senderId),
+                msg,
+                sentAt: sentAt,
+              },
+            ];
+          });
+
+          // Auto-scroll if user was at bottom or if it's their own message
+          if (shouldAutoScroll || parseInt(senderId) === userIdRef.current) {
+            setTimeout(scrollToBottom, 100);
+          }
         },
         ({ type, senderId, message }) => {
+          console.log("Notification received:", { type, senderId, message });
           const notifyKey = type === "private" ? senderId : `group-${groupName}`;
           incrementUnread(notifyKey);
           toast.success(`New ${type} message from ${senderId}`, {
@@ -98,7 +159,8 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
           }
         },
         (senderId, isTyping) => {
-          if (senderId !== currentUserId) {
+          console.log("Typing status:", { senderId, isTyping });
+          if (senderId !== userIdRef.current) {
             setOtherTyping(isTyping);
           }
         }
@@ -107,6 +169,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
       connectionRef.current = conn;
 
       conn.on("ReceiveReaction", (messageId, userId, emoji) => {
+        console.log("Reaction received:", { messageId, userId, emoji });
         setReactions((prev) => {
           const existing = prev[messageId] || [];
           return {
@@ -117,6 +180,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
       });
 
       conn.on("ReceiveMessageEdit", (messageId, newContent, editedAt) => {
+        console.log("Message edit received:", { messageId, newContent, editedAt });
         setChatLog((prev) =>
           prev.map((msg) =>
             msg.id === messageId ? { ...msg, msg: newContent, editedAt } : msg
@@ -125,6 +189,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
       });
 
       conn.on("ReceiveMessageDelete", (messageId) => {
+        console.log("Message delete received:", messageId);
         setChatLog((prev) =>
           prev.map((msg) =>
             msg.id === messageId ? { ...msg, msg: "[deleted]", isDeleted: true } : msg
@@ -133,6 +198,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
       });
 
       conn.on("ReceiveReadReceipt", (messageId, userId) => {
+        console.log("Read receipt received:", { messageId, userId });
         setReadMap((prev) => ({
           ...prev,
           [messageId]: [...(prev[messageId] || []), userId],
@@ -162,6 +228,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
 
     // Cleanup function
     return () => {
+      console.log("ChatWindow cleanup");
       if (connectionRef.current) {
         connectionRef.current.off("ReceiveReaction");
         connectionRef.current.off("ReceiveMessageEdit");
@@ -172,9 +239,15 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   }, [token, receiverId, groupName]);
 
   useEffect(() => {
-    if (scrollRef.current) {
+    console.log("Chat log updated:", chatLog.length, "messages");
+    
+    // Scroll to anchor message if specified in URL
+    if (anchorMessageId && scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+    
+    // Auto-scroll to bottom on initial load and when new messages arrive
+    setTimeout(scrollToBottom, 100);
   }, [chatLog]);
 
   const handleTyping = (e) => {
@@ -189,21 +262,14 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   };
 
   const handleSend = () => {
-    if (!message.trim()) return;
+    if (!message.trim()) {
+      console.log("Empty message, not sending");
+      return;
+    }
 
-    // Add message to chat log immediately for instant feedback
-    const tempMessageId = Date.now();
-    setChatLog((prev) => [
-      ...prev,
-      {
-        id: tempMessageId,
-        senderId: currentUserId,
-        msg: message,
-        sentAt: new Date().toISOString(),
-      },
-    ]);
-
-    // Send message via SignalR
+    console.log("Sending message:", message);
+    
+    // Send message via SignalR only (NO immediate chatLog addition)
     if (groupName) {
       sendGroupMessage(groupName, message);
     } else {
@@ -212,11 +278,16 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
 
     setMessage("");
     if (receiverId) sendTypingStatus(receiverId, false);
+    
+    // Auto-scroll to bottom after sending (optimistic)
+    setTimeout(scrollToBottom, 50);
   };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    console.log("Uploading file:", file.name);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -224,12 +295,13 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
     if (groupName) formData.append("groupId", groupName.replace("group-", ""));
 
     try {
-      // Changed from /api/chat/upload to /api/FileUpload/upload
       const res = await axios.post("http://localhost:5216/api/FileUpload/upload", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Add file message to chat log immediately
+      console.log("File upload successful:", res.data);
+
+      // Add file message to chat log from server response
       setChatLog((prev) => [
         ...prev,
         {
@@ -242,17 +314,31 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
       ]);
 
       toast.success(`File sent: ${res.data.fileName}`);
+      
+      // Auto-scroll after file upload
+      setTimeout(scrollToBottom, 100);
     } catch (err) {
+      console.error("File upload failed:", err);
       toast.error("Upload failed");
-      console.error(err);
     }
   };
 
   return (
     <div className="p-4 bg-base-200 rounded shadow w-full max-w-md">
-      <div className="overflow-y-auto h-64 mb-2 border border-base-300 rounded px-2 py-1">
+      {/* Chat container with ref for scroll detection */}
+      <div 
+        ref={chatContainerRef}
+        className="overflow-y-auto h-64 mb-2 border border-base-300 rounded px-2 py-1"
+        style={{ scrollBehavior: "smooth" }}
+      >
         {chatLog.map((entry, idx) => {
-          const isSender = entry.senderId === currentUserId;
+          const isSender = entry.senderId === userIdRef.current;
+          
+          // Debug: Check for misclassifications
+          if (entry.senderId !== userIdRef.current && entry.senderId === currentUserId) {
+            console.warn("Misclassified message:", entry);
+          }
+          
           const ref = entry.id === anchorMessageId ? scrollRef : null;
 
           return (
@@ -341,6 +427,10 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
             </div>
           );
         })}
+        
+        {/* Invisible element at the bottom for auto-scrolling */}
+        <div ref={messagesEndRef} />
+        
         {otherTyping && (
           <div className="text-xs text-gray-500 italic mt-1">Typing...</div>
         )}
@@ -357,6 +447,12 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         value={message}
         onChange={handleTyping}
         placeholder="Type your message..."
+        onKeyPress={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+          }
+        }}
       />
       <button className="btn btn-primary w-full" onClick={handleSend}>
         Send
