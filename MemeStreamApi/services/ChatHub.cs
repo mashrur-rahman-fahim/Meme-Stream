@@ -99,22 +99,60 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
     }
 
-    public async Task ReactToMessage(int messageId, string emoji)
+public async Task ReactToMessage(int messageId, string emoji)
+{
+    try
     {
         var userId = int.Parse(Context.UserIdentifier);
 
-        var reacton = new MessageReacton
+        var existing = await _context.MessageReactons
+            .FirstOrDefaultAsync(r => r.MessageId == messageId && r.ReactorId == userId);
+
+        string status;
+
+        if (existing == null)
+        {
+            var newReaction = new MessageReacton
+            {
+                MessageId = messageId,
+                ReactorId = userId,
+                Emoji = emoji
+            };
+
+            _context.MessageReactons.Add(newReaction);
+            status = "added";
+        }
+        else if (existing.Emoji == emoji)
+        {
+            _context.MessageReactons.Remove(existing);
+            status = "removed";
+        }
+        else
+        {
+            existing.Emoji = emoji;
+            status = "updated";
+        }
+
+        await _context.SaveChangesAsync();
+
+        await Clients.All.SendAsync("ReceiveReaction", new
         {
             MessageId = messageId,
             ReactorId = userId,
-            Emoji = emoji
-        };
-
-        _context.MessageReactons.Add(reacton);
-        await _context.SaveChangesAsync();
-
-        await Clients.All.SendAsync("ReceiveReaction", messageId, userId, emoji);
+            Emoji = emoji,
+            Status = status
+        });
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ReactToMessage failed: {ex.Message}");
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine($"🔍 Inner exception: {ex.InnerException.Message}");
+        }
+        throw;
+    }
+}
 
     public async Task EditMessage(int messageId, string newContent)
     {

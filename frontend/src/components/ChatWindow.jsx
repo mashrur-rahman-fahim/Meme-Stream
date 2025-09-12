@@ -35,8 +35,10 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
       try {
         const res = await axios.get(
           groupName
-            ? `http://localhost:5216/api/chat/group/${groupName.replace("group-", "")}/messages`
-            : `http://localhost:5216/api/chat/private/${receiverId}`,
+            // Changed from /api/chat/group/{groupId}/messages to /api/GroupMessage/group/{groupId}/messages
+            ? `http://localhost:5216/api/GroupMessage/group/${groupName.replace("group-", "")}/messages`
+            // Changed from /api/chat/private/{userId} to /api/PrivateMessage/private/{userId}
+            : `http://localhost:5216/api/PrivateMessage/private/${receiverId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -222,7 +224,8 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
     if (groupName) formData.append("groupId", groupName.replace("group-", ""));
 
     try {
-      const res = await axios.post("http://localhost:5216/api/chat/upload", formData, {
+      // Changed from /api/chat/upload to /api/FileUpload/upload
+      const res = await axios.post("http://localhost:5216/api/FileUpload/upload", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

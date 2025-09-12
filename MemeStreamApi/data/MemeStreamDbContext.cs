@@ -29,19 +29,26 @@ namespace MemeStreamApi.data
         public DbSet<MessageReacton> MessageReactons { get; set; }
 
         public DbSet<ChatFile> ChatFiles { get; set; }
-        
+
         public DbSet<MessageReadReceipt> MessageReadReceipts { get; set; }
 
+        // public DbSet<GroupMessageRead> GroupMessageReads { get; set; }
 
 
 
-        
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
+
+            modelBuilder.Entity<MessageReacton>()
+                .HasIndex(r => new { r.MessageId, r.ReactorId })
+                .IsUnique();
+
         }
     }
 }

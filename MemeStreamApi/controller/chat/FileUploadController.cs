@@ -1,16 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MemeStreamApi.data;
+using MemeStreamApi.model;
 using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class FileController : ControllerBase
+public class FileUploadController : ControllerBase
 {
     private readonly MemeStreamDbContext _context;
 
-    public FileController(MemeStreamDbContext context)
+    public FileUploadController(MemeStreamDbContext context)
     {
         _context = context;
     }
@@ -23,9 +24,6 @@ public class FileController : ControllerBase
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             var fileName = Path.GetFileName(file.FileName);
             var filePath = Path.Combine("Uploads", Guid.NewGuid() + "_" + fileName);
-
-            // Ensure the Uploads directory exists
-            Directory.CreateDirectory("Uploads");
 
             using var stream = new FileStream(filePath, FileMode.Create);
             await file.CopyToAsync(stream);

@@ -20,8 +20,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
   const fetchGroupDetails = async () => {
     try {
       setLoading(true);
+      // Changed from /api/chat/group/{groupId}/details to /api/Group/{groupId}/details
       const response = await axios.get(
-        `http://localhost:5216/api/chat/group/${group.id}/details`,
+        `http://localhost:5216/api/Group/${group.id}/details`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setGroupDetails(response.data);
@@ -69,9 +70,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setError("");
       setSuccess("");
       
-      // The backend expects just the integer userId in the request body
+      // Changed from /api/chat/group/{groupId}/add to /api/GroupMembership/group/{groupId}/add
       const response = await axios.post(
-        `http://localhost:5216/api/chat/group/${group.id}/add`,
+        `http://localhost:5216/api/GroupMembership/group/${group.id}/add`,
         userId, // Send just the userId integer, not an object
         {
           headers: {
@@ -112,8 +113,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setError("");
       setSuccess("");
       
+      // Changed from /api/chat/group/{groupId}/remove/{userId} to /api/GroupMembership/group/{groupId}/remove/{userId}
       const response = await axios.delete(
-        `http://localhost:5216/api/chat/group/${group.id}/remove/${userId}`,
+        `http://localhost:5216/api/GroupMembership/group/${group.id}/remove/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -141,8 +143,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       
       const userId = JSON.parse(atob(token.split('.')[1]))["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
       
+      // Changed from /api/chat/group/{groupId}/remove/{userId} to /api/GroupMembership/group/{groupId}/remove/{userId}
       const response = await axios.delete(
-        `http://localhost:5216/api/chat/group/${group.id}/remove/${userId}`,
+        `http://localhost:5216/api/GroupMembership/group/${group.id}/remove/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -165,8 +168,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setError("");
       setSuccess("");
       
+      // Changed from /api/chat/group/{groupId} to /api/Group/{groupId}
       const response = await axios.put(
-        `http://localhost:5216/api/chat/group/${group.id}`,
+        `http://localhost:5216/api/Group/${group.id}`,
         {
           name: groupName,
           description: groupDescription
@@ -199,8 +203,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setError("");
       setSuccess("");
       
+      // Changed from /api/chat/group/{groupId}/promote/{userId} to /api/GroupMembership/group/{groupId}/promote/{userId}
       const response = await axios.post(
-        `http://localhost:5216/api/chat/group/${group.id}/promote/${userId}`,
+        `http://localhost:5216/api/GroupMembership/group/${group.id}/promote/${userId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -223,8 +228,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setError("");
       setSuccess("");
       
+      // Changed from /api/chat/group/{groupId}/demote/{userId} to /api/GroupMembership/group/{groupId}/demote/{userId}
       const response = await axios.post(
-        `http://localhost:5216/api/chat/group/${group.id}/demote/${userId}`,
+        `http://localhost:5216/api/GroupMembership/group/${group.id}/demote/${userId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -251,8 +257,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setError("");
       setSuccess("");
       
+      // Changed from /api/chat/group/{groupId}/transfer-admin/{userId} to /api/GroupMembership/group/{groupId}/transfer-admin/{userId}
       const response = await axios.post(
-        `http://localhost:5216/api/chat/group/${group.id}/transfer-admin/${userId}`,
+        `http://localhost:5216/api/GroupMembership/group/${group.id}/transfer-admin/${userId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -280,8 +287,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setError("");
       setSuccess("");
       
+      // Changed from /api/chat/group/{groupId} to /api/Group/{groupId}
       const response = await axios.delete(
-        `http://localhost:5216/api/chat/group/${group.id}`,
+        `http://localhost:5216/api/Group/${group.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       

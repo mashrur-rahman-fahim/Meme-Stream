@@ -106,13 +106,13 @@ public class ChatController : ControllerBase
         }
     }
 
-     [HttpGet("my-groups")]
+    [HttpGet("my-groups")]
     public async Task<IActionResult> GetMyGroups()
     {
         try
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Fixed: Use GroupMemberships directly instead of User.GroupMemberships
             var groups = await _context.GroupMemberships
                 .Where(gm => gm.UserId == userId)
@@ -144,11 +144,11 @@ public class ChatController : ControllerBase
         try
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Check if user is a member of the group
             var isMember = await _context.GroupMemberships
                 .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == userId);
-            
+
             if (!isMember)
                 return Unauthorized("You are not a member of this group");
 
@@ -194,12 +194,12 @@ public class ChatController : ControllerBase
         try
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Check if user is admin or co-admin of the group
             var hasPermission = await _context.GroupMemberships
-                .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == userId && 
+                .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == userId &&
                                (gm.Group.CreatedById == userId || gm.IsCoAdmin));
-            
+
             if (!hasPermission)
                 return Unauthorized("Only group admins can access this information");
 
@@ -224,12 +224,12 @@ public class ChatController : ControllerBase
         try
         {
             var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Check if current user is admin or co-admin of the group
             var hasPermission = await _context.GroupMemberships
-                .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId && 
+                .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId &&
                                (gm.Group.CreatedById == currentUserId || gm.IsCoAdmin));
-            
+
             if (!hasPermission)
                 return Unauthorized("Only group admins can add members");
 
@@ -269,13 +269,13 @@ public class ChatController : ControllerBase
         try
         {
             var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Check if current user is admin or co-admin of the group OR if user is removing themselves
             var isSelfRemoval = userId == currentUserId;
             var hasPermission = isSelfRemoval || await _context.GroupMemberships
-                .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId && 
+                .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId &&
                                (gm.Group.CreatedById == currentUserId || gm.IsCoAdmin));
-            
+
             if (!hasPermission)
                 return Unauthorized("You don't have permission to remove this user");
 
@@ -285,14 +285,14 @@ public class ChatController : ControllerBase
                 var userMembership = await _context.GroupMemberships
                     .Include(gm => gm.Group)
                     .FirstOrDefaultAsync(gm => gm.GroupId == groupId && gm.UserId == userId);
-                
+
                 if (userMembership != null && userMembership.Group.CreatedById == userId)
                 {
                     // Admin is trying to leave - check if there are other admins
                     var otherAdmins = await _context.GroupMemberships
                         .Where(gm => gm.GroupId == groupId && gm.UserId != userId && gm.IsCoAdmin)
                         .ToListAsync();
-                    
+
                     if (!otherAdmins.Any())
                     {
                         return BadRequest("You are the only admin. Assign another admin before leaving or delete the group.");
@@ -324,11 +324,11 @@ public class ChatController : ControllerBase
         try
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Check if user is a member of the group
             var isMember = await _context.GroupMemberships
                 .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == userId);
-            
+
             if (!isMember)
                 return Unauthorized("You are not a member of this group");
 
@@ -339,7 +339,7 @@ public class ChatController : ControllerBase
             // Only allow name/description updates for all members
             if (!string.IsNullOrEmpty(dto.Name))
                 group.Name = dto.Name;
-            
+
             if (!string.IsNullOrEmpty(dto.Description))
                 group.Description = dto.Description;
 
@@ -360,11 +360,11 @@ public class ChatController : ControllerBase
         try
         {
             var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Check if current user is admin of the group
             var isAdmin = await _context.Groups
                 .AnyAsync(g => g.Id == groupId && g.CreatedById == currentUserId);
-            
+
             if (!isAdmin)
                 return Unauthorized("Only group admin can promote members");
 
@@ -395,11 +395,11 @@ public class ChatController : ControllerBase
         try
         {
             var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Check if current user is admin of the group
             var isAdmin = await _context.Groups
                 .AnyAsync(g => g.Id == groupId && g.CreatedById == currentUserId);
-            
+
             if (!isAdmin)
                 return Unauthorized("Only group admin can demote co-admins");
 
@@ -434,11 +434,11 @@ public class ChatController : ControllerBase
         try
         {
             var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Check if current user is admin of the group
             var isAdmin = await _context.Groups
                 .AnyAsync(g => g.Id == groupId && g.CreatedById == currentUserId);
-            
+
             if (!isAdmin)
                 return Unauthorized("Only group admin can delete the group");
 
@@ -451,10 +451,10 @@ public class ChatController : ControllerBase
 
             // Remove all memberships first
             _context.GroupMemberships.RemoveRange(group.Members);
-            
+
             // Remove the group
             _context.Groups.Remove(group);
-            
+
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Group deleted successfully" });
@@ -472,11 +472,11 @@ public class ChatController : ControllerBase
         try
         {
             var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Check if current user is admin of the group
             var isAdmin = await _context.Groups
                 .AnyAsync(g => g.Id == groupId && g.CreatedById == currentUserId);
-            
+
             if (!isAdmin)
                 return Unauthorized("Only group admin can transfer admin rights");
 
@@ -493,7 +493,7 @@ public class ChatController : ControllerBase
 
             // Transfer admin rights
             group.CreatedById = userId;
-            
+
             // Ensure the new admin is also a co-admin
             targetMembership.IsCoAdmin = true;
 
@@ -541,4 +541,45 @@ public class ChatController : ControllerBase
             return StatusCode(500, "Internal Server Error");
         }
     }
+    
+    [HttpGet("group/{groupId}/messages")]
+public async Task<IActionResult> GetGroupMessages(int groupId)
+{
+    try
+    {
+        var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        
+        // Check if user is a member of the group
+        var isMember = await _context.GroupMemberships
+            .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId);
+        
+        if (!isMember)
+            return Unauthorized("You are not a member of this group");
+
+        var messages = await _context.Messages
+            .Where(m => m.GroupId == groupId && !m.IsDeleted) // Only get non-deleted messages
+            .Include(m => m.Sender) // Include sender details
+            .Select(m => new 
+            {
+                m.Id,
+                m.SenderId,
+                SenderName = m.Sender.Name, // Assuming User has a Name property
+                m.Content,
+                m.SentAt,
+                m.EditedAt,
+                m.IsDeleted,
+                m.GroupId,
+                ReadByCount = m.ReadReceipts.Count // Count of users who read this message
+            })
+            .OrderBy(m => m.SentAt)
+            .ToListAsync();
+
+        return Ok(messages);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("❌ Error fetching group messages: " + ex.Message);
+        return StatusCode(500, "Internal Server Error: " + ex.Message);
+    }
+}
 }

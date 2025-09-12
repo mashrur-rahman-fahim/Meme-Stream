@@ -30,7 +30,7 @@ public class PrivateMessageController : ControllerBase
         return Ok(message);
     }
 
-    [HttpGet("with/{userId}")]
+    [HttpGet("private/{userId}")]
     public async Task<IActionResult> GetPrivateMessages(int userId)
     {
         var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));

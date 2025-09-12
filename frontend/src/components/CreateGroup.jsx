@@ -57,8 +57,9 @@ export default function CreateGroup({ token: propToken, onGroupCreated }) {
     setSuccess("");
 
     try {
+      // Changed from /api/chat/create-group to /api/Group/create
       const res = await axios.post(
-        "http://localhost:5216/api/chat/create-group",
+        "http://localhost:5216/api/Group/create", // Updated endpoint
         {
           name: groupName,
           memberIds: selectedIds,

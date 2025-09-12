@@ -19,7 +19,8 @@ export default function GroupList({ token: propToken }) {
 
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:5216/api/chat/my-groups", {
+      // Changed from /api/chat/my-groups to /api/Group/my-groups
+      const response = await axios.get("http://localhost:5216/api/Group/my-groups", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setGroups(response.data);
