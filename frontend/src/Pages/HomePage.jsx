@@ -5,12 +5,14 @@ import { Post } from "../components/Post";
 import { FriendsList } from "../components/FriendsList";
 import { Feed } from "../components/Feed";
 import { Navbar } from "../components/Navbar";
+import api from "../utils/axios";
 
 export const HomePage = () => {
   const { isVerified, loading, logout } = useContext(VerifyContext);
   const navigate = useNavigate();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [pageReady, setPageReady] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     if (isVerified === false && !loading) {
@@ -21,6 +23,22 @@ export const HomePage = () => {
       setTimeout(() => setPageReady(true), 100);
     }
   }, [isVerified, navigate, loading, pageReady]);
+
+  // Fetch current user data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (isVerified) {
+        try {
+          const response = await api.get('/User/profile');
+          setCurrentUser(response.data);
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [isVerified]);
 
   const handleLogout = () => {
     logout();
@@ -75,8 +93,18 @@ export const HomePage = () => {
                   className="w-full bg-base-100 hover:bg-base-200 border border-base-300 rounded-lg p-4 flex items-center gap-3 transition-colors"
                 >
                   <div className="avatar">
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                      <span className="text-primary-content font-bold">U</span>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      {currentUser?.image ? (
+                        <img 
+                          src={currentUser.image} 
+                          alt={currentUser?.name || 'User'} 
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-white font-bold">
+                          {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <span className="text-base-content/70">What's on your mind?</span>
