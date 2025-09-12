@@ -30,6 +30,9 @@ namespace MemeStreamApi.data
 
         public DbSet<ChatFile> ChatFiles { get; set; }
         public DbSet<MessageReadReceipt> MessageReadReceipts { get; set; }
+        
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<NotificationPreference> NotificationPreferences { get; set; }
 
 
 
@@ -40,6 +43,14 @@ namespace MemeStreamApi.data
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
+
+            // Configure Comment self-referencing relationship for replies
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.ParentComment)
+                .WithMany(c => c.Replies)
+                .HasForeignKey(c => c.ParentCommentId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete issues
         }
     }
 }

@@ -180,6 +180,25 @@ export const feedService = {
     }
   },
 
+  // Add reply to a comment
+  addReply: async (commentId, content) => {
+    try {
+      const response = await api.post("/Comment/reply", { commentId, content });
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to add reply",
+      };
+    }
+  },
+
   editComment: async (commentId, content) => {
     try {
       const response = await api.put(`/Comment/update/${commentId}`, { content });

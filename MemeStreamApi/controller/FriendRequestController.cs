@@ -4,8 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using MemeStreamApi.data;
 using MemeStreamApi.model;
+using MemeStreamApi.services;
+using MemeStreamApi.hubs;
+using MemeStreamApi.extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,9 +20,16 @@ namespace MemeStreamApi.controller
     public class FriendRequestController:ControllerBase
     {
         private readonly MemeStreamDbContext _context;
-        public FriendRequestController(MemeStreamDbContext context)
+        private readonly INotificationService _notificationService;
+        private readonly IHubContext<NotificationHub> _hubContext;
+        
+        public FriendRequestController(MemeStreamDbContext context,
+            INotificationService notificationService,
+            IHubContext<NotificationHub> hubContext)
         {
             this._context = context;
+            this._notificationService = notificationService;
+            this._hubContext = hubContext;
         }
         public class FriendRequestDto
         {
@@ -27,27 +38,26 @@ namespace MemeStreamApi.controller
         }
         [Authorize]
         [HttpPost("send")]
-        public IActionResult SendFriendRequest([FromBody] FriendRequestDto friendRequestDto){
+        public async Task<IActionResult> SendFriendRequest([FromBody] FriendRequestDto friendRequestDto){
             try{
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    return Unauthorized("User ID claim not found.");
-                }
-                var userId = int.Parse(userIdClaim);
+                var userId = User.GetUserId();
+                
                 if (userId == friendRequestDto.ReceiverId)
                 {
                     return BadRequest("You cannot send a friend request to yourself.");
                 }
-                var receiver = _context.Users.FirstOrDefault(u => u.Id == friendRequestDto.ReceiverId);
+                
+                var receiver = await _context.Users.FindAsync(friendRequestDto.ReceiverId);
                 if (receiver == null)
                 {
                     return NotFound("Receiver not found.");
                 }
+                
                 // Check if friend request already exists in either direction
                 var existingFriendRequest = _context.FriendRequests.FirstOrDefault(fr => 
                     (fr.SenderId == userId && fr.ReceiverId == friendRequestDto.ReceiverId) ||
                     (fr.SenderId == friendRequestDto.ReceiverId && fr.ReceiverId == userId));
+                    
                 if (existingFriendRequest != null)
                 {
                     if (existingFriendRequest.Status == FriendRequest.RequestStatus.Accepted)
@@ -59,6 +69,7 @@ namespace MemeStreamApi.controller
                         return BadRequest("Friend request already exists.");
                     }
                 }
+                
                 var friendRequest = new FriendRequest{
                     SenderId = userId,
                     ReceiverId = friendRequestDto.ReceiverId,
@@ -66,6 +77,34 @@ namespace MemeStreamApi.controller
                 };
                 _context.FriendRequests.Add(friendRequest);
                 _context.SaveChanges();
+                
+                // Create notification for receiver
+                var senderUser = await _context.Users.FindAsync(userId);
+                var notification = await _notificationService.CreateNotificationAsync(
+                    friendRequestDto.ReceiverId,
+                    "friend_request",
+                    $"{senderUser?.Name ?? "Someone"} sent you a friend request",
+                    "New Friend Request",
+                    userId,
+                    null,
+                    null,
+                    "/friends"
+                );
+                
+                // Send real-time notification
+                if (notification != null)
+                {
+                    await NotificationHub.SendNotificationToUser(_hubContext, friendRequestDto.ReceiverId, new {
+                        id = notification.Id,
+                        type = notification.Type,
+                        message = notification.Message,
+                        title = notification.Title,
+                        createdAt = notification.CreatedAt,
+                        relatedUser = new { id = userId, name = senderUser?.Name, image = senderUser?.Image },
+                        actionUrl = notification.ActionUrl
+                    }, _notificationService);
+                }
+                
                 return Ok(friendRequest);
             }
             catch (Exception ex){
@@ -106,21 +145,50 @@ namespace MemeStreamApi.controller
         }
         [Authorize]
         [HttpPut("accept/{id}")]
-        public IActionResult AcceptFriendRequest(int id){
+        public async Task<IActionResult> AcceptFriendRequest(int id){
             try{
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    return Unauthorized("User ID claim not found.");
-                }
-                var userId = int.Parse(userIdClaim);
-                var friendRequest = _context.FriendRequests.FirstOrDefault(fr => fr.Id == id && fr.ReceiverId == userId);
+                var userId = User.GetUserId();
+                
+                var friendRequest = await _context.FriendRequests
+                    .Include(fr => fr.Sender)
+                    .Include(fr => fr.Receiver)
+                    .FirstOrDefaultAsync(fr => fr.Id == id && fr.ReceiverId == userId);
+                    
                 if (friendRequest == null)
                 {
                     return NotFound("Friend request not found.");
                 }
+                
                 friendRequest.Status = FriendRequest.RequestStatus.Accepted;
                 _context.SaveChanges();
+                
+                // Create notification for sender
+                var receiverUser = await _context.Users.FindAsync(userId);
+                var notification = await _notificationService.CreateNotificationAsync(
+                    friendRequest.SenderId,
+                    "friend_request",
+                    $"{receiverUser?.Name ?? "Someone"} accepted your friend request",
+                    "Friend Request Accepted",
+                    userId,
+                    null,
+                    null,
+                    "/friends"
+                );
+                
+                // Send real-time notification
+                if (notification != null)
+                {
+                    await NotificationHub.SendNotificationToUser(_hubContext, friendRequest.SenderId, new {
+                        id = notification.Id,
+                        type = notification.Type,
+                        message = notification.Message,
+                        title = notification.Title,
+                        createdAt = notification.CreatedAt,
+                        relatedUser = new { id = userId, name = receiverUser?.Name, image = receiverUser?.Image },
+                        actionUrl = notification.ActionUrl
+                    }, _notificationService);
+                }
+                
                 return Ok(friendRequest);
             }
             catch (Exception ex){
@@ -318,6 +386,126 @@ namespace MemeStreamApi.controller
                 Console.WriteLine($"Error in UnfriendUser: {ex.Message}");
                 return BadRequest("Error removing friend.");
             }
+        }
+
+        [Authorize]
+        [HttpGet("search-friends/{query}")]
+        public IActionResult SearchFriends(string query)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                var userId = int.Parse(userIdClaim);
+
+                if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                {
+                    return BadRequest("Search query must be at least 2 characters long.");
+                }
+
+                // Search only among current user's friends
+                var friends = _context.FriendRequests
+                    .Include(fr => fr.Sender)
+                    .Include(fr => fr.Receiver)
+                    .Where(fr => (fr.ReceiverId == userId || fr.SenderId == userId) && 
+                                fr.Status == FriendRequest.RequestStatus.Accepted)
+                    .Select(fr => new {
+                        Friend = fr.ReceiverId == userId ? fr.Sender : fr.Receiver,
+                        FriendId = fr.ReceiverId == userId ? fr.SenderId : fr.ReceiverId
+                    })
+                    .Where(f => f.Friend.Name.ToLower().Contains(query.ToLower()))
+                    .Select(f => new {
+                        Id = f.FriendId,
+                        Name = f.Friend.Name,
+                        Email = f.Friend.Email,
+                        Image = f.Friend.Image,
+                        Bio = f.Friend.Bio,
+                        FriendshipStatus = "Friend"
+                    })
+                    .Take(20) // Limit results for performance
+                    .ToList();
+
+                return Ok(friends);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SearchFriends: {ex.Message}");
+                return BadRequest("Error searching friends.");
+            }
+        }
+
+        [Authorize]
+        [HttpPost("accept")]
+        public IActionResult AcceptFriendRequestBySender([FromBody] AcceptDeclineRequestDto dto)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                var receiverId = int.Parse(userIdClaim);
+                
+                var friendRequest = _context.FriendRequests.FirstOrDefault(fr => 
+                    fr.SenderId == dto.SenderId && fr.ReceiverId == receiverId && fr.Status == FriendRequest.RequestStatus.Pending);
+                
+                if (friendRequest == null)
+                {
+                    return NotFound("Friend request not found.");
+                }
+                
+                friendRequest.Status = FriendRequest.RequestStatus.Accepted;
+                _context.SaveChanges();
+                
+                return Ok(new { message = "Friend request accepted successfully." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in AcceptFriendRequestBySender: {ex.Message}");
+                return BadRequest("Error accepting friend request.");
+            }
+        }
+
+        [Authorize]
+        [HttpPost("decline")]
+        public IActionResult DeclineFriendRequestBySender([FromBody] AcceptDeclineRequestDto dto)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                var receiverId = int.Parse(userIdClaim);
+                
+                var friendRequest = _context.FriendRequests.FirstOrDefault(fr => 
+                    fr.SenderId == dto.SenderId && fr.ReceiverId == receiverId && fr.Status == FriendRequest.RequestStatus.Pending);
+                
+                if (friendRequest == null)
+                {
+                    return NotFound("Friend request not found.");
+                }
+                
+                friendRequest.Status = FriendRequest.RequestStatus.Rejected;
+                _context.SaveChanges();
+                
+                return Ok(new { message = "Friend request declined successfully." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in DeclineFriendRequestBySender: {ex.Message}");
+                return BadRequest("Error declining friend request.");
+            }
+        }
+
+        public class AcceptDeclineRequestDto
+        {
+            public int SenderId { get; set; }
         }
     }
 }

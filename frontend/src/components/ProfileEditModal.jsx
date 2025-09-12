@@ -61,12 +61,14 @@ const ProfileEditModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
 
   // Handle image removal
   const handleImageRemove = () => {
+    // Just remove the image from form state - user needs to save manually
     setUploadedImageData(null);
     setFormData(prev => ({
       ...prev,
       image: ''
     }));
     setIsDirty(true);
+    toast.success('Profile picture will be removed when you save changes');
   };
 
   // Validate form
@@ -178,11 +180,11 @@ const ProfileEditModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
             </label>
             
             {/* Current Profile Picture */}
-            {(currentUser?.image || formData.image) && !uploadedImageData && (
+            {formData.image && !uploadedImageData && (
               <div className="flex justify-center mb-4">
                 <div className="relative">
                   <img
-                    src={formData.image || currentUser?.image}
+                    src={formData.image}
                     alt="Current profile"
                     className="w-24 h-24 rounded-full object-cover border-4 border-base-300"
                   />
@@ -328,7 +330,12 @@ const ProfileEditModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
       </div>
       
       {/* Backdrop */}
-      <div className="modal-backdrop" onClick={handleClose} />
+      <div className="modal-backdrop" onClick={(e) => {
+        // Only close if clicking on the backdrop itself, not on children
+        if (e.target === e.currentTarget) {
+          handleClose();
+        }
+      }} />
     </div>
   );
 };

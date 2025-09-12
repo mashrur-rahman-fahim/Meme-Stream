@@ -2,42 +2,77 @@ import React, { useContext, useEffect, useState, useRef, useCallback } from "rea
 import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context";
 import { Post } from "../components/Post";
-import { FriendRequest } from "../components/FriendRequest";
+import { FriendsList } from "../components/FriendsList";
 import { Feed } from "../components/Feed";
 import { Navbar } from "../components/Navbar";
+import api from "../utils/axios";
 
 export const HomePage = () => {
-  const { isVerified, verifyUser, loading, logout } = useContext(VerifyContext);
+  const { isVerified, loading, logout } = useContext(VerifyContext);
   const navigate = useNavigate();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    verifyUser();
-  }, []);
-
-  useEffect(() => {
-    if (!isVerified && !loading) {
+    if (isVerified === false && !loading) {
       navigate("/auth");
+    } else if (isVerified === true && !pageReady) {
+      // Give components time to mount and start fetching data
+      // This prevents showing the page until everything is ready
+      setTimeout(() => setPageReady(true), 100);
     }
-  }, [isVerified, navigate, loading]);
+  }, [isVerified, navigate, loading, pageReady]);
+
+  // Fetch current user data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (isVerified) {
+        try {
+          const response = await api.get('/User/profile');
+          setCurrentUser(response.data);
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [isVerified]);
 
   const handleLogout = () => {
     logout();
     navigate("/auth");
   };
 
+  // Show loading while authentication is in progress OR page is not ready yet
+  if (loading || isVerified === null || (isVerified === true && !pageReady)) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <div className="text-center">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="mt-4 text-base-content">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isVerified === false) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-base-200">
+    <div className="min-h-screen bg-base-200 animate-fadeIn">
       <Navbar />
 
-      <div className="pt-20 pb-4">
+      <div className="pt-16 pb-4">
         {/* Main Container */}
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-4 px-2 sm:px-4">
+          <div className="flex flex-col lg:flex-row gap-4 px-2 sm:px-4 lg:h-[calc(100vh-6rem)] scrollbar-hide">
             
             {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
-            <div className="hidden lg:block lg:w-80 flex-shrink-0">
-              <div className="sticky top-24">
+            <div className="hidden lg:block lg:w-80 flex-shrink-0 group overflow-y-auto scrollbar-hide">
+              <div>
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">
                     <h2 className="text-lg font-bold text-base-content mb-3">
@@ -50,7 +85,7 @@ export const HomePage = () => {
             </div>
 
             {/* Main Feed Container */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 lg:overflow-y-auto lg:scrollbar-hide">
               {/* Mobile Create Post Button */}
               <div className="lg:hidden mb-4">
                 <button
@@ -58,8 +93,18 @@ export const HomePage = () => {
                   className="w-full bg-base-100 hover:bg-base-200 border border-base-300 rounded-lg p-4 flex items-center gap-3 transition-colors"
                 >
                   <div className="avatar">
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                      <span className="text-primary-content font-bold">U</span>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      {currentUser?.image ? (
+                        <img 
+                          src={currentUser.image} 
+                          alt={currentUser?.name || 'User'} 
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-white font-bold">
+                          {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <span className="text-base-content/70">What's on your mind?</span>
@@ -71,14 +116,14 @@ export const HomePage = () => {
             </div>
 
             {/* Right Sidebar - Friend Requests - Hidden on mobile */}
-            <div className="hidden xl:block xl:w-80 flex-shrink-0">
-              <div className="sticky top-24">
+            <div className="hidden xl:block xl:w-80 flex-shrink-0 lg:overflow-y-auto scrollbar-hide">
+              <div>
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body p-4">
                     <h2 className="text-lg font-bold text-base-content mb-3">
-                      Friend Requests
+                      Friends
                     </h2>
-                    <FriendRequest />
+                    <FriendsList />
                   </div>
                 </div>
               </div>

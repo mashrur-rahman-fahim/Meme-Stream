@@ -32,18 +32,8 @@ export const ProfilePage = () => {
   });
   const [isConfirming, setIsConfirming] = useState(false);
 
-  const { isVerified, verifyUser, loading: verifyLoading } = useContext(VerifyContext);
+  const { isVerified, loading: verifyLoading } = useContext(VerifyContext);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    verifyUser();
-  }, []);
-
-  useEffect(() => {
-    if (!isVerified && !verifyLoading) {
-      navigate("/auth");
-    }
-  }, [isVerified, navigate, verifyLoading]);
 
   const fetchUserData = useCallback(async () => {
     try {
@@ -61,12 +51,6 @@ export const ProfilePage = () => {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (isVerified) {
-      fetchUserData();
-    }
-  }, [isVerified, fetchUserData]);
 
   // Handle profile update from the modal
   const handleProfileUpdate = useCallback((updatedUser) => {
@@ -131,7 +115,34 @@ export const ProfilePage = () => {
     setIsEditModalOpen(true);
   }, []);
 
-  if (loading || verifyLoading) {
+  useEffect(() => {
+    if (isVerified === false && !verifyLoading) {
+      navigate("/auth");
+    }
+  }, [isVerified, navigate, verifyLoading]);
+
+  useEffect(() => {
+    if (isVerified) {
+      fetchUserData();
+    }
+  }, [isVerified, fetchUserData]);
+
+  if (verifyLoading || isVerified === null) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center transition-opacity duration-300">
+        <div className="text-center">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="mt-4 text-base-content animate-pulse">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isVerified === false) {
+    return null;
+  }
+
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-base-300">
         <div className="loading loading-bars loading-lg text-primary"></div>

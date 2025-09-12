@@ -5,8 +5,12 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using MemeStreamApi.data;
 using MemeStreamApi.model;
+using MemeStreamApi.services;
+using MemeStreamApi.hubs;
+using MemeStreamApi.extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -18,9 +22,16 @@ namespace MemeStreamApi.controller
     public class ReactionController:ControllerBase
     {
         private readonly MemeStreamDbContext _context;
-        public ReactionController(MemeStreamDbContext context)
+        private readonly INotificationService _notificationService;
+        private readonly IHubContext<NotificationHub> _hubContext;
+        
+        public ReactionController(MemeStreamDbContext context, 
+            INotificationService notificationService,
+            IHubContext<NotificationHub> hubContext)
         {
             this._context = context;
+            this._notificationService = notificationService;
+            this._hubContext = hubContext;
         }
         public class ReactionDto
         {
@@ -29,14 +40,19 @@ namespace MemeStreamApi.controller
         }
         [Authorize]
         [HttpPost("create")]
-        public IActionResult CreateReaction([FromBody] ReactionDto reactionDto){
+        public async Task<IActionResult> CreateReaction([FromBody] ReactionDto reactionDto){
            try{
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
+            var userId = User.GetUserId();
+            
+            // Get the post to access post author info
+            var post = await _context.Posts
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.Id == reactionDto.PostId);
+                
+            if (post == null)
             {
-                return Unauthorized("User ID claim not found.");
+                return NotFound("Post not found.");
             }
-            var userId = int.Parse(userIdClaim);
             
             // Check if user already has this reaction on this post
             var existingReaction = _context.Reactions
@@ -67,6 +83,43 @@ namespace MemeStreamApi.controller
             };
             _context.Reactions.Add(reaction);
             _context.SaveChanges();
+            
+            // Create notification for post owner (don't notify self)
+            if (post.UserId != userId)
+            {
+                var reactorUser = await _context.Users.FindAsync(userId);
+                var reactionTypeText = reactionDto.Type switch
+                {
+                    Reaction.ReactionType.Laugh => "laughed at",
+                    _ => "reacted to"
+                };
+                
+                var notification = await _notificationService.CreateNotificationAsync(
+                    post.UserId,
+                    "like",
+                    $"{reactorUser?.Name ?? "Someone"} {reactionTypeText} your post",
+                    "New Reaction",
+                    userId,
+                    reactionDto.PostId,
+                    null,
+                    $"/posts/{reactionDto.PostId}"
+                );
+                
+                // Send real-time notification
+                if (notification != null)
+                {
+                    await NotificationHub.SendNotificationToUser(_hubContext, post.UserId, new {
+                        id = notification.Id,
+                        type = notification.Type,
+                        message = notification.Message,
+                        title = notification.Title,
+                        createdAt = notification.CreatedAt,
+                        relatedUser = new { id = userId, name = reactorUser?.Name, image = reactorUser?.Image },
+                        actionUrl = notification.ActionUrl
+                    }, _notificationService);
+                }
+            }
+            
             return Ok(new { reaction, message = "Reaction added", removed = false });
            }
            catch (Exception ex){
