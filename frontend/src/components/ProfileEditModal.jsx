@@ -226,7 +226,7 @@ const ProfileEditModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
               className={`input input-bordered w-full ${
                 errors.name ? 'input-error' : ''
               }`}
-              placeholder="Enter your display name"
+              placeholder="What do you want to be called in the meme kingdom? 👑"
               disabled={isLoading}
             />
             {errors.name && (
@@ -251,7 +251,7 @@ const ProfileEditModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
               className={`input input-bordered w-full ${
                 errors.email ? 'input-error' : ''
               }`}
-              placeholder="Enter your email address"
+              placeholder="Your digital mailbox address 📬"
               disabled={isLoading}
             />
             {errors.email && (

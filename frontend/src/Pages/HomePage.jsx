@@ -107,7 +107,7 @@ export const HomePage = () => {
                       )}
                     </div>
                   </div>
-                  <span className="text-base-content/70">What's on your mind?</span>
+                  <span className="text-base-content/70">Ready to drop some fire content? 🔥</span>
                 </button>
               </div>
 

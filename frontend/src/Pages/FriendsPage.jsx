@@ -487,8 +487,8 @@ export const FriendsPage = () => {
                   ) : friends.length === 0 ? (
                     <div className="text-center py-16">
                       <FaUserFriends className="text-6xl text-base-content/20 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-base-content mb-2">No friends yet</h3>
-                      <p className="text-base-content/70 mb-6">Start connecting with people to build your network</p>
+                      <h3 className="text-xl font-semibold text-base-content mb-2">Your friend list is as empty as your dating life 💔</h3>
+                      <p className="text-base-content/70 mb-6">Time to find your meme squad and build that social empire! 👑</p>
                       <div className="text-sm text-base-content/50">
                         Use the search box on the left to find people to connect with
                       </div>

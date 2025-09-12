@@ -189,10 +189,10 @@ export const Feed = () => {
         <div className="text-center py-16">
           <div className="text-6xl mb-4">😴</div>
           <h3 className="text-xl font-bold text-base-content mb-2">
-            No memes yet
+            The feed is emptier than your soul at 3 AM 💀
           </h3>
           <p className="text-base-content/70 mb-6">
-            Be the first to share something funny!
+            Time to drop some fire content and break the internet! 🔥
           </p>
           <button
             onClick={refreshFeed}
