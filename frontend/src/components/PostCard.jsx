@@ -98,11 +98,87 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     }
   }, [targetPostId]);
 
+  // Auto-load interactions on mount - but only fetch basic counts, not full data
+  useEffect(() => {
+    if (targetPostId) {
+      // Load just the basic interaction counts on mount
+      const fetchInteractionCounts = async () => {
+        try {
+          const [reactionsRes, commentsRes] = await Promise.all([
+            feedService.getPostReactions(targetPostId),
+            feedService.getPostComments(targetPostId)
+          ]);
+          
+          if (reactionsRes.success && reactionsRes.data) {
+            setReactions(Array.isArray(reactionsRes.data.reactions) ? reactionsRes.data.reactions : []);
+            setUserReaction(reactionsRes.data.userReaction || null);
+            setReactionsLoaded(true);
+          }
+          
+          if (commentsRes.success && commentsRes.data) {
+            setCommentCount(commentsRes.data.length);
+            // Don't set comments array yet - only when user clicks to view them
+            setCommentsLoaded(false); // Keep this false so comments load when clicked
+          }
+        } catch (error) {
+          console.error(`Error fetching interaction counts for post ${targetPostId}:`, error);
+        }
+      };
+      
+      fetchInteractionCounts();
+    }
+  }, [targetPostId]);
 
   const handleReactionClick = async () => {
     if (!targetPostId) return;
-    await feedService.addReaction(targetPostId, 0);
-    fetchPostInteractions();
+    
+    // Optimistic update - immediately update UI
+    const wasUserReacted = userReaction;
+    const previousReactionCount = reactions.length;
+    
+    if (wasUserReacted) {
+      // User is removing their reaction
+      setUserReaction(null);
+      setReactions(reactions.filter(r => r.userId !== currentUser?.id));
+    } else {
+      // User is adding a reaction
+      setUserReaction({ 
+        id: Date.now(), // temporary ID
+        userId: currentUser?.id, 
+        type: 0,
+        createdAt: new Date().toISOString()
+      });
+      setReactions([...reactions, { 
+        id: Date.now(),
+        userId: currentUser?.id,
+        user: currentUser,
+        type: 0,
+        createdAt: new Date().toISOString()
+      }]);
+    }
+
+    // Make API call in background
+    try {
+      await feedService.addReaction(targetPostId, 0);
+      // If successful, refresh to get accurate data from server
+      refreshInteractions();
+    } catch (error) {
+      // Rollback optimistic changes if API call fails
+      if (wasUserReacted) {
+        setUserReaction({ 
+          id: wasUserReacted.id,
+          userId: currentUser?.id, 
+          type: 0,
+          createdAt: wasUserReacted.createdAt || new Date().toISOString()
+        });
+        setReactions(reactions);
+      } else {
+        setUserReaction(null);
+        setReactions(reactions.slice(0, previousReactionCount));
+      }
+      toast.error("Failed to update reaction");
+      console.error("Error updating reaction:", error);
+    }
   };
 
   const handleShareClick = () => {
@@ -135,8 +211,8 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
   };
 
   const handleToggleComments = async () => {
-    // If opening comments for the first time, load them
-    if (!showInlineComments && !commentsLoaded) {
+    // If opening comments for the first time, load the full comments data
+    if (!showInlineComments && comments.length === 0) {
       await fetchComments();
     }
     setShowInlineComments(!showInlineComments);
@@ -146,17 +222,42 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     e.preventDefault();
     if (!newComment.trim() || !targetPostId) return;
 
+    const commentContent = newComment.trim();
+    const tempId = `temp-${Date.now()}`;
+    
+    // Optimistic update - immediately add comment to UI
+    const optimisticComment = {
+      id: tempId,
+      content: commentContent,
+      user: currentUser,
+      createdAt: new Date().toISOString(),
+      replies: [],
+      isOptimistic: true // flag to identify optimistic comments
+    };
+    
+    setComments(prevComments => [...prevComments, optimisticComment]);
+    setCommentCount(prev => prev + 1);
+    setNewComment('');
     setIsSubmittingComment(true);
+
     try {
-      const result = await feedService.addComment(targetPostId, newComment.trim());
+      const result = await feedService.addComment(targetPostId, commentContent);
       if (result.success) {
-        setNewComment('');
-        fetchPostInteractions();
+        // Replace optimistic comment with real comment from server
+        refreshInteractions();
         toast.success("Comment added!");
       } else {
+        // Remove optimistic comment if API call failed
+        setComments(prevComments => prevComments.filter(c => c.id !== tempId));
+        setCommentCount(prev => prev - 1);
+        setNewComment(commentContent); // Restore comment text
         toast.error(result.error || "Failed to add comment");
       }
     } catch (error) {
+      // Remove optimistic comment if API call failed
+      setComments(prevComments => prevComments.filter(c => c.id !== tempId));
+      setCommentCount(prev => prev - 1);
+      setNewComment(commentContent); // Restore comment text
       toast.error("Error adding comment");
       console.error("Error adding comment:", error);
     } finally {
@@ -168,18 +269,61 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
     e.preventDefault();
     if (!replyText.trim() || !replyingTo) return;
 
+    const replyContent = replyText.trim();
+    const tempId = `temp-reply-${Date.now()}`;
+    
+    // Optimistic update - immediately add reply to UI
+    const optimisticReply = {
+      id: tempId,
+      content: replyContent,
+      user: currentUser,
+      createdAt: new Date().toISOString(),
+      isOptimistic: true
+    };
+    
+    // Update comments state to add the reply to the correct comment
+    setComments(prevComments => 
+      prevComments.map(comment => 
+        comment.id === replyingTo 
+          ? { ...comment, replies: [...(comment.replies || []), optimisticReply] }
+          : comment
+      )
+    );
+    
+    setReplyText('');
+    setReplyingTo(null);
     setIsSubmittingReply(true);
+
     try {
-      const result = await feedService.addReply(replyingTo, replyText.trim());
+      const result = await feedService.addReply(replyingTo, replyContent);
       if (result.success) {
-        setReplyText('');
-        setReplyingTo(null);
-        fetchPostInteractions();
+        // Replace optimistic reply with real data from server
+        refreshInteractions();
         toast.success("Reply added!");
       } else {
+        // Remove optimistic reply if API call failed
+        setComments(prevComments => 
+          prevComments.map(comment => 
+            comment.id === replyingTo 
+              ? { ...comment, replies: comment.replies?.filter(r => r.id !== tempId) || [] }
+              : comment
+          )
+        );
+        setReplyText(replyContent); // Restore reply text
+        setReplyingTo(replyingTo); // Restore reply state
         toast.error(result.error || "Failed to add reply");
       }
     } catch (error) {
+      // Remove optimistic reply if API call failed
+      setComments(prevComments => 
+        prevComments.map(comment => 
+          comment.id === replyingTo 
+            ? { ...comment, replies: comment.replies?.filter(r => r.id !== tempId) || [] }
+            : comment
+        )
+      );
+      setReplyText(replyContent); // Restore reply text
+      setReplyingTo(replyingTo); // Restore reply state
       toast.error("Error adding reply");
       console.error("Error adding reply:", error);
     } finally {
@@ -351,9 +495,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                         </div>
                       </div>
                       <div className="flex-1">
-                        <div className="bg-base-200 rounded-2xl px-3 py-2">
+                        <div className={`bg-base-200 rounded-2xl px-3 py-2 ${comment.isOptimistic ? 'opacity-70 animate-pulse' : ''}`}>
                           <p className="font-semibold text-sm">{comment.user?.name}</p>
                           <p className="text-sm">{comment.content}</p>
+                          {comment.isOptimistic && <p className="text-xs text-base-content/50 mt-1">Posting...</p>}
                         </div>
                         <div className="flex gap-4 mt-1 text-xs text-base-content/60">
                           <span>{formatDate(comment.createdAt)}</span>
@@ -384,9 +529,10 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                               </div>
                             </div>
                             <div className="flex-1">
-                              <div className="bg-base-200 rounded-2xl px-3 py-2">
+                              <div className={`bg-base-200 rounded-2xl px-3 py-2 ${reply.isOptimistic ? 'opacity-70 animate-pulse' : ''}`}>
                                 <p className="font-semibold text-sm">{reply.user?.name}</p>
                                 <p className="text-sm">{reply.content}</p>
+                                {reply.isOptimistic && <p className="text-xs text-base-content/50 mt-1">Posting...</p>}
                               </div>
                               <div className="flex gap-4 mt-1 text-xs text-base-content/60">
                                 <span>{formatDate(reply.createdAt)}</span>

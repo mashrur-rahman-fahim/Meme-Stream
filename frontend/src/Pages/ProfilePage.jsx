@@ -50,6 +50,7 @@ export const ProfilePage = () => {
         laughScoreService.getLeaderboard(10)
       ]);
       
+      console.log("Profile user data:", userRes.data);
       setUser(userRes.data);
       
       if (postsRes.success) {
