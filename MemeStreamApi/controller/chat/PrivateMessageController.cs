@@ -42,4 +42,24 @@ public class PrivateMessageController : ControllerBase
 
         return Ok(messages);
     }
+
+    [HttpGet("private/{friendId}/latest")]
+public async Task<IActionResult> GetLatestPrivateMessage(int friendId)
+{
+    var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+    
+    var latestMessage = await _context.Messages
+        .Where(m => !m.IsDeleted && 
+                   ((m.SenderId == userId && m.ReceiverId == friendId) || 
+                    (m.SenderId == friendId && m.ReceiverId == userId)))
+        .OrderByDescending(m => m.SentAt)
+        .Select(m => new {
+            m.Content,
+            m.SentAt,
+            SenderName = m.Sender.Name
+        })
+        .FirstOrDefaultAsync();
+
+    return Ok(latestMessage);
+}
 }

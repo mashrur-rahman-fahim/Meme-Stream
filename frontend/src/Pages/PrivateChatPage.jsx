@@ -1,10 +1,13 @@
 import { useParams } from "react-router-dom";
-import ChatWindow from "../components/ChatWindow";
+import ChatWindow from "../components/Chat/ChatWindow";
 import { jwtDecode } from "jwt-decode";
 
-const PrivateChatPage = () => {
-  const { userId } = useParams();
+const PrivateChatPage = ({ userId, embedded = false }) => {
+  const params = useParams();
   const token = localStorage.getItem("token");
+  
+  // Use the userId prop if provided (from ChatLayout), otherwise use the URL param
+  const targetUserId = userId || params.userId;
 
   let currentUserId = null;
   if (token) {
@@ -19,12 +22,12 @@ const PrivateChatPage = () => {
   }
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Private Chat</h2>
+    <div className={embedded ? "h-full" : "p-4"}>
+      {!embedded && <h2 className="text-xl font-bold mb-4">Private Chat</h2>}
       <ChatWindow
         token={token}
-        receiverId={userId}
-        currentUserId={currentUserId} // ✅ Add this line
+        receiverId={targetUserId}
+        currentUserId={currentUserId}
       />
     </div>
   );

@@ -23,17 +23,17 @@ public class GroupMessageController : ControllerBase
         try
         {
             var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             var isMember = await _context.GroupMemberships
                 .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId);
-            
+
             if (!isMember)
                 return Unauthorized("You are not a member of this group");
 
             var messages = await _context.Messages
                 .Where(m => m.GroupId == groupId && !m.IsDeleted)
                 .Include(m => m.Sender)
-                .Select(m => new 
+                .Select(m => new
                 {
                     m.Id,
                     m.SenderId,
@@ -56,4 +56,20 @@ public class GroupMessageController : ControllerBase
             return StatusCode(500, "Internal Server Error: " + ex.Message);
         }
     }
+    
+    [HttpGet("group/{groupId}/latest")]
+public async Task<IActionResult> GetLatestGroupMessage(int groupId)
+{
+    var latestMessage = await _context.Messages
+        .Where(m => !m.IsDeleted && m.GroupId == groupId)
+        .OrderByDescending(m => m.SentAt)
+        .Select(m => new {
+            m.Content,
+            m.SentAt,
+            SenderName = m.Sender.Name
+        })
+        .FirstOrDefaultAsync();
+
+    return Ok(latestMessage);
+}
 }

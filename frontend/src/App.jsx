@@ -13,13 +13,15 @@ import { RegisterPage } from "./Pages/RegisterPage";
 import PrivateChatPage from "./Pages/PrivateChatPage";
 import GroupChatPage from "./Pages/GroupChatPage";
 import CreateGroupPage from "./Pages/CreateGroupPage";
-import GroupManagePage from "./Pages/GroupManagePage";
+/* import GroupManagePage from "./Pages/GroupManagePage"; */
+// import ChatLayout from "./components/ChatLayout";
+import ChatLayout from "./components/Chat/ChatLayout";
 
 // ✅ Keep all valid imports from both branches
 import CreateGroup from "./components/CreateGroup";
 import GroupList from "./components/GroupList";
-import GroupManager from "./components/GroupManager";
-import ChatSidebar from "./components/ChatSidebar";
+/* import GroupManager from "./components/GroupManager";
+import ChatSidebar from "./components/ChatSidebar"; */
 import { FriendsPage } from "./Pages/FriendsPage";
 import { PublicProfile } from "./components/PublicProfile";
 import { SettingsPage } from "./Pages/Settings";
@@ -37,16 +39,19 @@ function App() {
         <Route path="/Profile" element={<ProfilePage />} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route path="/reset-password" element={<ForgotPassValidationPage />} />
+
         <Route path="/chat/private/:userId" element={<PrivateChatPage />} />
         <Route path="/chat/group/:groupId" element={<GroupChatPage />} />
+        
         <Route path="/chat/group/create" element={<CreateGroupPage />} />
-        <Route path="/chat/group/manage/:groupId" element={<GroupManagePage />} />
+        {/* <Route path="/chat/group/manage/:groupId" element={<GroupManagePage />} /> */}
+        <Route path="/chat" element={<ChatLayout />} />
 
         {/* ✅ Additional routes from both branches */}
         <Route path="/groups/create" element={<CreateGroup />} />
         <Route path="/groups/list" element={<GroupList />} />
-        <Route path="/groups/manage" element={<GroupManager />} />
-        <Route path="/chat/side" element={<ChatSidebar />} />
+        {/* <Route path="/groups/manage" element={<GroupManager />} /> */}
+        {/* <Route path="/chat/side" element={<ChatSidebar />} /> */}
         <Route path="/friends" element={<FriendsPage />} />
         <Route path="/profile/:userId" element={<PublicProfile />} />
         <Route path="/settings" element={<SettingsPage />} />
