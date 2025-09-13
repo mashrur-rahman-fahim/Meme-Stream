@@ -23,10 +23,12 @@ namespace MemeStreamApi.controller
     {
         private readonly MemeStreamDbContext _context;
         private readonly IEmailService _emailService;
-        public UserController(MemeStreamDbContext context, IEmailService emailService)
+        private readonly ILaughScoreService _laughScoreService;
+        public UserController(MemeStreamDbContext context, IEmailService emailService, ILaughScoreService laughScoreService)
         {
             _context = context;
             _emailService = emailService;
+            _laughScoreService = laughScoreService;
         }
         public class RegisterDto
         {
@@ -221,6 +223,7 @@ namespace MemeStreamApi.controller
         [HttpDelete("delete")]
         public IActionResult DeleteUser()
         {
+            using var transaction = _context.Database.BeginTransaction();
             try
             {
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
@@ -234,13 +237,100 @@ namespace MemeStreamApi.controller
                 {
                     return NotFound("User not found.");
                 }
+
+                // Delete user's posts and related data
+                var userPosts = _context.Posts.Where(p => p.UserId == userId).ToList();
+                foreach (var post in userPosts)
+                {
+                    // Delete reactions on this post
+                    var postReactions = _context.Reactions.Where(r => r.PostId == post.Id).ToList();
+                    _context.Reactions.RemoveRange(postReactions);
+                    
+                    // Delete comments on this post (including replies)
+                    var postComments = _context.Comments.Where(c => c.PostId == post.Id).ToList();
+                    _context.Comments.RemoveRange(postComments);
+                    
+                    // Delete shared posts of this post
+                    var sharedPosts = _context.SharedPosts.Where(sp => sp.PostId == post.Id).ToList();
+                    _context.SharedPosts.RemoveRange(sharedPosts);
+                }
+                // Delete the posts themselves
+                _context.Posts.RemoveRange(userPosts);
+
+                // Delete user's reactions on other posts
+                var userReactions = _context.Reactions.Where(r => r.UserId == userId).ToList();
+                _context.Reactions.RemoveRange(userReactions);
+
+                // Delete user's comments on other posts (including replies)
+                var userComments = _context.Comments.Where(c => c.UserId == userId).ToList();
+                _context.Comments.RemoveRange(userComments);
+
+                // Delete user's shared posts
+                var userSharedPosts = _context.SharedPosts.Where(sp => sp.UserId == userId).ToList();
+                _context.SharedPosts.RemoveRange(userSharedPosts);
+
+                // Delete friend requests (both sent and received)
+                var friendRequests = _context.FriendRequests.Where(fr => 
+                    fr.SenderId == userId || fr.ReceiverId == userId).ToList();
+                _context.FriendRequests.RemoveRange(friendRequests);
+
+                // Delete notifications (both sent and received)
+                var sentNotifications = _context.Notifications.Where(n => n.RelatedUserId == userId).ToList();
+                var receivedNotifications = _context.Notifications.Where(n => n.UserId == userId).ToList();
+                _context.Notifications.RemoveRange(sentNotifications);
+                _context.Notifications.RemoveRange(receivedNotifications);
+
+                // Delete notification preferences
+                var notificationPreferences = _context.NotificationPreferences.Where(np => np.UserId == userId).ToList();
+                _context.NotificationPreferences.RemoveRange(notificationPreferences);
+
+                // Delete group memberships
+                var groupMemberships = _context.GroupMemberships.Where(gm => gm.UserId == userId).ToList();
+                _context.GroupMemberships.RemoveRange(groupMemberships);
+
+                // Delete groups created by the user (and their messages/members)
+                var userGroups = _context.Groups.Where(g => g.CreatedById == userId).ToList();
+                foreach (var group in userGroups)
+                {
+                    // Delete all messages in these groups
+                    var groupMessages = _context.Messages.Where(m => m.GroupId == group.Id).ToList();
+                    _context.Messages.RemoveRange(groupMessages);
+                    
+                    // Delete all members of these groups
+                    var allGroupMembers = _context.GroupMemberships.Where(gm => gm.GroupId == group.Id).ToList();
+                    _context.GroupMemberships.RemoveRange(allGroupMembers);
+                }
+                _context.Groups.RemoveRange(userGroups);
+
+                // Delete user's messages
+                var userMessages = _context.Messages.Where(m => m.SenderId == userId).ToList();
+                _context.Messages.RemoveRange(userMessages);
+
+                // Delete message reactions by the user
+                var userMessageReactions = _context.MessageReactons.Where(mr => mr.ReactorId == userId).ToList();
+                _context.MessageReactons.RemoveRange(userMessageReactions);
+
+                // Delete message read receipts by the user
+                var userReadReceipts = _context.MessageReadReceipts.Where(mrr => mrr.UserId == userId).ToList();
+                _context.MessageReadReceipts.RemoveRange(userReadReceipts);
+
+                // Delete chat files uploaded by the user
+                var userChatFiles = _context.ChatFiles.Where(cf => cf.SenderId == userId).ToList();
+                _context.ChatFiles.RemoveRange(userChatFiles);
+
+                // Delete the user account itself
                 _context.Users.Remove(user);
+                
                 _context.SaveChanges();
-                return Ok("User deleted successfully.");
+                transaction.Commit();
+                
+                return Ok(new { message = "User account and all related data deleted successfully." });
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                transaction.Rollback();
+                Console.WriteLine($"Error deleting user account: {ex.Message}");
+                return BadRequest(new { message = "Error deleting user account.", error = ex.Message });
             }
         }    
         public class UpdateProfileDto
@@ -480,7 +570,7 @@ namespace MemeStreamApi.controller
         }
         [Authorize]
         [HttpGet("profile")]
-        public IActionResult GetProfile()
+        public async Task<IActionResult> GetProfile()
         {
             try
             {
@@ -495,7 +585,25 @@ namespace MemeStreamApi.controller
                 {
                     return NotFound("User not found.");
                 }
-                return Ok(user);
+                
+                // Get detailed LaughScore breakdown
+                var laughScoreBreakdown = await _laughScoreService.GetDetailedLaughScoreAsync(userId);
+                
+                var userProfile = new
+                {
+                    user.Id,
+                    user.Name,
+                    user.Email,
+                    user.Image,
+                    user.Bio,
+                    user.CreatedAt,
+                    user.IsEmailVerified,
+                    user.LaughScore,
+                    user.LastLaughScoreUpdate,
+                    LaughScoreDetails = laughScoreBreakdown
+                };
+                
+                return Ok(userProfile);
             }
             catch (Exception ex)
             {
@@ -505,7 +613,7 @@ namespace MemeStreamApi.controller
 
         [Authorize]
         [HttpGet("profile/{userId}")]
-        public IActionResult GetPublicProfile(int userId)
+        public async Task<IActionResult> GetPublicProfile(int userId)
         {
             try
             {
@@ -557,6 +665,9 @@ namespace MemeStreamApi.controller
                     canSendRequest = false;
                 }
 
+                // Get LaughScore breakdown for public profile
+                var laughScoreBreakdown = await _laughScoreService.GetDetailedLaughScoreAsync(userId);
+                
                 var publicProfile = new PublicProfileDto
                 {
                     Id = user.Id,
@@ -565,7 +676,10 @@ namespace MemeStreamApi.controller
                     Image = user.Image,
                     FriendshipStatus = friendshipStatus,
                     CanSendRequest = canSendRequest,
-                    IsOwnProfile = currentUserId == userId
+                    IsOwnProfile = currentUserId == userId,
+                    LaughScore = user.LaughScore,
+                    FunninessLevel = laughScoreBreakdown.FunninessLevel,
+                    LastLaughScoreUpdate = user.LastLaughScoreUpdate
                 };
 
                 return Ok(publicProfile);
@@ -586,6 +700,9 @@ namespace MemeStreamApi.controller
             public string FriendshipStatus { get; set; } = string.Empty;
             public bool CanSendRequest { get; set; }
             public bool IsOwnProfile { get; set; }
+            public int LaughScore { get; set; }
+            public string FunninessLevel { get; set; } = string.Empty;
+            public DateTime? LastLaughScoreUpdate { get; set; }
         }
 
     }

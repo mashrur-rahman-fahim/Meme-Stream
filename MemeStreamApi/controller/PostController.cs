@@ -51,19 +51,35 @@ namespace MemeStreamApi.controller
                     return NotFound("User not found.");
                 }
 
-                // Perform meme detection on the content
-                if (!string.IsNullOrWhiteSpace(postDto.Content))
+                // Perform comprehensive meme detection on the content
+                if (!string.IsNullOrWhiteSpace(postDto.Content) || !string.IsNullOrWhiteSpace(postDto.Image))
                 {
                     var memeDetectionRequest = new MemeDetectionRequest
                     {
                         Text = postDto.Content,
+                        ImageUrl = postDto.Image,
                         IncludeSentiment = true,
                         IncludeHumorScore = true,
                         IncludeMemeReferences = true,
                         IncludeCulturalContext = true
                     };
 
-                    var memeDetectionResult = await _memeDetectionService.AnalyzeTextAsync(memeDetectionRequest);
+                    // Determine analysis mode based on available data
+                    if (!string.IsNullOrEmpty(memeDetectionRequest.Text) && !string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                    {
+                        memeDetectionRequest.DetectionMode = "combined";
+                    }
+                    else if (!string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                    {
+                        memeDetectionRequest.DetectionMode = "image";
+                    }
+                    else if (!string.IsNullOrEmpty(memeDetectionRequest.Text))
+                    {
+                        memeDetectionRequest.DetectionMode = "text";
+                    }
+
+                    // Use the unified analysis method that automatically determines the mode
+                    var memeDetectionResult = await _memeDetectionService.AnalyzeAsync(memeDetectionRequest);
                     
                     if (!memeDetectionResult.Success)
                     {
@@ -79,9 +95,17 @@ namespace MemeStreamApi.controller
                         return BadRequest(new { 
                             error = "Non-meme content detected", 
                             message = "This post does not contain meme content and cannot be published. Only memes are allowed!",
-                            memeAnalysis = memeDetectionResult.Result
+                            memeAnalysis = memeDetectionResult.Result,
+                            analysisMode = memeDetectionResult.Result?.DetectionMode ?? "unknown"
                         });
                     }
+                }
+                else
+                {
+                    return BadRequest(new { 
+                        error = "No content provided", 
+                        message = "Please provide either text content, an image, or both to create a post."
+                    });
                 }
 
                 // If not a meme, proceed to create the post
@@ -111,25 +135,42 @@ namespace MemeStreamApi.controller
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(postDto.Content))
+                if (string.IsNullOrWhiteSpace(postDto.Content) && string.IsNullOrWhiteSpace(postDto.Image))
                 {
                     return Ok(new { 
                         isMeme = false, 
-                        message = "No content to analyze - only memes are allowed!",
-                        canPost = false // Can't post without content, and content must be meme
+                        message = "No content to analyze - provide text, image, or both. Only memes are allowed!",
+                        canPost = false,
+                        analysisMode = "none"
                     });
                 }
 
                 var memeDetectionRequest = new MemeDetectionRequest
                 {
                     Text = postDto.Content,
+                    ImageUrl = postDto.Image,
                     IncludeSentiment = true,
                     IncludeHumorScore = true,
                     IncludeMemeReferences = true,
                     IncludeCulturalContext = true
                 };
 
-                var memeDetectionResult = await _memeDetectionService.AnalyzeTextAsync(memeDetectionRequest);
+                // Determine analysis mode based on available data
+                if (!string.IsNullOrEmpty(memeDetectionRequest.Text) && !string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                {
+                    memeDetectionRequest.DetectionMode = "combined";
+                }
+                else if (!string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                {
+                    memeDetectionRequest.DetectionMode = "image";
+                }
+                else if (!string.IsNullOrEmpty(memeDetectionRequest.Text))
+                {
+                    memeDetectionRequest.DetectionMode = "text";
+                }
+
+                // Use unified analysis that automatically determines the best mode
+                var memeDetectionResult = await _memeDetectionService.AnalyzeAsync(memeDetectionRequest);
                 
                 if (!memeDetectionResult.Success)
                 {
@@ -140,10 +181,21 @@ namespace MemeStreamApi.controller
                 }
 
                 var isMeme = memeDetectionResult.Result?.IsMeme == true;
+                var analysisMode = memeDetectionResult.Result?.DetectionMode ?? "unknown";
+                
+                string message = analysisMode switch
+                {
+                    "text" => isMeme ? "Great! Your text is meme content and can be posted." : "Your text is not a meme and cannot be posted. Only memes are allowed!",
+                    "image" => isMeme ? "Great! Your image contains meme elements and can be posted." : "Your image doesn't contain meme elements and cannot be posted. Only memes are allowed!",
+                    "combined" => isMeme ? "Perfect! Your text and image together create meme content and can be posted." : "Your content combination is not a meme and cannot be posted. Only memes are allowed!",
+                    _ => isMeme ? "Content detected as meme and can be posted." : "Content is not a meme and cannot be posted. Only memes are allowed!"
+                };
+
                 return Ok(new { 
                     isMeme = isMeme,
-                    canPost = isMeme, // Can only post if it IS a meme
-                    message = isMeme ? "Great! This is meme content and can be posted." : "This content is not a meme and cannot be posted. Only memes are allowed!",
+                    canPost = isMeme,
+                    message = message,
+                    analysisMode = analysisMode,
                     analysis = memeDetectionResult.Result
                 });
             }
@@ -175,6 +227,54 @@ namespace MemeStreamApi.controller
             catch (System.Exception)
             {
 
+                return BadRequest("Error retrieving post.");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("single/{id}")]
+        public IActionResult GetSinglePost(int id)
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                
+                var post = _context.Posts
+                    .Include(p => p.User)
+                    .FirstOrDefault(p => p.Id == id);
+                    
+                if (post == null)
+                {
+                    return NotFound("Post not found.");
+                }
+                
+                // Format the response similar to the feed format
+                var formattedPost = new {
+                    Id = post.Id,
+                    Content = post.Content,
+                    Image = post.Image,
+                    CreatedAt = post.CreatedAt,
+                    UserId = post.UserId,
+                    User = new {
+                        Id = post.User.Id,
+                        Name = post.User.Name,
+                        Email = post.User.Email,
+                        Image = post.User.Image,
+                        Bio = post.User.Bio
+                    },
+                    IsShared = false,
+                    SharedBy = (object?)null,
+                    SharedAt = (DateTime?)null
+                };
+                
+                return Ok(formattedPost);
+            }
+            catch (System.Exception)
+            {
                 return BadRequest("Error retrieving post.");
             }
         }
@@ -318,7 +418,8 @@ namespace MemeStreamApi.controller
                         DaysOld = (int)(now - p.CreatedAt).TotalDays,
                         IsShared = false,
                         SharedBy = (object?)null,
-                        SharedAt = (DateTime?)null
+                        SharedAt = (DateTime?)null,
+                        HasUserShared = _context.SharedPosts.Any(sp => sp.PostId == p.Id && sp.UserId == userId)
                     })
                     .ToList(); // Execute query first
                 
@@ -356,7 +457,8 @@ namespace MemeStreamApi.controller
                             Image = sp.User.Image,
                             Bio = sp.User.Bio
                         },
-                        SharedAt = sp.SharedAt
+                        SharedAt = sp.SharedAt,
+                        HasUserShared = _context.SharedPosts.Any(sp2 => sp2.PostId == sp.Post.Id && sp2.UserId == userId)
                     })
                     .ToList();
                 
@@ -364,7 +466,7 @@ namespace MemeStreamApi.controller
                 var allFeedItems = regularPosts.Cast<dynamic>().Concat(sharedPosts.Cast<dynamic>()).ToList();
                 
                 // Calculate feed score using complex algorithm
-                var feedPosts = allFeedItems
+                var scoredPosts = allFeedItems
                     .Select(p => new {
                         Id = (int)p.Id,
                         Content = (string?)p.Content,
@@ -382,6 +484,13 @@ namespace MemeStreamApi.controller
                     })
                     .OrderByDescending(p => p.FeedScore)
                     .ThenByDescending(p => p.CreatedAt)
+                    .ToList();
+                
+                // Apply diverse feed algorithm to prevent consecutive posts from same user
+                var diverseFeedPosts = ApplyDiverseFeedAlgorithm(scoredPosts.Cast<dynamic>().ToList());
+                
+                // Apply pagination after diversification
+                var feedPosts = diverseFeedPosts
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
@@ -452,6 +561,68 @@ namespace MemeStreamApi.controller
             }
             
             return baseScore;
+        }
+
+        private List<dynamic> ApplyDiverseFeedAlgorithm(List<dynamic> scoredPosts)
+        {
+            if (scoredPosts.Count <= 1) return scoredPosts;
+            
+            var result = new List<dynamic>();
+            var remaining = new List<dynamic>(scoredPosts);
+            
+            // Algorithm: Smart interleaving to prevent consecutive posts from same user
+            while (remaining.Count > 0)
+            {
+                dynamic selectedPost = null;
+                int lastUserId = result.Count > 0 ? (int)result.Last().UserId : -1;
+                int lastSharedById = result.Count > 0 && (bool)result.Last().IsShared ? 
+                    (int)result.Last().SharedBy.Id : -1;
+                
+                // Find the highest-scored post that's NOT from the last user (or sharer)
+                foreach (var post in remaining.OrderByDescending(p => (double)p.FeedScore))
+                {
+                    int currentUserId = (int)post.UserId;
+                    int currentSharedById = (bool)post.IsShared ? (int)post.SharedBy.Id : -1;
+                    
+                    // Check if this post is from a different user than the last post
+                    bool differentFromLastUser = currentUserId != lastUserId;
+                    bool differentFromLastSharer = currentSharedById != lastSharedById;
+                    
+                    // Prefer posts from different users, but allow same user if significant score gap
+                    if (differentFromLastUser && differentFromLastSharer)
+                    {
+                        selectedPost = post;
+                        break;
+                    }
+                }
+                
+                // If no different user found, or if we're at the start, take the highest scoring
+                if (selectedPost == null)
+                {
+                    // If we couldn't find a different user, check if the score gap is significant enough
+                    var topPost = remaining.OrderByDescending(p => (double)p.FeedScore).First();
+                    double topScore = (double)topPost.FeedScore;
+                    
+                    // Look for posts from different users within 20% score range
+                    var alternativePosts = remaining
+                        .Where(p => {
+                            int currentUserId = (int)p.UserId;
+                            int currentSharedById = (bool)p.IsShared ? (int)p.SharedBy.Id : -1;
+                            bool differentFromLastUser = currentUserId != lastUserId;
+                            bool differentFromLastSharer = currentSharedById != lastSharedById;
+                            return (differentFromLastUser && differentFromLastSharer) && 
+                                   ((double)p.FeedScore >= topScore * 0.8);
+                        })
+                        .OrderByDescending(p => (double)p.FeedScore);
+                    
+                    selectedPost = alternativePosts.FirstOrDefault() ?? topPost;
+                }
+                
+                result.Add(selectedPost);
+                remaining.Remove(selectedPost);
+            }
+            
+            return result;
         }
 
         [Authorize]
@@ -560,7 +731,138 @@ namespace MemeStreamApi.controller
 
         [Authorize]
         [HttpDelete("delete/{id}")]
-        public IActionResult DeletePost(int id)
+        public async Task<IActionResult> DeletePost(int id)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User ID claim not found.");
+                }
+                int userId = int.Parse(userIdClaim);
+                
+                // Find the post to delete (only owner can delete)
+                var post = await _context.Posts
+                    .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+                
+                if (post == null)
+                {
+                    return NotFound("Post not found or you don't have permission to delete it.");
+                }
+
+                // Get all users who will be affected by LaughScore recalculation
+                var affectedUserIds = new HashSet<int> { userId }; // Post owner
+                
+                // Get users who reacted to this post
+                var reactingUserIds = await _context.Reactions
+                    .Where(r => r.PostId == id)
+                    .Select(r => r.UserId)
+                    .Distinct()
+                    .ToListAsync();
+                    
+                // Get users who shared this post 
+                var sharingUserIds = await _context.SharedPosts
+                    .Where(sp => sp.PostId == id)
+                    .Select(sp => sp.UserId)
+                    .Distinct()
+                    .ToListAsync();
+                    
+                // Get users who commented on this post
+                var commentingUserIds = await _context.Comments
+                    .Where(c => c.PostId == id)
+                    .Select(c => c.UserId)
+                    .Distinct()
+                    .ToListAsync();
+
+                // Add all affected users for point recalculation
+                foreach (var uid in reactingUserIds) affectedUserIds.Add(uid);
+                foreach (var uid in sharingUserIds) affectedUserIds.Add(uid);
+                foreach (var uid in commentingUserIds) affectedUserIds.Add(uid);
+
+                // CASCADE DELETE: Remove all related data
+                
+                // 1. Delete all reactions to this post
+                var reactions = await _context.Reactions
+                    .Where(r => r.PostId == id)
+                    .ToListAsync();
+                _context.Reactions.RemoveRange(reactions);
+                
+                // 2. Delete all comments on this post (including replies)
+                var comments = await _context.Comments
+                    .Where(c => c.PostId == id)
+                    .ToListAsync();
+                _context.Comments.RemoveRange(comments);
+                
+                // 3. Delete all shares of this post
+                var sharedPosts = await _context.SharedPosts
+                    .Where(sp => sp.PostId == id)
+                    .ToListAsync();
+                _context.SharedPosts.RemoveRange(sharedPosts);
+                
+                // 4. Delete notifications related to this post
+                var notifications = await _context.Notifications
+                    .Where(n => n.PostId == id)
+                    .ToListAsync();
+                _context.Notifications.RemoveRange(notifications);
+                
+                // 5. Finally, delete the post itself
+                _context.Posts.Remove(post);
+                
+                // Save all deletions
+                await _context.SaveChangesAsync();
+                
+                // Commit the transaction
+                await transaction.CommitAsync();
+                
+                // RECALCULATE LAUGH SCORES for affected users (async, don't block response)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        foreach (var affectedUserId in affectedUserIds)
+                        {
+                            var laughScoreService = HttpContext.RequestServices.GetService<ILaughScoreService>();
+                            if (laughScoreService != null)
+                            {
+                                await laughScoreService.UpdateLaughScoreAsync(affectedUserId);
+                            }
+                        }
+                        Console.WriteLine($"LaughScore recalculated for {affectedUserIds.Count} users after post {id} deletion");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error recalculating LaughScores after post deletion: {ex.Message}");
+                    }
+                });
+
+                return Ok(new { 
+                    message = "Post and all related data deleted successfully! Your internet presence just got a little lighter 🗑️✨",
+                    deletedItems = new {
+                        post = 1,
+                        reactions = reactions.Count,
+                        comments = comments.Count,
+                        shares = sharedPosts.Count,
+                        notifications = notifications.Count
+                    },
+                    affectedUsers = affectedUserIds.Count
+                });
+            }
+            catch (System.Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"Error deleting post: {ex.Message}");
+                return BadRequest(new { 
+                    error = "Failed to delete post", 
+                    message = "Something went wrong while deleting your post. Even the delete button is having trust issues 🤔" 
+                });
+            }
+        }
+
+        [Authorize]
+        [HttpPut("edit/{id}")]
+        public async Task<IActionResult> EditPost(int id, [FromBody] PostDto postDto)
         {
             try
             {
@@ -570,22 +872,99 @@ namespace MemeStreamApi.controller
                     return Unauthorized("User ID claim not found.");
                 }
                 int userId = int.Parse(userIdClaim);
-                var post = _context.Posts.FirstOrDefault(p => p.Id == id && p.UserId == userId);
-                var sharedPost = _context.SharedPosts.FirstOrDefault(sp => sp.PostId == id && sp.UserId == userId);
-                if (sharedPost != null)
+                
+                // Find the post to edit (only owner can edit)
+                var post = await _context.Posts
+                    .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+                
+                if (post == null)
                 {
-                    _context.SharedPosts.Remove(sharedPost);
+                    return NotFound("Post not found or you don't have permission to edit it.");
                 }
-                if (post != null)
+
+                // Perform meme detection on the updated content (same validation as create)
+                if (!string.IsNullOrWhiteSpace(postDto.Content) || !string.IsNullOrWhiteSpace(postDto.Image))
                 {
-                    _context.Posts.Remove(post);
+                    var memeDetectionRequest = new MemeDetectionRequest
+                    {
+                        Text = postDto.Content,
+                        ImageUrl = postDto.Image,
+                        IncludeSentiment = true,
+                        IncludeHumorScore = true,
+                        IncludeMemeReferences = true,
+                        IncludeCulturalContext = true
+                    };
+
+                    // Determine analysis mode based on available data
+                    if (!string.IsNullOrEmpty(memeDetectionRequest.Text) && !string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                    {
+                        memeDetectionRequest.DetectionMode = "combined";
+                    }
+                    else if (!string.IsNullOrEmpty(memeDetectionRequest.ImageUrl))
+                    {
+                        memeDetectionRequest.DetectionMode = "image";
+                    }
+                    else if (!string.IsNullOrEmpty(memeDetectionRequest.Text))
+                    {
+                        memeDetectionRequest.DetectionMode = "text";
+                    }
+
+                    // Use the unified analysis method
+                    var memeDetectionResult = await _memeDetectionService.AnalyzeAsync(memeDetectionRequest);
+                    
+                    if (!memeDetectionResult.Success)
+                    {
+                        return BadRequest(new { 
+                            error = "Meme detection failed", 
+                            details = memeDetectionResult.Error,
+                            message = "The meme detector had a meltdown! Try again? 🤖💥"
+                        });
+                    }
+
+                    // If it's NOT detected as a meme, block the edit
+                    if (memeDetectionResult.Result?.IsMeme != true)
+                    {
+                        return BadRequest(new { 
+                            error = "Non-meme content detected", 
+                            message = "Nice try, but that's not meme content! Keep it spicy and meme-worthy 🌶️",
+                            memeAnalysis = memeDetectionResult.Result,
+                            analysisMode = memeDetectionResult.Result?.DetectionMode ?? "unknown"
+                        });
+                    }
                 }
-                _context.SaveChanges();
-                return Ok("Post deleted successfully.");
+                else
+                {
+                    return BadRequest(new { 
+                        error = "No content provided", 
+                        message = "Your meme can't be invisible! Add some content to edit 👻"
+                    });
+                }
+
+                // Update the post
+                post.Content = postDto.Content;
+                post.Image = postDto.Image;
+                // Note: We don't update CreatedAt as it should remain the original creation time
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { 
+                    message = "Meme successfully upgraded to premium edition! ✨",
+                    post = new {
+                        Id = post.Id,
+                        Content = post.Content,
+                        Image = post.Image,
+                        CreatedAt = post.CreatedAt,
+                        UserId = post.UserId
+                    }
+                });
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-                return BadRequest("Error deleting post.");
+                Console.WriteLine($"Error editing post: {ex.Message}");
+                return BadRequest(new { 
+                    error = "Failed to edit post", 
+                    message = "Edit failed! Your meme is playing hard to get 😅" 
+                });
             }
         }
     }

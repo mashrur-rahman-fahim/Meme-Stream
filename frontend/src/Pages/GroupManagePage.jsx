@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../utils/axios";
 import { useParams } from "react-router-dom";
 
 const GroupManagePage = () => {
@@ -11,15 +11,13 @@ const GroupManagePage = () => {
 
   useEffect(() => {
     const fetchMembers = async () => {
-      const res = await axios.get(`http://localhost:5216/api/chat/group/${groupId}/members`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get(`/chat/group/${groupId}/members`, {
       });
       setMembers(res.data);
     };
 
     const fetchFriends = async () => {
-      const res = await axios.get("http://localhost:5216/api/ChatSidebar/friends", {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/ChatSidebar/friends", {
       });
       setFriends(res.data);
     };
@@ -30,16 +28,14 @@ const GroupManagePage = () => {
 
   const handleAdd = async () => {
     if (!selectedFriend) return;
-    await axios.post(`http://localhost:5216/api/chat/group/${groupId}/add`, selectedFriend, {
-      headers: { Authorization: `Bearer ${token}` },
+    await api.post(`/chat/group/${groupId}/add`, selectedFriend, {
     });
     setSelectedFriend("");
     window.location.reload();
   };
 
   const handleRemove = async (userId) => {
-    await axios.delete(`http://localhost:5216/api/chat/group/${groupId}/remove/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    await api.delete(`/chat/group/${groupId}/remove/${userId}`, {
     });
     window.location.reload();
   };

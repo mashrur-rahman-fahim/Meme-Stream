@@ -2,7 +2,31 @@
   "permissions": {
     "allow": [
       "Bash(npm run dev:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(dotnet build)",
+      "Bash(dotnet ef migrations add:*)",
+      "Bash(dotnet ef database:*)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(dotnet run:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(dotnet build:*)",
+      "Bash(curl:*)",
+      "Bash(cmd /c:*)",
+      "Bash(cat:*)",
+      "Bash(psql:*)",
+      "Bash(tasklist)",
+      "Bash(dotnet ef dbcontext script:*)",
+      "Bash(rm:*)",
+      "Bash(git reset:*)",
+      "Bash(tasklist:*)",
+      "Bash(npm run build:*)",
+      "Bash(dir F:MemeStream)",
+      "Bash(git rev-parse:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(dir)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

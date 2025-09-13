@@ -125,9 +125,9 @@ export const FriendRequest = () => {
     }
   };
 
-  const declineFriendRequest = async (id) => {
+  const declineFriendRequest = async (senderId) => {
     try {
-      await api.delete(`/FriendRequest/delete/${id}`);
+      await api.post("/FriendRequest/decline", { senderId });
       setMessage("Friend request declined!");
       fetchFriendRequests();
     } catch (error) {
@@ -274,7 +274,7 @@ export const FriendRequest = () => {
                           Accept
                         </button>
                         <button
-                          onClick={() => declineFriendRequest(r.id)}
+                          onClick={() => declineFriendRequest(r.senderId)}
                           className="btn btn-neutral btn-xs"
                         >
                           Decline

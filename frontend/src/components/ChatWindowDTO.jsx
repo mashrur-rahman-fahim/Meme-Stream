@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
-import axios from "axios";
+import api from "../utils/axios";
+import { getApiBaseUrl } from "../utils/api-config";
 import {
   startSignalRConnection,
   sendPrivateMessage,
@@ -28,7 +29,7 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
   const chatContainerRef = useRef(null);
   const ding = new Audio("/sounds/ding.mp3");
   const connectionRef = useRef(null);
-  
+
   const userIdRef = useRef(currentUserId);
   useEffect(() => {
     userIdRef.current = currentUserId;
@@ -45,21 +46,19 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
   };
 
   useEffect(() => {
-    console.log("ChatWindowDTO mounted with:", { receiverId, groupName, currentUserId });
-    
     const key = receiverId || `group-${groupName}`;
 
     const fetchHistory = async () => {
       try {
-        console.log("Fetching message history for:", key);
-        const res = await axios.get(
+        const res = await api.get(
           groupName
-            ? `http://localhost:5216/api/GroupMessage/group/${groupName.replace("group-", "")}/messages`
-            : `http://localhost:5216/api/PrivateMessage/private/${receiverId}`,
+            ? `/chat/group/${groupName.replace("group-", "")}/messages`
+            : `/chat/private/${receiverId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
+
         const history = res.data.map((m) => ({
           id: m.id,
           senderId: m.senderId,
@@ -70,7 +69,6 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
           editedAt: m.editedAt,
           isDeleted: m.isDeleted,
         }));
-        console.log("Fetched history:", history.length, "messages");
         setChatLog(history);
       } catch (err) {
         console.error("Error fetching message history:", err);
@@ -81,30 +79,17 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
       const conn = await startSignalRConnection(
         token,
         (senderId, msg, messageId, sentAt, senderName) => {
-          console.log("Received private message:", { senderId, msg, messageId, sentAt, senderName });
-          
           const shouldAutoScroll = isScrolledToBottom();
-          
+
           setChatLog((prev) => {
             const messageExists = prev.some(m => m.id === messageId);
-            if (messageExists) {
-              console.log("Message already exists, skipping:", messageId);
-              return prev;
-            }
-            
-            console.log("Adding new private message to chat log:", messageId);
+            if (messageExists) return prev;
             return [
               ...prev,
-              {
-                id: messageId,
-                senderId: parseInt(senderId),
-                msg,
-                sentAt: sentAt,
-              },
+              { id: messageId, senderId: parseInt(senderId), msg, sentAt },
             ];
           });
 
-          // Update latest message for sidebar
           updateLatestMessage(
             receiverId.toString(),
             msg,
@@ -117,32 +102,19 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
           }
         },
         (senderId, msg, messageId, sentAt, senderName, groupId) => {
-          console.log("Received group message:", { senderId, msg, messageId, sentAt, senderName, groupId });
-          
           const shouldAutoScroll = isScrolledToBottom();
-          
+
           setChatLog((prev) => {
             const messageExists = prev.some(m => m.id === messageId);
-            if (messageExists) {
-              console.log("Group message already exists, skipping:", messageId);
-              return prev;
-            }
-            
-            console.log("Adding new group message to chat log:", messageId);
+            if (messageExists) return prev;
             return [
               ...prev,
-              {
-                id: messageId,
-                senderId: parseInt(senderId),
-                msg,
-                sentAt: sentAt,
-              },
+              { id: messageId, senderId: parseInt(senderId), msg, sentAt },
             ];
           });
 
-          // Update latest message for sidebar
           updateLatestMessage(
-            `group-${groupId || groupName.replace('group-', '')}`,
+            `group-${groupId || groupName.replace("group-", "")}`,
             msg,
             senderName || `User ${senderId}`,
             sentAt
@@ -153,27 +125,24 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
           }
         },
         ({ type, senderId, message, senderName, groupId, timestamp }) => {
-          console.log("Notification received:", { type, senderId, message, senderName, groupId, timestamp });
           const notifyKey = type === "private" ? senderId : `group-${groupId || groupName}`;
           incrementUnread(notifyKey);
-          
-          // Add notification to sidebar instead of toast
+
           addNotification({
             type,
             senderId,
             senderName: senderName || `User ${senderId}`,
-            message: message,
-            groupId: groupId,
+            message,
+            groupId,
             timestamp: timestamp || new Date(),
             chatKey: notifyKey
           });
-          
+
           if (document.visibilityState !== "visible") {
             ding.play();
           }
         },
         (senderId, isTyping) => {
-          console.log("Typing status:", { senderId, isTyping });
           if (senderId !== userIdRef.current) {
             setOtherTyping(isTyping);
           }
@@ -183,7 +152,6 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
       connectionRef.current = conn;
 
       conn.on("ReceiveReaction", (messageId, userId, emoji) => {
-        console.log("Reaction received:", { messageId, userId, emoji });
         setReactions((prev) => {
           const existing = prev[messageId] || [];
           return {
@@ -194,28 +162,14 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
       });
 
       conn.on("ReceiveMessageEdit", (messageId, newContent, editedAt) => {
-        console.log("Message edit received:", { messageId, newContent, editedAt });
         setChatLog((prev) =>
           prev.map((msg) =>
             msg.id === messageId ? { ...msg, msg: newContent, editedAt } : msg
           )
         );
-
-        // Update latest message if this is the latest one
-        const updatedMessage = chatLog.find(msg => msg.id === messageId);
-        if (updatedMessage) {
-          const chatKey = groupName ? `group-${groupName.replace('group-', '')}` : receiverId.toString();
-          updateLatestMessage(
-            chatKey,
-            newContent,
-            `User ${updatedMessage.senderId}`,
-            editedAt
-          );
-        }
       });
 
       conn.on("ReceiveMessageDelete", (messageId) => {
-        console.log("Message delete received:", messageId);
         setChatLog((prev) =>
           prev.map((msg) =>
             msg.id === messageId ? { ...msg, msg: "[deleted]", isDeleted: true } : msg
@@ -224,7 +178,6 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
       });
 
       conn.on("ReceiveReadReceipt", (messageId, userId) => {
-        console.log("Read receipt received:", { messageId, userId });
         setReadMap((prev) => ({
           ...prev,
           [messageId]: [...(prev[messageId] || []), userId],
@@ -253,7 +206,6 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
     initConnection();
 
     return () => {
-      console.log("ChatWindowDTO cleanup");
       if (connectionRef.current) {
         connectionRef.current.off("ReceiveReaction");
         connectionRef.current.off("ReceiveMessageEdit");
@@ -264,12 +216,10 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
   }, [token, receiverId, groupName]);
 
   useEffect(() => {
-    console.log("Chat log updated:", chatLog.length, "messages");
-    
     if (anchorMessageId && scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-    
+
     setTimeout(scrollToBottom, 100);
   }, [chatLog]);
 
@@ -285,31 +235,19 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
   };
 
   const handleSend = () => {
-    if (!message.trim()) {
-      console.log("Empty message, not sending");
-      return;
-    }
+    if (!message.trim()) return;
 
-    console.log("Sending message:", message);
-    
     if (groupName) {
       sendGroupMessage(groupName, message);
     } else {
       sendPrivateMessage(receiverId, message);
     }
 
-    // Update latest message optimistically for better UX
-    const chatKey = groupName ? `group-${groupName.replace('group-', '')}` : receiverId.toString();
-    updateLatestMessage(
-      chatKey,
-      message,
-      "You", // Assuming current user's name would be shown as "You"
-      new Date()
-    );
+    const chatKey = groupName ? `group-${groupName.replace("group-", "")}` : receiverId.toString();
+    updateLatestMessage(chatKey, message, "You", new Date());
 
     setMessage("");
     if (receiverId) sendTypingStatus(receiverId, false);
-    
     setTimeout(scrollToBottom, 50);
   };
 
@@ -317,19 +255,15 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    console.log("Uploading file:", file.name);
-
     const formData = new FormData();
     formData.append("file", file);
     if (receiverId) formData.append("receiverId", receiverId);
     if (groupName) formData.append("groupId", groupName.replace("group-", ""));
 
     try {
-      const res = await axios.post("http://localhost:5216/api/FileUpload/upload", formData, {
+      const res = await api.post("/chat/upload", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      console.log("File upload successful:", res.data);
 
       setChatLog((prev) => [
         ...prev,
@@ -342,14 +276,8 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
         },
       ]);
 
-      // Update latest message for file upload
-      const chatKey = groupName ? `group-${groupName.replace('group-', '')}` : receiverId.toString();
-      updateLatestMessage(
-        chatKey,
-        "📎 File",
-        "You",
-        new Date()
-      );
+      const chatKey = groupName ? `group-${groupName.replace("group-", "")}` : receiverId.toString();
+      updateLatestMessage(chatKey, "📎 File", "You", new Date());
 
       setTimeout(scrollToBottom, 100);
     } catch (err) {
@@ -359,18 +287,13 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
 
   return (
     <div className="p-4 bg-base-200 rounded shadow w-full max-w-md">
-      <div 
+      <div
         ref={chatContainerRef}
         className="overflow-y-auto h-64 mb-2 border border-base-300 rounded px-2 py-1"
         style={{ scrollBehavior: "smooth" }}
       >
         {chatLog.map((entry, idx) => {
           const isSender = entry.senderId === userIdRef.current;
-          
-          if (entry.senderId !== userIdRef.current && entry.senderId === currentUserId) {
-            console.warn("Misclassified message:", entry);
-          }
-          
           const ref = entry.id === anchorMessageId ? scrollRef : null;
 
           return (
@@ -385,7 +308,7 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
                 {entry.filePath && (
                   <div className="mt-2">
                     <a
-                      href={`http://localhost:5216/${entry.filePath}`}
+                      href={`${getApiBaseUrl().replace('/api', '')}/${entry.filePath}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 underline"
@@ -459,9 +382,8 @@ const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
             </div>
           );
         })}
-        
+
         <div ref={messagesEndRef} />
-        
         {otherTyping && (
           <div className="text-xs text-gray-500 italic mt-1">Typing...</div>
         )}

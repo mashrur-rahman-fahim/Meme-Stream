@@ -70,6 +70,9 @@ namespace MemeStreamApi.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("ParentCommentId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("PostId")
                         .HasColumnType("integer");
 
@@ -77,6 +80,8 @@ namespace MemeStreamApi.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentCommentId");
 
                     b.HasIndex("PostId");
 
@@ -270,6 +275,125 @@ namespace MemeStreamApi.Migrations
                     b.ToTable("MessageReadReceipts");
                 });
 
+            modelBuilder.Entity("MemeStreamApi.model.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionUrl")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("CommentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("PostId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("RelatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("RelatedUserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("MemeStreamApi.model.NotificationPreference", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("CommentNotifications")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("EmailNotifications")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("FollowNotifications")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("FriendRequestNotifications")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("InAppNotifications")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("LikeNotifications")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("MentionNotifications")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("PushNotifications")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShareNotifications")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("NotificationPreferences");
+                });
+
             modelBuilder.Entity("MemeStreamApi.model.Post", b =>
                 {
                     b.Property<int>("Id")
@@ -386,6 +510,12 @@ namespace MemeStreamApi.Migrations
                     b.Property<bool>("IsEmailVerified")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("LastLaughScoreUpdate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LaughScore")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -410,6 +540,11 @@ namespace MemeStreamApi.Migrations
 
             modelBuilder.Entity("MemeStreamApi.model.Comment", b =>
                 {
+                    b.HasOne("MemeStreamApi.model.Comment", "ParentComment")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentCommentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MemeStreamApi.model.Post", "Post")
                         .WithMany()
                         .HasForeignKey("PostId")
@@ -421,6 +556,8 @@ namespace MemeStreamApi.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("ParentComment");
 
                     b.Navigation("Post");
 
@@ -537,6 +674,46 @@ namespace MemeStreamApi.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("MemeStreamApi.model.Notification", b =>
+                {
+                    b.HasOne("MemeStreamApi.model.Comment", "Comment")
+                        .WithMany()
+                        .HasForeignKey("CommentId");
+
+                    b.HasOne("MemeStreamApi.model.Post", "Post")
+                        .WithMany()
+                        .HasForeignKey("PostId");
+
+                    b.HasOne("MemeStreamApi.model.User", "RelatedUser")
+                        .WithMany()
+                        .HasForeignKey("RelatedUserId");
+
+                    b.HasOne("MemeStreamApi.model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("Post");
+
+                    b.Navigation("RelatedUser");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MemeStreamApi.model.NotificationPreference", b =>
+                {
+                    b.HasOne("MemeStreamApi.model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("MemeStreamApi.model.Post", b =>
                 {
                     b.HasOne("MemeStreamApi.model.User", "User")
@@ -584,6 +761,11 @@ namespace MemeStreamApi.Migrations
                     b.Navigation("Post");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MemeStreamApi.model.Comment", b =>
+                {
+                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("MemeStreamApi.model.Group", b =>

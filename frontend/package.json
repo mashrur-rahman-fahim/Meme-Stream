@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@microsoft/signalr": "^9.0.6",
+    "@tanstack/react-query": "^5.87.4",
     "axios": "^1.11.0",
     "cloudinary-core": "^2.14.0",
     "jwt-decode": "^4.0.0",

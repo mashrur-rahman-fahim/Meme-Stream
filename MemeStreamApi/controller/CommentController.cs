@@ -5,8 +5,12 @@ using System.Threading.Tasks;
 using System.Security.Claims;
 using MemeStreamApi.data;
 using MemeStreamApi.model;
+using MemeStreamApi.services;
+using MemeStreamApi.hubs;
+using MemeStreamApi.extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace MemeStreamApi.controller
@@ -16,9 +20,19 @@ namespace MemeStreamApi.controller
     public class CommentController:ControllerBase
     {
         private readonly MemeStreamDbContext _context;
-        public CommentController(MemeStreamDbContext context)
+        private readonly INotificationService _notificationService;
+        private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly ILaughScoreService _laughScoreService;
+        
+        public CommentController(MemeStreamDbContext context,
+            INotificationService notificationService,
+            IHubContext<NotificationHub> hubContext,
+            ILaughScoreService laughScoreService)
         {
             this._context = context;
+            this._notificationService = notificationService;
+            this._hubContext = hubContext;
+            this._laughScoreService = laughScoreService;
         }
         
         public class CommentDto
@@ -35,14 +49,20 @@ namespace MemeStreamApi.controller
         }
         [Authorize]
         [HttpPost("create")]
-        public IActionResult CreateComment([FromBody] CommentDto commentDto){
+        public async Task<IActionResult> CreateComment([FromBody] CommentDto commentDto){
             try{
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
+                var userId = User.GetUserId();
+                
+                // Get the post to access post author info
+                var post = await _context.Posts
+                    .Include(p => p.User)
+                    .FirstOrDefaultAsync(p => p.Id == commentDto.PostId);
+                    
+                if (post == null)
                 {
-                    return Unauthorized("User ID claim not found.");
+                    return NotFound("Post not found.");
                 }
-                var userId = int.Parse(userIdClaim);
+                
                 var comment = new Comment{
                     PostId = commentDto.PostId,
                     UserId = userId,
@@ -51,6 +71,40 @@ namespace MemeStreamApi.controller
                 };
                 _context.Comments.Add(comment);
                 _context.SaveChanges();
+                
+                // Update LaughScore for post owner
+                _ = Task.Run(async () => await _laughScoreService.UpdateLaughScoreAsync(post.UserId));
+                
+                // Create notification for post owner (don't notify self)
+                if (post.UserId != userId)
+                {
+                    var commenterUser = await _context.Users.FindAsync(userId);
+                    var notification = await _notificationService.CreateNotificationAsync(
+                        post.UserId,
+                        "comment",
+                        $"{commenterUser?.Name ?? "Someone"} commented on your post",
+                        "New Comment",
+                        userId,
+                        commentDto.PostId,
+                        comment.Id,
+                        $"/posts/{commentDto.PostId}"
+                    );
+                    
+                    // Send real-time notification
+                    if (notification != null)
+                    {
+                        await NotificationHub.SendNotificationToUser(_hubContext, post.UserId, new {
+                            id = notification.Id,
+                            type = notification.Type,
+                            message = notification.Message,
+                            title = notification.Title,
+                            createdAt = notification.CreatedAt,
+                            relatedUser = new { id = userId, name = commenterUser?.Name, image = commenterUser?.Image },
+                            actionUrl = notification.ActionUrl
+                        }, _notificationService);
+                    }
+                }
+                
                 return Ok(comment);
             }
             catch (Exception ex){
@@ -68,13 +122,21 @@ namespace MemeStreamApi.controller
                     return Unauthorized("User ID claim not found.");
                 }
                 var userId = int.Parse(userIdClaim);
-                var comment = _context.Comments.FirstOrDefault(c => c.Id == id && c.UserId == userId);
+                var comment = _context.Comments
+                    .Include(c => c.Post)
+                    .FirstOrDefault(c => c.Id == id && c.UserId == userId);
                 if (comment == null)
                 {
                     return NotFound("Comment not found.");
                 }
+                
+                var postOwnerId = comment.Post.UserId;
                 _context.Comments.Remove(comment);
                 _context.SaveChanges();
+                
+                // Update LaughScore for post owner
+                _ = Task.Run(async () => await _laughScoreService.UpdateLaughScoreAsync(postOwnerId));
+                
                 return Ok("Comment deleted successfully.");
             }
             catch (Exception ex){
@@ -161,19 +223,19 @@ namespace MemeStreamApi.controller
 
         [Authorize]
         [HttpPost("reply")]
-        public IActionResult CreateReply([FromBody] ReplyDto replyDto)
+        public async Task<IActionResult> CreateReply([FromBody] ReplyDto replyDto)
         {
             try
             {
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    return Unauthorized("User ID claim not found.");
-                }
-                var userId = int.Parse(userIdClaim);
+                var userId = User.GetUserId();
 
-                // Get the parent comment to get the PostId
-                var parentComment = _context.Comments.FirstOrDefault(c => c.Id == replyDto.CommentId);
+                // Get the parent comment to get the PostId and user info
+                var parentComment = await _context.Comments
+                    .Include(c => c.User)
+                    .Include(c => c.Post)
+                        .ThenInclude(p => p.User)
+                    .FirstOrDefaultAsync(c => c.Id == replyDto.CommentId);
+                    
                 if (parentComment == null)
                 {
                     return NotFound("Parent comment not found.");
@@ -189,6 +251,65 @@ namespace MemeStreamApi.controller
 
                 _context.Comments.Add(reply);
                 _context.SaveChanges();
+
+                // Create notifications
+                var replyingUser = await _context.Users.FindAsync(userId);
+                
+                // Notify parent comment author (if not self)
+                if (parentComment.UserId != userId)
+                {
+                    var notification = await _notificationService.CreateNotificationAsync(
+                        parentComment.UserId,
+                        "comment",
+                        $"{replyingUser?.Name ?? "Someone"} replied to your comment",
+                        "New Reply",
+                        userId,
+                        parentComment.PostId,
+                        reply.Id,
+                        $"/posts/{parentComment.PostId}"
+                    );
+                    
+                    if (notification != null)
+                    {
+                        await NotificationHub.SendNotificationToUser(_hubContext, parentComment.UserId, new {
+                            id = notification.Id,
+                            type = notification.Type,
+                            message = notification.Message,
+                            title = notification.Title,
+                            createdAt = notification.CreatedAt,
+                            relatedUser = new { id = userId, name = replyingUser?.Name, image = replyingUser?.Image },
+                            actionUrl = notification.ActionUrl
+                        }, _notificationService);
+                    }
+                }
+                
+                // Also notify post author if different from comment author and replying user
+                if (parentComment.Post?.UserId != userId && parentComment.Post?.UserId != parentComment.UserId)
+                {
+                    var notification = await _notificationService.CreateNotificationAsync(
+                        parentComment.Post.UserId,
+                        "comment",
+                        $"{replyingUser?.Name ?? "Someone"} replied to a comment on your post",
+                        "New Reply on Post",
+                        userId,
+                        parentComment.PostId,
+                        reply.Id,
+                        $"/posts/{parentComment.PostId}"
+                    );
+                    
+                    if (notification != null)
+                    {
+                        await NotificationHub.SendNotificationToUser(_hubContext, parentComment.Post.UserId, new {
+                            id = notification.Id,
+                            type = notification.Type,
+                            message = notification.Message,
+                            title = notification.Title,
+                            createdAt = notification.CreatedAt,
+                            relatedUser = new { id = userId, name = replyingUser?.Name, image = replyingUser?.Image },
+                            actionUrl = notification.ActionUrl
+                        }, _notificationService);
+                    }
+                }
 
                 // Return the reply with user info
                 var replyWithUser = _context.Comments

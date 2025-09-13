@@ -21,7 +21,10 @@ namespace MemeStreamApi.model
         public DateTime? EmailVerificationTokenExpiresAt { get; set; }
         public string? ResetPasswordToken { get; set; }
         public DateTime? ResetPasswordTokenExpiresAt { get; set; }
-       
+        
+        // LaughScore - represents how funny user is based on meme engagement
+        public int LaughScore { get; set; } = 0;
+        public DateTime? LastLaughScoreUpdate { get; set; }
  
         
     }

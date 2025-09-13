@@ -62,7 +62,7 @@ export const CommentModal = ({ isOpen, onClose, postId, currentUser }) => {
     if (res.success) {
       setComments(res.data);
     } else {
-      toast.error("Failed to load comments");
+      toast.error("Comments broke! Even the internet is having a moment 😅");
     }
     setLoading(false);
   }, [postId]);
@@ -81,7 +81,7 @@ export const CommentModal = ({ isOpen, onClose, postId, currentUser }) => {
       setNewComment('');
       fetchComments();
     } else {
-      toast.error("Failed to post comment.");
+      toast.error("Comment got lost in the void! Try again? 🕳️");
     }
   };
 
@@ -100,11 +100,11 @@ export const CommentModal = ({ isOpen, onClose, postId, currentUser }) => {
     e.preventDefault();
     const result = await feedService.editComment(editingCommentId, editingCommentText);
     if (result.success) {
-      toast.success("Comment updated!");
+      toast.success("Comment upgraded to premium! ✨");
       handleCancelEdit();
       fetchComments();
     } else {
-      toast.error("Failed to update comment.");
+      toast.error("Edit failed! Even your comment is having trust issues 🤔");
     }
   };
 
@@ -123,10 +123,10 @@ export const CommentModal = ({ isOpen, onClose, postId, currentUser }) => {
     setIsConfirming(true);
     const result = await feedService.deleteComment(commentId);
     if (result.success) {
-      toast.success("Comment deleted successfully!");
+      toast.success("Comment yeeted into the digital void! 🗑️💫");
       fetchComments();
     } else {
-      toast.error(`Failed to delete comment`);
+      toast.error("Delete failed! This comment is more stubborn than you thought 😤");
     }
     setIsConfirming(false);
     setConfirmState({ isOpen: false });
@@ -179,7 +179,7 @@ export const CommentModal = ({ isOpen, onClose, postId, currentUser }) => {
             ))
           ) : (
             <div className="text-center p-8 text-base-content/70">
-              <p>No comments yet. Be the first to share your thoughts!</p>
+              <p>Ghost town in here! Be the first to drop a hot take! 👻</p>
             </div>
           )}
         </div>
@@ -200,7 +200,7 @@ export const CommentModal = ({ isOpen, onClose, postId, currentUser }) => {
           </div>
           <input
             type="text"
-            placeholder="Write a comment..."
+            placeholder="Drop your hot take... 🔥"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             className="input input-bordered bg-base-200 w-full rounded-full"

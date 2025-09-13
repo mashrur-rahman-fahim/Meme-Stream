@@ -1,9 +1,10 @@
 import React, { useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { VerifyContext } from '../../context/create_verify_context';
-import { FaHome, FaUserFriends, FaCommentAlt, FaBell, FaUser, FaSignOutAlt, FaBars, FaTimes, FaSearch, FaUserCircle } from 'react-icons/fa';
+import { FaHome, FaUserFriends, FaCommentAlt, FaBell, FaUser, FaSignOutAlt, FaBars, FaTimes, FaSearch, FaUserCircle, FaCog } from 'react-icons/fa';
 import api from '../utils/axios';
 import ThemeSwitcher from './ThemeSwitcher';
+import NotificationBell from './NotificationBell';
 
 export const Navbar = () => {
   const { logout } = useContext(VerifyContext);
@@ -168,7 +169,17 @@ export const Navbar = () => {
                 onClick={() => navigate('/')}
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">M</span>
+                  {currentUser?.image ? (
+                    <img 
+                      src={currentUser.image} 
+                      alt={currentUser?.name || 'User'} 
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-lg">
+                      {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'M'}
+                    </span>
+                  )}
                 </div>
                 <span className="hidden lg:block text-xl font-bold text-blue-600 dark:text-blue-400">MemeStream</span>
               </button>
@@ -181,7 +192,7 @@ export const Navbar = () => {
                       <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
                       <input
                         type="text"
-                        placeholder="Search MemeStream"
+                        placeholder="Find your meme squad... 🔍"
                         className="w-60 pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-none rounded-full text-sm placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-600 transition-colors"
                         value={searchQuery}
                         onChange={handleSearchChange}
@@ -223,7 +234,7 @@ export const Navbar = () => {
                       ) : searchQuery && !searchLoading ? (
                         <div className="p-4 text-center text-gray-500">
                           <FaSearch className="mx-auto text-xl mb-2 opacity-50" />
-                          <p>No users found for "{searchQuery}"</p>
+                          <p>No meme legends match "{searchQuery}" 🤷‍♂️</p>
                         </div>
                       ) : null}
                     </div>
@@ -275,14 +286,7 @@ export const Navbar = () => {
               </div>
 
               {/* Notifications */}
-              <button className="relative p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                <FaBell className="text-gray-600 dark:text-gray-400" />
-                {notificationCount > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                  </div>
-                )}
-              </button>
+              <NotificationBell />
 
               {/* Profile Dropdown */}
               <div className="relative">
@@ -349,6 +353,13 @@ export const Navbar = () => {
                           <FaUserFriends className="text-gray-600 dark:text-gray-400" />
                           <span className="text-gray-900 dark:text-white">Friends</span>
                         </button>
+                        <button
+                          onClick={() => { navigate('/settings'); setIsProfileOpen(false); }}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                        >
+                          <FaCog className="text-gray-600 dark:text-gray-400" />
+                          <span className="text-gray-900 dark:text-white">Settings</span>
+                        </button>
                         
                         <hr className="border-gray-200 dark:border-gray-700 my-2" />
                         
@@ -391,7 +402,7 @@ export const Navbar = () => {
                   <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search MemeStream"
+                    placeholder="Find your meme squad... 🔍"
                     className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-gray-700 border-none rounded-full text-sm placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={searchQuery}
                     onChange={handleSearchChange}
@@ -432,7 +443,7 @@ export const Navbar = () => {
                   ) : searchQuery && !searchLoading ? (
                     <div className="p-4 text-center text-gray-500">
                       <FaSearch className="mx-auto text-xl mb-2 opacity-50" />
-                      <p>No users found for "{searchQuery}"</p>
+                      <p>No meme legends match "{searchQuery}" 🤷‍♂️</p>
                     </div>
                   ) : null}
                 </div>
@@ -471,6 +482,13 @@ export const Navbar = () => {
                     )}
                   </button>
                 ))}
+                
+                {/* Theme Switcher for Mobile */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                  <div className="flex items-center justify-center">
+                    <ThemeSwitcher />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

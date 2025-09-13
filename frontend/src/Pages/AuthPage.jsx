@@ -52,7 +52,7 @@ export const AuthPage = () => {
         });
         if (res.status === 200) {
           setFormSuccess(null);
-          setFormError("Your email is not verified. We've sent a new verification link to your email address. Please verify your email before logging in.");
+          setFormError("Hold up! Check your email and verify it first. We just sent you another verification link because we're nice like that 📧✨");
         }
         return;
       }
@@ -72,7 +72,7 @@ export const AuthPage = () => {
       localStorage.setItem("token", res.data.token);
       navigate("/");
     } catch (error) {
-      const message = error?.response?.data || "Incorrect email or password. Please try again.";
+      const message = error?.response?.data || "Nah fam, that email or password ain't it. Try again! 🤷‍♂️";
       setFormError(message);
       console.error("Login failed:", error);
     } finally {
@@ -89,7 +89,7 @@ export const AuthPage = () => {
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setFormError("Passwords do not match.");
+      setFormError("Passwords don't match! Come on, you got this 💪");
       return;
     }
 
@@ -192,7 +192,7 @@ export const AuthPage = () => {
                     <input
                       type="email"
                       name="email"
-                      placeholder="Enter Your Registered Email"
+                      placeholder="Your email (the one that gets all the spam) 📧"
                       className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.email ? 'border-error' : ''}`}
                       value={formData.email}
                       onChange={(e) =>
@@ -216,7 +216,7 @@ export const AuthPage = () => {
                     <input
                       type="password"
                       name="password"
-                      placeholder="Enter Your Password"
+                      placeholder="Your super secret password 🤫"
                       className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.password ? 'border-error' : ''}`}
                       value={formData.password}
                       onChange={(e) =>
@@ -271,7 +271,7 @@ export const AuthPage = () => {
                     <input
                       type="text"
                       name="name"
-                      placeholder="Your Profile Name"
+                      placeholder="Your legendary username ⭐"
                       className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.name ? 'border-error' : ''}`}
                       value={formData.name}
                       onChange={(e) =>
@@ -297,7 +297,7 @@ export const AuthPage = () => {
                     <input
                       type="email"
                       name="email"
-                      placeholder="Enter a Valid Email"
+                      placeholder="Drop your email here (promise no spam... mostly) 📮"
                       className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.email ? 'border-error' : ''}`}
                       value={formData.email}
                       onChange={(e) =>
@@ -321,7 +321,7 @@ export const AuthPage = () => {
                     <input
                       type="password"
                       name="password"
-                      placeholder="Create a Secure Password"
+                      placeholder="Make it secure but memorable (not 'password123') 🔐"
                       className={`input input-bordered transition-colors duration-300 focus:outline-none focus:border-primary ${fieldErrors.password ? 'border-error' : ''}`}
                       value={formData.password}
                       onChange={(e) =>
@@ -345,7 +345,7 @@ export const AuthPage = () => {
                     </label>
                     <input
                       type="password"
-                      placeholder="Confirm Your Password"
+                      placeholder="Type it again (we know, it's annoying) 🔄"
                       className="input input-bordered focus:border-primary focus:outline-none"
                       value={formData.confirmPassword}
                       onChange={(e) =>

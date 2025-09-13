@@ -28,13 +28,13 @@ export const Post = ({ onSuccess }) => {
   }, [isVerified, loading, navigate]);
 
   const handleMemeCheck = async () => {
-    if (!FormData.content.trim()) {
-      setPostStatus("Please enter some content to check.");
+    if (!FormData.content.trim() && !FormData.image.trim()) {
+      setPostStatus("Bruh, at least give me something to work with! 🤷‍♂️");
       return;
     }
 
     setIsCheckingMeme(true);
-    setPostStatus("Checking if content is a meme...");
+    setPostStatus("Running the meme detector... *robot noises* 🤖");
 
     try {
       const response = await api.post("/Post/check-meme", FormData, {
@@ -46,16 +46,28 @@ export const Post = ({ onSuccess }) => {
 
       setMemeCheckResult(response.data);
 
+      // Update status with analysis mode information
+      const analysisMode = response.data.analysisMode || "unknown";
+      const analysisTypeText = {
+        text: "📝 Text Analysis",
+        image: "🖼️ Image Analysis", 
+        combined: "🎯 Combined Analysis",
+        none: "❌ No Analysis",
+        unknown: "❓ Analysis"
+      }[analysisMode] || "❓ Analysis";
+
       if (!response.data.isMeme) {
         setPostStatus(
-          "This content is not a meme and cannot be posted. Only memes are allowed!"
+          `${analysisTypeText}: ${response.data.message || "That's not it, chief! This ain't meme-worthy content 😬"}`
         );
       } else {
-        setPostStatus("Great! This is meme content and can be posted!");
+        setPostStatus(
+          `${analysisTypeText}: ${response.data.message || "YESSS! 🔥 This is prime meme material, ready to go viral!"}`
+        );
       }
     } catch (error) {
       console.error("Error checking meme:", error);
-      setPostStatus("Error checking content. Please try again.");
+      setPostStatus("Oops! The meme detector had a brain fart. Try again? 🤔");
       setMemeCheckResult(null);
     } finally {
       setIsCheckingMeme(false);
@@ -66,12 +78,12 @@ export const Post = ({ onSuccess }) => {
     e.preventDefault();
 
     if (!memeCheckResult || !memeCheckResult.isMeme) {
-      setPostStatus("Please ensure your content is a meme before posting.");
+      setPostStatus("Hold up! Make sure your content passes the vibe check first! ✋");
       return;
     }
 
     try {
-      setPostStatus("Creating post...");
+      setPostStatus("Uploading your masterpiece to the meme verse... 🚀");
       const response = await api.post("/Post/create", FormData, {
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +92,7 @@ export const Post = ({ onSuccess }) => {
       });
 
       console.log("Post created:", response.data);
-      setPostStatus("Post created successfully!");
+      setPostStatus("BOOM! 💥 Your meme is live and ready to break the internet!");
 
       // Reset form
       setFormData({ content: "", image: "" });
@@ -97,9 +109,17 @@ export const Post = ({ onSuccess }) => {
     } catch (error) {
       console.error("Error creating post:", error);
       if (error.response?.data?.error === "Non-meme content detected") {
-        setPostStatus("Post blocked: Only meme content is allowed!");
+        const analysisMode = error.response?.data?.analysisMode || "unknown";
+        const analysisTypeText = {
+          text: "📝 Text",
+          image: "🖼️ Image", 
+          combined: "🎯 Combined",
+          unknown: "❓"
+        }[analysisMode] || "❓";
+        
+        setPostStatus(`Post rejected! (${analysisTypeText} Analysis): Only fire memes allowed here! 🚫🔥`);
       } else {
-        setPostStatus("Error creating post. Please try again.");
+        setPostStatus("Uh oh! Something went wrong. Even the memes are having tech issues 😅");
       }
     }
   };
@@ -119,17 +139,17 @@ export const Post = ({ onSuccess }) => {
 return (
   <div className="max-w-2xl mx-auto p-4 sm:p-6 bg-base-100 rounded-lg shadow-md space-y-6">
     <h2 className="text-2xl font-bold text-center text-base-content">
-      Create a Meme Post
+      Time to Cook Up Some Fire Content 🔥
     </h2>
 
     {/* Meme Content */}
     <div>
       <label className="block text-sm font-medium text-base-content mb-1">
-        Meme Content
+        Your Legendary Content ✨
       </label>
       <textarea
         className="textarea textarea-bordered w-full min-h-[6rem] sm:min-h-[7rem] resize-none text-base p-3"
-        placeholder="What's on your mind?"
+        placeholder="Drop your spiciest meme or roast the day away... 🔥"
         value={FormData.content}
         onChange={(e) => {
           setFormData({ ...FormData, content: e.target.value });
@@ -142,7 +162,7 @@ return (
     {/* Image Upload */}
     <div>
       <label className="block text-sm font-medium text-base-content mb-2">
-        Upload Image (optional)
+        Add Visual Chaos (optional) 🎨
       </label>
       <ImageUpload
         onImageUpload={handleImageUpload}
@@ -151,7 +171,7 @@ return (
       />
       {uploadedImageData && (
         <div className="mt-2 text-xs text-base-content/60">
-          <p>✅ Image uploaded: {uploadedImageData.originalName}</p>
+          <p>✅ Visual locked and loaded: {uploadedImageData.originalName}</p>
           <p>📏 {uploadedImageData.width}x{uploadedImageData.height} • {(uploadedImageData.size / 1024).toFixed(1)}KB</p>
         </div>
       )}
@@ -164,9 +184,9 @@ return (
         <button
           type="button"
           onClick={handleMemeCheck}
-          disabled={isCheckingMeme || !FormData.content.trim()}
+          disabled={isCheckingMeme || (!FormData.content.trim() && !FormData.image.trim())}
           className={`btn w-full text-base sm:text-lg font-semibold transition-all duration-200 ${
-            isCheckingMeme || !FormData.content.trim()
+            isCheckingMeme || (!FormData.content.trim() && !FormData.image.trim())
               ? "btn-disabled"
               : "btn-outline btn-primary hover:scale-105"
           }`}
@@ -177,12 +197,12 @@ return (
               Checking...
             </>
           ) : (
-            "Check if Meme"
+            "Check the Vibe ✨"
           )}
         </button>
-        {!FormData.content.trim() && (
+        {(!FormData.content.trim() && !FormData.image.trim()) && (
           <p className="text-sm text-base-content/60 pl-1">
-            ✍️ Write something first to check if it's a meme
+            ✍️ Need some content first before we can verify the vibes!
           </p>
         )}
       </div>
@@ -198,11 +218,11 @@ return (
               : "btn-primary hover:scale-105"
           }`}
         >
-          Create Post
+          Drop the Fire 🚀
         </button>
         {(!memeCheckResult || !memeCheckResult.isMeme) && (
           <p className="text-sm text-base-content/60 pl-1">
-            ✅ First check and confirm your content is a meme
+            ✅ Get the vibe check approval first, then you can drop that fire!
           </p>
         )}
       </div>

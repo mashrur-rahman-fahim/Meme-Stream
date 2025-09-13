@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using MemeStreamApi.services;
+using MemeStreamApi.hubs;
 using Microsoft.AspNetCore.SignalR;
 
 Env.Load();
@@ -36,7 +37,7 @@ builder.Services.AddAuthentication(options =>
         {
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
+            if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/chathub") || path.StartsWithSegments("/notificationhub")))
             {
                 context.Token = accessToken;
             }
@@ -84,6 +85,28 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+// Add response compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    options.MimeTypes = Microsoft.AspNetCore.ResponseCompression.ResponseCompressionDefaults.MimeTypes.Concat(
+        new[] { "application/json", "text/json", "text/plain", "text/html" });
+});
+
+// Configure Gzip compression level
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>(options =>
+{
+    options.Level = System.IO.Compression.CompressionLevel.Optimal;
+});
+
+// Configure Brotli compression level
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = System.IO.Compression.CompressionLevel.Optimal;
+});
+
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddDbContext<MemeStreamDbContext>(options =>
@@ -92,6 +115,13 @@ builder.Services.AddDbContext<MemeStreamDbContext>(options =>
 // Register meme detection service
 builder.Services.AddScoped<IMemeDetectionService, MemeDetectionService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Register notification services
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Register LaughScore service
+builder.Services.AddScoped<ILaughScoreService, LaughScoreService>();
+
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
 
@@ -106,7 +136,16 @@ builder.Services.AddCors(options =>
             .WithOrigins(frontendUrl, "http://localhost:5173") // Production and development URLs
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials());
+            .AllowCredentials()
+            .SetIsOriginAllowed(origin => 
+            {
+                // Allow localhost and your production domain for development and production
+                return origin == frontendUrl || 
+                       origin == "http://localhost:5173" ||
+                       origin.StartsWith("https://memestream") || // Allow any memestream subdomain
+                       origin.StartsWith("http://localhost:") ||  // Allow any localhost port
+                       origin.StartsWith("https://localhost:");   // Allow https localhost
+            }));
 });
 var app = builder.Build();
 
@@ -128,6 +167,9 @@ using (var scope = app.Services.CreateScope())
 
 app.UseCors("AllowFrontend");
 
+// Use response compression
+app.UseResponseCompression();
+
 // Add health check endpoint
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
@@ -135,6 +177,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub");
+app.MapHub<NotificationHub>("/notificationhub");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
