@@ -1,4 +1,5 @@
 import React from "react";
+import { getApiBaseUrl } from "../../utils/api-config"; 
 
 const MessageList = ({
   chatLog,
@@ -13,6 +14,9 @@ const MessageList = ({
   onEditMessage,
   onDeleteMessage
 }) => {
+  // Get API base URL and remove /api suffix for file downloads
+  const API_BASE_URL = getApiBaseUrl().replace("/api", "");
+
   return (
     <div 
       ref={chatContainerRef}
@@ -34,7 +38,7 @@ const MessageList = ({
               {entry.filePath && (
                 <div className="mt-2">
                   <a
-                    href={`http://localhost:5216/${entry.filePath}`}
+                    href={`${API_BASE_URL}/${entry.filePath}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 underline"

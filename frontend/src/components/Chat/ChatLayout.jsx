@@ -15,7 +15,7 @@ import {
 import GroupManagementSidebar from "./GroupManagementSidebar";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
-import CreateGroupPopup from "./CreateGroupPopup"; // Import the new component
+import CreateGroupPopup from "./CreateGroupPopup"; 
 
 const ChatLayout = () => {
   const [friends, setFriends] = useState([]);
@@ -35,7 +35,7 @@ const ChatLayout = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [connection, setConnection] = useState(null);
   const [connectionError, setConnectionError] = useState("");
-  const [showCreateGroup, setShowCreateGroup] = useState(false); // New state for popup
+  const [showCreateGroup, setShowCreateGroup] = useState(false); 
 
   const token = localStorage.getItem("token");
   const { 

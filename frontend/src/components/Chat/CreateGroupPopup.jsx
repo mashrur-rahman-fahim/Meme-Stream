@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { getApiBaseUrl } from "../../utils/api-config"; 
 
 export default function CreateGroupPopup({ token: propToken, onGroupCreated, onClose }) {
   const [groupName, setGroupName] = useState("");
@@ -17,7 +18,7 @@ export default function CreateGroupPopup({ token: propToken, onGroupCreated, onC
 
     setLoading(true);
     axios
-      .get("http://localhost:5216/api/friendrequest/get/friends", {
+      .get(`${getApiBaseUrl()}/friendrequest/get/friends`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -58,7 +59,7 @@ export default function CreateGroupPopup({ token: propToken, onGroupCreated, onC
 
     try {
       const res = await axios.post(
-        "http://localhost:5216/api/Group/create",
+        `${getApiBaseUrl()}/Group/create`,
         {
           name: groupName,
           memberIds: selectedIds,

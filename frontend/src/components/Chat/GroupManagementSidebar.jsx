@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { getApiBaseUrl } from "../../utils/api-config"; 
 
 const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
   const [groupDetails, setGroupDetails] = useState(null);
@@ -12,6 +13,9 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
   const [success, setSuccess] = useState("");
   const [allFriends, setAllFriends] = useState([]);
 
+  // Get API base URL
+  const API_BASE_URL = getApiBaseUrl();
+
   useEffect(() => {
     if (group) {
       fetchGroupDetails();
@@ -23,7 +27,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:5216/api/Group/${group.id}/details`,
+        `${API_BASE_URL}/Group/${group.id}/details`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setGroupDetails(response.data);
@@ -41,7 +45,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
   const fetchAllFriends = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5216/api/friendrequest/get/friends`,
+        `${API_BASE_URL}/friendrequest/get/friends`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -68,7 +72,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
       setSuccess("");
       
       const response = await axios.post(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/add`,
+        `${API_BASE_URL}/GroupMembership/group/${group.id}/add`,
         userId,
         {
           headers: {
@@ -110,7 +114,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
       setSuccess("");
       
       const response = await axios.delete(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/remove/${userId}`,
+        `${API_BASE_URL}/GroupMembership/group/${group.id}/remove/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -139,7 +143,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
       const userId = JSON.parse(atob(token.split('.')[1]))["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
       
       const response = await axios.delete(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/remove/${userId}`,
+        `${API_BASE_URL}/GroupMembership/group/${group.id}/remove/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -163,7 +167,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
       setSuccess("");
       
       const response = await axios.put(
-        `http://localhost:5216/api/Group/${group.id}`,
+        `${API_BASE_URL}/Group/${group.id}`,
         {
           name: groupName,
           description: groupDescription
@@ -197,7 +201,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
       setSuccess("");
       
       const response = await axios.post(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/promote/${userId}`,
+        `${API_BASE_URL}/GroupMembership/group/${group.id}/promote/${userId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -221,7 +225,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
       setSuccess("");
       
       const response = await axios.post(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/demote/${userId}`,
+        `${API_BASE_URL}/GroupMembership/group/${group.id}/demote/${userId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -249,7 +253,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
       setSuccess("");
       
       const response = await axios.post(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/transfer-admin/${userId}`,
+        `${API_BASE_URL}/GroupMembership/group/${group.id}/transfer-admin/${userId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -278,7 +282,7 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
       setSuccess("");
       
       const response = await axios.delete(
-        `http://localhost:5216/api/Group/${group.id}`,
+        `${API_BASE_URL}/Group/${group.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
