@@ -6,6 +6,7 @@ import api from '../utils/axios';
 import ThemeSwitcher from './ThemeSwitcher';
 import NotificationBell from './NotificationBell';
 
+
 export const Navbar = () => {
   const { logout } = useContext(VerifyContext);
   const navigate = useNavigate();
@@ -107,9 +108,9 @@ export const Navbar = () => {
       count: friendRequestCount
     },
     { 
-      path: '/messages', 
+      path: '/Chat', 
       icon: FaCommentAlt, 
-      label: 'Messages',
+      label: 'Chat',
       count: 0
     },
   ];

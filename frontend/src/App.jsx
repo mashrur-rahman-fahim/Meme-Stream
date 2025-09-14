@@ -43,7 +43,7 @@ function App() {
         <Route path="/chat/group/:groupId" element={<GroupChatPage />} />
         <Route path="/chat/group/create" element={<CreateGroupPage />} />
         <Route path="/chat/group/manage/:groupId" element={<GroupManagePage />} />
-        <Route path="/chat" element={<ChatLayout />} />
+        <Route path="/Chat" element={<ChatLayout />} />
 
         {/* Group routes */}
         <Route path="/groups/create" element={<CreateGroup />} />
