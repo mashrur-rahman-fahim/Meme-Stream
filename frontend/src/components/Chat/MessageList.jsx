@@ -64,7 +64,7 @@ const MessageList = ({
 
               {!entry.isDeleted && (
                 <div className="flex gap-2 mt-1">
-                  {["👍", "😂", "❤️"].map((emoji) => (
+                  {["👍", "😂", "❤️","😫"].map((emoji) => (
                     <button
                       key={emoji}
                       className="text-xs"
