@@ -177,7 +177,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub");
-//app.MapHub<NotificationHub>("/notificationhub");
+app.MapHub<NotificationHub>("/notificationhub");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
