@@ -20,35 +20,66 @@ const NotificationDropdown = ({
           )}
         </div>
       </label>
-      <div tabIndex={0} className="mt-3 z-50 card card-compact dropdown-content w-80 bg-base-100 shadow">
-        <div className="card-body">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="card-title text-sm">Notifications</h3>
+      
+      {/* This will be positioned outside the sidebar */}
+      <div className="dropdown-content hidden absolute">
+        {/* This is a placeholder for DaisyUI's JavaScript to work */}
+      </div>
+    </div>
+  );
+};
+
+// Separate component for the dropdown content that can be rendered outside the sidebar
+export const NotificationDropdownContent = ({
+  notifications,
+  onClearAllNotifications,
+  onRemoveNotification,
+  isOpen,
+  onClose
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-40" 
+      onClick={onClose}
+      style={{ pointerEvents: 'auto' }}
+    >
+      <div 
+        className="absolute right-4 top-16 z-50 bg-base-100 rounded-box shadow-lg w-80 max-h-96 overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-4">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-semibold">Notifications</h3>
             {notifications.length > 0 && (
               <button
                 onClick={onClearAllNotifications}
-                className="text-xs text-primary hover:underline"
+                className="text-sm text-primary hover:underline"
               >
                 Clear all
               </button>
             )}
           </div>
-          <div className="max-h-96 overflow-y-auto">
+          <div>
             {notifications.length === 0 ? (
-              <div className="text-center text-gray-500 py-4">
+              <div className="text-center text-gray-500 py-6">
                 No new notifications
               </div>
             ) : (
-              <div className="divide-y divide-base-200">
+              <div className="space-y-3">
                 {notifications.map((notification) => (
-                  <div key={notification.id} className="p-2">
-                    <div className="flex justify-between">
-                      <span className="font-medium">{notification.senderName}</span>
-                      <button onClick={() => onRemoveNotification(notification.id)} className="text-xs">
+                  <div key={notification.id} className="p-3 border-b border-base-200 last:border-b-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-medium text-sm">{notification.senderName}</span>
+                      <button 
+                        onClick={() => onRemoveNotification(notification.id)} 
+                        className="text-sm btn btn-ghost btn-xs px-2"
+                      >
                         ×
                       </button>
                     </div>
-                    <p className="text-sm">{notification.message}</p>
+                    <p className="text-sm text-gray-600">{notification.message}</p>
                   </div>
                 ))}
               </div>
