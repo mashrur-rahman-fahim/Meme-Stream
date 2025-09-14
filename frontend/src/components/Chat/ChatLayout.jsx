@@ -15,6 +15,7 @@ import {
 import GroupManagementSidebar from "./GroupManagementSidebar";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
+import CreateGroupPopup from "./CreateGroupPopup"; // Import the new component
 
 const ChatLayout = () => {
   const [friends, setFriends] = useState([]);
@@ -34,6 +35,7 @@ const ChatLayout = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [connection, setConnection] = useState(null);
   const [connectionError, setConnectionError] = useState("");
+  const [showCreateGroup, setShowCreateGroup] = useState(false); // New state for popup
 
   const token = localStorage.getItem("token");
   const { 
@@ -132,6 +134,14 @@ const ChatLayout = () => {
       fetchSidebarData();
     }
   }, [token]);
+
+  // Handle group creation
+  const handleGroupCreated = (newGroup) => {
+    // Add the new group to the groups list
+    setGroups(prev => [...prev, newGroup]);
+    // Optionally select the new group
+    handleChatSelect(newGroup.id, 'group', newGroup.name);
+  };
 
   // Handle chat selection from sidebar
   const handleChatSelect = (chatId, type, name) => {
@@ -516,6 +526,7 @@ const ChatLayout = () => {
         onChatSelect={handleChatSelect}
         onClearAllNotifications={clearAllNotifications}
         onRemoveNotification={removeNotification}
+        onCreateGroup={() => setShowCreateGroup(true)} // Pass function to show popup
       />
       
       {/* Main chat area on the right */}
@@ -550,6 +561,15 @@ const ChatLayout = () => {
           token={token}
           onClose={() => setShowGroupManagement(false)}
           onGroupUpdate={handleGroupUpdate}
+        />
+      )}
+      
+      {/* Create Group Popup */}
+      {showCreateGroup && (
+        <CreateGroupPopup
+          token={token}
+          onGroupCreated={handleGroupCreated}
+          onClose={() => setShowCreateGroup(false)}
         />
       )}
     </div>

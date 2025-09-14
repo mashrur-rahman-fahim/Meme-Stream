@@ -11,7 +11,8 @@ const ChatSidebar = ({
   notifications,
   onChatSelect,
   onClearAllNotifications,
-  onRemoveNotification
+  onRemoveNotification,
+  onCreateGroup // Add this prop
 }) => {
   const formatMessagePreview = (content) => {
     if (!content) return "";
@@ -99,6 +100,14 @@ const ChatSidebar = ({
           </div>
         </div>
       </div>
+
+      {/* Create Group Button */}
+      <button 
+        onClick={onCreateGroup}
+        className="btn btn-primary btn-sm w-full mb-4"
+      >
+        + Create Group
+      </button>
 
       <div className="mb-6 flex-1">
         <h3 className="text-sm font-semibold mb-2">Friends ({friends.length})</h3>
@@ -199,13 +208,6 @@ const ChatSidebar = ({
           })
         )}
       </div>
-
-      <button 
-        onClick={() => window.location.href = "/groups/create"}
-        className="btn btn-primary btn-sm w-full mb-4"
-      >
-        + Create Group
-      </button>
     </div>
   );
 };
