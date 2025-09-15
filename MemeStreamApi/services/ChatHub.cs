@@ -99,19 +99,181 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
     }
 
+    /* public async Task ReactToMessage(int messageId, string emoji)
+    {
+        try
+        {
+            var userId = int.Parse(Context.UserIdentifier);
+
+            var existing = await _context.MessageReactons
+                .FirstOrDefaultAsync(r => r.MessageId == messageId && r.ReactorId == userId);
+
+            string status;
+
+            if (existing == null)
+            {
+                var newReaction = new MessageReacton
+                {
+                    MessageId = messageId,
+                    ReactorId = userId,
+                    Emoji = emoji
+                };
+
+                _context.MessageReactons.Add(newReaction);
+                status = "added";
+            }
+            else if (existing.Emoji == emoji)
+            {
+                _context.MessageReactons.Remove(existing);
+                status = "removed";
+            }
+            else
+            {
+                existing.Emoji = emoji;
+                status = "updated";
+            }
+
+            await _context.SaveChangesAsync();
+
+            await Clients.All.SendAsync("ReceiveReaction", new
+            {
+                MessageId = messageId,
+                ReactorId = userId,
+                Emoji = emoji,
+                Status = status
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ ReactToMessage failed: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"🔍 Inner exception: {ex.InnerException.Message}");
+            }
+            throw;
+        }
+    }
+     */
+
+
+    /* public async Task ReactToMessage(int messageId, string emoji)
+    {
+        try
+        {
+            Console.WriteLine($"🔍 ReactToMessage called: messageId={messageId}, emoji={emoji}");
+
+            var userIdStr = Context.UserIdentifier;
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                Console.WriteLine("❌ User not authenticated");
+                throw new HubException("User not authenticated");
+            }
+
+            var userId = int.Parse(userIdStr);
+            Console.WriteLine($"🔍 User ID: {userId}");
+
+            // Validate message exists
+            var messageExists = await _context.Messages.AnyAsync(m => m.Id == messageId);
+            if (!messageExists)
+            {
+                Console.WriteLine($"❌ Message {messageId} does not exist");
+                throw new HubException($"Message {messageId} not found");
+            }
+
+            // Validate user exists
+            var userExists = await _context.Users.AnyAsync(u => u.Id == userId);
+            if (!userExists)
+            {
+                Console.WriteLine($"❌ User {userId} does not exist");
+                throw new HubException($"User {userId} not found");
+            }
+
+            var existing = await _context.MessageReactons
+                .FirstOrDefaultAsync(r => r.MessageId == messageId && r.ReactorId == userId);
+
+            Console.WriteLine($"🔍 Existing reaction: {(existing != null ? $"found (emoji: {existing.Emoji})" : "not found")}");
+
+            string status;
+
+            if (existing == null)
+            {
+                Console.WriteLine($"🔍 Adding new reaction");
+                var newReaction = new MessageReacton
+                {
+                    MessageId = messageId,
+                    ReactorId = userId,
+                    Emoji = emoji
+                };
+
+                _context.MessageReactons.Add(newReaction);
+                status = "added";
+            }
+            else if (existing.Emoji == emoji)
+            {
+                Console.WriteLine($"🔍 Removing existing reaction");
+                _context.MessageReactons.Remove(existing);
+                status = "removed";
+            }
+            else
+            {
+                Console.WriteLine($"🔍 Updating reaction from {existing.Emoji} to {emoji}");
+                existing.Emoji = emoji;
+                status = "updated";
+            }
+
+            var saveResult = await _context.SaveChangesAsync();
+            Console.WriteLine($"🔍 Save changes result: {saveResult} rows affected");
+
+            await Clients.All.SendAsync("ReceiveReaction", new
+            {
+                MessageId = messageId,
+                ReactorId = userId,
+                Emoji = emoji,
+                Status = status
+            });
+
+            Console.WriteLine($"✅ Reaction processed successfully: {status}");
+        }
+        catch (DbUpdateException dbEx)
+        {
+            Console.WriteLine($"❌ Database update failed: {dbEx.Message}");
+            if (dbEx.InnerException != null)
+            {
+                Console.WriteLine($"🔍 Inner DB exception: {dbEx.InnerException.Message}");
+            }
+            throw new HubException("Database error occurred");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ ReactToMessage failed: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"🔍 Inner exception: {ex.InnerException.Message}");
+                Console.WriteLine($"🔍 Stack trace: {ex.InnerException.StackTrace}");
+            }
+            throw;
+        }
+    }
+     */
+
 public async Task ReactToMessage(int messageId, string emoji)
 {
     try
     {
+        Console.WriteLine($"🔍 ReactToMessage called: messageId={messageId}, emoji={emoji}");
+        
         var userId = int.Parse(Context.UserIdentifier);
+        Console.WriteLine($"🔍 User ID: {userId}");
 
         var existing = await _context.MessageReactons
             .FirstOrDefaultAsync(r => r.MessageId == messageId && r.ReactorId == userId);
 
         string status;
+        MessageReacton reactionToBroadcast = null;
 
         if (existing == null)
         {
+            Console.WriteLine($"🔍 Adding new reaction");
             var newReaction = new MessageReacton
             {
                 MessageId = messageId,
@@ -121,27 +283,38 @@ public async Task ReactToMessage(int messageId, string emoji)
 
             _context.MessageReactons.Add(newReaction);
             status = "added";
+            reactionToBroadcast = newReaction;
         }
         else if (existing.Emoji == emoji)
         {
+            Console.WriteLine($"🔍 Removing existing reaction");
             _context.MessageReactons.Remove(existing);
             status = "removed";
+            reactionToBroadcast = existing; // Send the removed reaction for clients to remove
         }
         else
         {
+            Console.WriteLine($"🔍 Updating reaction from {existing.Emoji} to {emoji}");
             existing.Emoji = emoji;
             status = "updated";
+            reactionToBroadcast = existing;
         }
 
         await _context.SaveChangesAsync();
+        Console.WriteLine($"🔍 Save changes result: 1 row affected");
 
+        // Broadcast to all clients with proper reaction data
         await Clients.All.SendAsync("ReceiveReaction", new
         {
             MessageId = messageId,
             ReactorId = userId,
             Emoji = emoji,
-            Status = status
+            Status = status,
+            // Include the actual reaction object for complete data
+            Reaction = reactionToBroadcast
         });
+
+        Console.WriteLine($"✅ Reaction processed successfully: {status}");
     }
     catch (Exception ex)
     {
@@ -149,11 +322,11 @@ public async Task ReactToMessage(int messageId, string emoji)
         if (ex.InnerException != null)
         {
             Console.WriteLine($"🔍 Inner exception: {ex.InnerException.Message}");
+            Console.WriteLine($"🔍 Stack trace: {ex.InnerException.StackTrace}");
         }
         throw;
     }
 }
-
     public async Task EditMessage(int messageId, string newContent)
     {
         var userId = int.Parse(Context.UserIdentifier);

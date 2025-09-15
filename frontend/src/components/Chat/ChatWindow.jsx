@@ -21,7 +21,9 @@ const ChatWindow = ({
   onFileUpload,
   onReactToMessage,
   onEditMessage,
-  onDeleteMessage
+  onDeleteMessage,
+  onFetchReactions, // Add this new prop
+  currentChatId // You might need this if your MessageList uses it
 }) => {
   if (!currentChat || !currentUserId) {
     return (
@@ -86,6 +88,8 @@ const ChatWindow = ({
         onReactToMessage={onReactToMessage}
         onEditMessage={onEditMessage}
         onDeleteMessage={onDeleteMessage}
+        onFetchReactions={onFetchReactions} // Pass the new prop
+        currentChat={currentChat} // Make sure this is passed if MessageList needs it
       />
       
       {/* Message input */}

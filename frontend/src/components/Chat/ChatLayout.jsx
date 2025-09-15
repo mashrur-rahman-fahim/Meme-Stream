@@ -137,9 +137,7 @@ const ChatLayout = () => {
 
   // Handle group creation
   const handleGroupCreated = (newGroup) => {
-    // Add the new group to the groups list
     setGroups(prev => [...prev, newGroup]);
-    // Optionally select the new group
     handleChatSelect(newGroup.id, 'group', newGroup.name);
   };
 
@@ -186,6 +184,55 @@ const ChatLayout = () => {
     }
   };
 
+  // Function to fetch reactions for a message
+  const fetchReactionsForMessage = async (messageId) => {
+    try {
+      const response = await axios.get(`http://localhost:5216/api/MessageReacton/${messageId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.status === 200) {
+        const reactionsData = response.data;
+        setReactions(prev => ({
+          ...prev,
+          [messageId]: reactionsData
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch reactions:', error);
+    }
+  };
+
+  // Reaction handling functions
+  const handleReactToMessage = async (messageId, emoji) => {
+    try {
+      await reactToMessage(messageId, emoji);
+    } catch (error) {
+      console.error("Reaction failed:", error);
+      throw error;
+    }
+  };
+
+  const handleEditMessage = async (messageId, newContent) => {
+    try {
+      await editMessage(messageId, newContent);
+    } catch (error) {
+      console.error("Edit failed:", error);
+      alert("Failed to edit message");
+    }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      await deleteMessage(messageId);
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Failed to delete message");
+    }
+  };
+
   // Chat window functionality
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -224,6 +271,13 @@ const ChatLayout = () => {
           isDeleted: m.isDeleted,
         }));
         setChatLog(history);
+        
+        // Fetch reactions for each message
+        history.forEach(message => {
+          if (message.id) {
+            fetchReactionsForMessage(message.id);
+          }
+        });
       } catch (err) {
         console.error("Error fetching message history:", err);
       }
@@ -315,15 +369,90 @@ const ChatLayout = () => {
         connectionRef.current = conn;
         setConnection(conn);
 
-        conn.on("ReceiveReaction", (messageId, userId, emoji) => {
-          setReactions((prev) => {
-            const existing = prev[messageId] || [];
-            return {
-              ...prev,
-              [messageId]: [...existing, { userId, emoji }],
-            };
+/*         // UPDATED: Proper reaction handling
+        conn.on("ReceiveReaction", (reactionData) => {
+          console.log("Received reaction update:", reactionData);
+          
+          setReactions(prev => {
+            const newReactions = { ...prev };
+            const messageId = reactionData.MessageId;
+            
+            if (reactionData.Status === "removed") {
+              // Remove reaction
+              if (newReactions[messageId]) {
+                newReactions[messageId] = newReactions[messageId].filter(
+                  r => !(r.reactorId === reactionData.ReactorId && r.emoji === reactionData.Emoji)
+                );
+              }
+            } else {
+              // Add or update reaction
+              if (!newReactions[messageId]) {
+                newReactions[messageId] = [];
+              }
+              
+              // Remove existing reaction from this user
+              newReactions[messageId] = newReactions[messageId].filter(
+                r => r.reactorId !== reactionData.ReactorId
+              );
+              
+              // Add new reaction
+              if (reactionData.Status === "added" || reactionData.Status === "updated") {
+                newReactions[messageId].push({
+                  reactorId: reactionData.ReactorId,
+                  emoji: reactionData.Emoji,
+                  reactorName: `User ${reactionData.ReactorId}`
+                });
+              }
+            }
+            
+            return newReactions;
           });
+        }); */
+
+        // Update the ReceiveReaction handler
+conn.on("ReceiveReaction", (reactionData) => {
+  console.log("Received reaction update:", reactionData);
+  
+  setReactions(prev => {
+    const newReactions = { ...prev };
+    const messageId = reactionData.MessageId;
+    
+    if (reactionData.Status === "removed") {
+      // Remove reaction - filter out this user's reaction for this emoji
+      if (newReactions[messageId]) {
+        newReactions[messageId] = newReactions[messageId].filter(
+          r => !(r.reactorId === reactionData.ReactorId && r.emoji === reactionData.Emoji)
+        );
+        
+        // If no reactions left, remove the message entry entirely
+        if (newReactions[messageId].length === 0) {
+          delete newReactions[messageId];
+        }
+      }
+    } else {
+      // Add or update reaction
+      if (!newReactions[messageId]) {
+        newReactions[messageId] = [];
+      }
+      
+      // Remove existing reaction from this user (for update case)
+      newReactions[messageId] = newReactions[messageId].filter(
+        r => r.reactorId !== reactionData.ReactorId
+      );
+      
+      // Add new reaction
+      if (reactionData.Status === "added" || reactionData.Status === "updated") {
+        newReactions[messageId].push({
+          reactorId: reactionData.ReactorId,
+          emoji: reactionData.Emoji,
+          reactorName: `User ${reactionData.ReactorId}`
         });
+      }
+    }
+    
+    return newReactions;
+  });
+});
 
         conn.on("ReceiveMessageEdit", (messageId, newContent, editedAt) => {
           setChatLog((prev) =>
@@ -441,10 +570,9 @@ const ChatLayout = () => {
     if (chatType === "group") {
       sendGroupMessage(`group-${currentChat}`, message);
     } else {
-      sendPrivateMessage(currentChat.toString(), message); // Ensure string conversion
+      sendPrivateMessage(currentChat.toString(), message);
     }
   
-    // Update latest message optimistically
     const chatKey = chatType === "group" ? `group-${currentChat}` : currentChat.toString();
     updateLatestMessage(
       chatKey,
@@ -458,22 +586,6 @@ const ChatLayout = () => {
     
     setTimeout(scrollToBottom, 50);
   };
-  
-  // Helper function for success handling
-  const handleSendSuccess = (responseData) => {
-    const newMessage = {
-      id: responseData.id || Date.now(),
-      senderId: currentUserId,
-      msg: message,
-      sentAt: new Date().toISOString()
-    };
-    
-    setChatLog(prev => [...prev, newMessage]);
-    setMessage("");
-    setTimeout(scrollToBottom, 50);
-    setConnectionError("");
-  };
-
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -526,7 +638,7 @@ const ChatLayout = () => {
         onChatSelect={handleChatSelect}
         onClearAllNotifications={clearAllNotifications}
         onRemoveNotification={removeNotification}
-        onCreateGroup={() => setShowCreateGroup(true)} // Pass function to show popup
+        onCreateGroup={() => setShowCreateGroup(true)}
       />
       
       {/* Main chat area on the right */}
@@ -548,9 +660,10 @@ const ChatLayout = () => {
           onTyping={handleTyping}
           onSend={handleSend}
           onFileUpload={handleFileUpload}
-          onReactToMessage={reactToMessage}
-          onEditMessage={editMessage}
-          onDeleteMessage={deleteMessage}
+          onReactToMessage={handleReactToMessage}
+          onEditMessage={handleEditMessage}
+          onDeleteMessage={handleDeleteMessage}
+          onFetchReactions={fetchReactionsForMessage}
         />
       </div>
       
