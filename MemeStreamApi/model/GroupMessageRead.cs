@@ -1,22 +1,23 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MemeStreamApi.model
 {
-    public class GroupMembership
+    public class GroupMessageRead
     {
+        [Key]
         public int Id { get; set; }
 
+        [Required]
         public int GroupId { get; set; }
 
+        [Required]
         public int UserId { get; set; }
 
-        public bool IsCoAdmin { get; set; } = false;
+        [Required]
+        public DateTime LastReadAt { get; set; }
 
-        public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
-
+        // Navigation properties
         public Group Group { get; set; }
-
         public User User { get; set; }
     }
 }
