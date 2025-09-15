@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { getApiBaseUrl } from "../../utils/api-config"; 
+import { getApiBaseUrl } from "../../utils/api-config";
+import { Users, Settings, Crown, Shield, UserPlus, UserMinus, Edit3, Save, X, Trash2, LogOut, ChevronDown, ChevronUp, ArrowRightLeft } from "lucide-react";
 
 const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
   const [groupDetails, setGroupDetails] = useState(null);
@@ -12,6 +13,11 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [allFriends, setAllFriends] = useState([]);
+  const [expandedSections, setExpandedSections] = useState({
+    members: true,
+    addFriends: true,
+    actions: false
+  });
 
   // Get API base URL
   const API_BASE_URL = getApiBaseUrl();
@@ -63,6 +69,13 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
     } catch (err) {
       console.error("Error fetching friends:", err);
     }
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   const addUserToGroup = async (userId) => {
@@ -301,14 +314,27 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
 
   if (loading) {
     return (
-      <div className="w-80 bg-base-100 p-4 border-l border-base-300 h-screen overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">Group Management</h2>
-          <button onClick={onClose} className="btn btn-ghost btn-sm">✕</button>
+      <div className="w-96 bg-gray-900 border-l border-gray-700 h-screen overflow-y-auto">
+        <div className="sticky top-0 bg-gray-800/95 backdrop-blur-sm p-6 border-b border-gray-700">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gray-700 rounded-lg">
+                <Settings className="w-5 h-5 text-gray-300" />
+              </div>
+              <h2 className="text-xl font-semibold text-white">Group Management</h2>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
         </div>
-        <div className="text-center py-8">
-          <span className="loading loading-spinner loading-md"></span>
-          <p className="mt-2 text-gray-600">Loading group details...</p>
+        
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-12 h-12 border-4 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-400 font-medium">Loading group details...</p>
         </div>
       </div>
     );
@@ -316,13 +342,29 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
 
   if (!groupDetails) {
     return (
-      <div className="w-80 bg-base-100 p-4 border-l border-base-300 h-screen overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">Group Management</h2>
-          <button onClick={onClose} className="btn btn-ghost btn-sm">✕</button>
+      <div className="w-96 bg-gray-900 border-l border-gray-700 h-screen overflow-y-auto">
+        <div className="sticky top-0 bg-gray-800/95 backdrop-blur-sm p-6 border-b border-gray-700">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-900/30 rounded-lg">
+                <Settings className="w-5 h-5 text-red-400" />
+              </div>
+              <h2 className="text-xl font-semibold text-white">Group Management</h2>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
         </div>
-        <div className="text-center py-8">
-          <p className="text-error">Failed to load group details</p>
+        
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="p-4 bg-red-900/30 rounded-full mb-4">
+            <X className="w-8 h-8 text-red-400" />
+          </div>
+          <p className="text-red-400 font-medium">Failed to load group details</p>
         </div>
       </div>
     );
@@ -335,223 +377,316 @@ const GroupManagementSidebar = ({ group, token, onClose, onGroupUpdate }) => {
   );
 
   return (
-    <div className="w-80 bg-base-100 p-4 border-l border-base-300 h-screen overflow-y-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold">Group Management</h2>
-        <button onClick={onClose} className="btn btn-ghost btn-sm">✕</button>
+    <div className="w-96 bg-gray-900 border-l border-gray-700 h-screen overflow-y-auto">
+      {/* Header */}
+      <div className="sticky top-0 bg-gray-800/95 backdrop-blur-sm p-6 border-b border-gray-700">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gray-700 rounded-lg">
+              <Settings className="w-5 h-5 text-gray-300" />
+            </div>
+            <h2 className="text-xl font-semibold text-white">Group Management</h2>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
       </div>
       
+      {/* Notifications */}
       {error && (
-        <div className="alert alert-error mb-4">
-          {error}
+        <div className="mx-6 mt-4 p-4 bg-red-900/30 border border-red-700 rounded-lg">
+          <div className="flex items-center gap-2">
+            <X className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <span className="text-red-300 text-sm font-medium">{error}</span>
+          </div>
         </div>
       )}
       
       {success && (
-        <div className="alert alert-success mb-4">
-          {success}
+        <div className="mx-6 mt-4 p-4 bg-green-900/30 border border-green-700 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-green-500 rounded-full flex-shrink-0"></div>
+            <span className="text-green-300 text-sm font-medium">{success}</span>
+          </div>
         </div>
       )}
       
-      {/* Group Info Section */}
-      <div className="mb-6 p-4 bg-base-200 rounded-md">
-        {editMode ? (
-          <div className="space-y-4">
-            <div>
-              <label className="label">Group Name</label>
-              <input
-                type="text"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                className="input input-bordered w-full"
-              />
-            </div>
-            <div>
-              <label className="label">Description</label>
-              <textarea
-                value={groupDescription}
-                onChange={(e) => setGroupDescription(e.target.value)}
-                className="textarea textarea-bordered w-full"
-                rows="3"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={updateGroup}
-                disabled={actionLoading}
-                className="btn btn-primary btn-sm"
-              >
-                Save Changes
-              </button>
-              <button
-                onClick={() => setEditMode(false)}
-                className="btn btn-ghost btn-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold">{groupDetails.name}</h3>
-                {groupDetails.description && (
-                  <p className="text-gray-600 mt-1">{groupDetails.description}</p>
+      <div className="p-6 space-y-6">
+        {/* Group Info Section */}
+        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+          <div className="bg-blue-900 p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                {editMode ? (
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      className="w-full bg-white/10 border border-white/30 rounded-lg px-4 py-2 text-white placeholder-white/70 focus:outline-none focus:border-white"
+                      placeholder="Group name"
+                    />
+                    <textarea
+                      value={groupDescription}
+                      onChange={(e) => setGroupDescription(e.target.value)}
+                      className="w-full bg-white/10 border border-white/30 rounded-lg px-4 py-2 text-white placeholder-white/70 focus:outline-none focus:border-white resize-none"
+                      rows="2"
+                      placeholder="Group description"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={updateGroup}
+                        disabled={actionLoading}
+                        className="flex items-center gap-2 px-4 py-2 bg-white text-gray-900 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50"
+                      >
+                        <Save className="w-4 h-4" />
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditMode(false)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2">{groupDetails.name}</h3>
+                    {groupDetails.description && (
+                      <p className="text-white/90 mb-3">{groupDetails.description}</p>
+                    )}
+                    <p className="text-white/80 text-sm">
+                      Created by {groupDetails.createdBy.name}
+                    </p>
+                  </div>
                 )}
-                <p className="text-sm text-gray-500 mt-2">
-                  Created by {groupDetails.createdBy.name}
-                </p>
               </div>
-              {(groupDetails.isAdmin || groupDetails.isCoAdmin) && (
+              {(groupDetails.isAdmin || groupDetails.isCoAdmin) && !editMode && (
                 <button
                   onClick={() => setEditMode(true)}
-                  className="btn btn-ghost btn-sm"
+                  className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
                 >
-                  Edit
+                  <Edit3 className="w-5 h-5 text-white" />
                 </button>
               )}
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Current Members */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-4">Current Members ({groupDetails.members.length})</h3>
-        <div className="border border-base-300 rounded-md divide-y max-h-96 overflow-y-auto">
-          {groupDetails.members.map((member) => (
-            <div key={member.id} className="p-3 flex justify-between items-center">
-              <div>
-                <span className="font-medium">{member.name}</span>
-                <div className="flex gap-1 mt-1">
-                  {member.isAdmin && (
-                    <span className="badge badge-primary badge-sm">
-                      Admin
-                    </span>
-                  )}
-                  {member.isCoAdmin && (
-                    <span className="badge badge-secondary badge-sm">
-                      Co-Admin
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                {groupDetails.isAdmin && !member.isAdmin && (
-                  <>
-                    {member.isCoAdmin ? (
-                      <button
-                        onClick={() => demoteFromCoAdmin(member.id)}
-                        disabled={actionLoading}
-                        className="btn btn-warning btn-xs"
-                        title="Demote from Co-Admin"
-                      >
-                        Demote
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => promoteToCoAdmin(member.id)}
-                        disabled={actionLoading}
-                        className="btn btn-success btn-xs"
-                        title="Promote to Co-Admin"
-                      >
-                        Promote
-                      </button>
-                    )}
-                  </>
-                )}
-                {groupDetails.isAdmin && member.isAdmin && (
-                  <button
-                    onClick={() => transferAdmin(member.id)}
-                    disabled={actionLoading}
-                    className="btn btn-info btn-xs"
-                    title="Transfer Admin Rights"
-                  >
-                    Transfer Admin
-                  </button>
-                )}
-                {(groupDetails.isAdmin || groupDetails.isCoAdmin) && !member.isAdmin && (
-                  <button
-                    onClick={() => removeUserFromGroup(member.id)}
-                    disabled={actionLoading}
-                    className="btn btn-error btn-xs"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
         </div>
-      </div>
-      
-      {/* Add Members */}
-      {(groupDetails.isAdmin || groupDetails.isCoAdmin) && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4">Add Friends to Group</h3>
-          
-          {availableFriends.length === 0 ? (
-            <div className="text-gray-500 text-sm p-3 bg-base-200 rounded-md">
-              <p>No friends available to add right now.</p>
-            </div>
-          ) : (
-            <div className="mb-4 border border-base-300 rounded-md max-h-48 overflow-y-auto">
-              <div className="p-2 bg-base-200 border-b">
-                <p className="text-sm font-medium">
-                  Available Friends ({availableFriends.length})
-                </p>
+
+        {/* Current Members Section */}
+        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            onClick={() => toggleSection('members')}
+            className="w-full p-4 flex items-center justify-between hover:bg-gray-700 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gray-700 rounded-lg">
+                <Users className="w-5 h-5 text-gray-300" />
               </div>
-              {availableFriends.map((user) => (
-                <div key={user.Id} className="p-3 border-b last:border-b-0 flex justify-between items-center">
-                  <div className="flex items-center">
-                    {user.Image && (
-                      <div className="avatar mr-3">
-                        <div className="w-8 h-8 rounded-full">
-                          <img src={user.Image} alt={user.Name} />
+              <h3 className="text-lg font-semibold text-white">
+                Current Members ({groupDetails.members.length})
+              </h3>
+            </div>
+            {expandedSections.members ? (
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            )}
+          </button>
+          
+          {expandedSections.members && (
+            <div className="border-t border-gray-700">
+              <div className="max-h-80 overflow-y-auto">
+                {groupDetails.members.map((member, index) => (
+                  <div key={member.id} className={`p-4 flex items-center justify-between ${index !== groupDetails.members.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+                        {member.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">{member.name}</p>
+                        <div className="flex gap-2 mt-1">
+                          {member.isAdmin && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-900/30 text-yellow-300 text-xs font-medium rounded-full">
+                              <Crown className="w-3 h-3" />
+                              Admin
+                            </span>
+                          )}
+                          {member.isCoAdmin && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-700 text-gray-300 text-xs font-medium rounded-full">
+                              <Shield className="w-3 h-3" />
+                              Co-Admin
+                            </span>
+                          )}
                         </div>
                       </div>
-                    )}
-                    <div>
-                      <p className="font-medium">{user.Name}</p>
-                      <p className="text-sm text-gray-500">{user.Email}</p>
+                    </div>
+                    
+                    <div className="flex gap-1">
+                      {groupDetails.isAdmin && !member.isAdmin && (
+                        <>
+                          {member.isCoAdmin ? (
+                            <button
+                              onClick={() => demoteFromCoAdmin(member.id)}
+                              disabled={actionLoading}
+                              className="p-2 text-orange-400 hover:bg-orange-900/30 rounded-lg transition-colors disabled:opacity-50"
+                              title="Demote from Co-Admin"
+                            >
+                              <Shield className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => promoteToCoAdmin(member.id)}
+                              disabled={actionLoading}
+                              className="p-2 text-green-400 hover:bg-green-900/30 rounded-lg transition-colors disabled:opacity-50"
+                              title="Promote to Co-Admin"
+                            >
+                              <Crown className="w-4 h-4" />
+                            </button>
+                          )}
+                        </>
+                      )}
+                      {groupDetails.isAdmin && !member.isAdmin && (
+                        <button
+                          onClick={() => transferAdmin(member.id)}
+                          disabled={actionLoading}
+                          className="p-2 text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50"
+                          title="Transfer Admin Rights"
+                        >
+                          <ArrowRightLeft className="w-4 h-4" />
+                        </button>
+                      )}
+                      {(groupDetails.isAdmin || groupDetails.isCoAdmin) && !member.isAdmin && (
+                        <button
+                          onClick={() => removeUserFromGroup(member.id)}
+                          disabled={actionLoading}
+                          className="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
+                          title="Remove from group"
+                        >
+                          <UserMinus className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => handleAddClick(user, e)}
-                    disabled={actionLoading}
-                    className="btn btn-primary btn-xs"
-                  >
-                    Add
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
-      )}
-
-      {/* Group Actions */}
-      <div className="p-4 bg-base-200 rounded-md">
-        <h3 className="text-lg font-semibold mb-3">Group Actions</h3>
         
-        <button
-          onClick={leaveGroup}
-          disabled={actionLoading}
-          className="btn btn-warning w-full mb-3"
-        >
-          Leave Group
-        </button>
-        
-        {groupDetails.isAdmin && (
-          <button
-            onClick={deleteGroup}
-            disabled={actionLoading}
-            className="btn btn-error w-full"
-          >
-            Delete Group
-          </button>
+        {/* Add Members Section */}
+        {(groupDetails.isAdmin || groupDetails.isCoAdmin) && (
+          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+            <button
+              onClick={() => toggleSection('addFriends')}
+              className="w-full p-4 flex items-center justify-between hover:bg-gray-700 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-700 rounded-lg">
+                  <UserPlus className="w-5 h-5 text-gray-300" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Add Friends to Group</h3>
+              </div>
+              {expandedSections.addFriends ? (
+                <ChevronUp className="w-5 h-5 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-400" />
+              )}
+            </button>
+            
+            {expandedSections.addFriends && (
+              <div className="border-t border-gray-700">
+                {availableFriends.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <div className="p-3 bg-gray-700 rounded-full inline-block mb-3">
+                      <Users className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <p className="text-gray-400">No friends available to add right now.</p>
+                  </div>
+                ) : (
+                  <div className="max-h-64 overflow-y-auto">
+                    {availableFriends.map((user, index) => (
+                      <div key={user.Id} className={`p-4 flex items-center justify-between ${index !== availableFriends.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                        <div className="flex items-center gap-3">
+                          {user.Image ? (
+                            <div className="w-10 h-10 rounded-full overflow-hidden">
+                              <img src={user.Image} alt={user.Name} className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-medium">
+                              {user.Name.charAt(0)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-medium text-white">{user.Name}</p>
+                            <p className="text-sm text-gray-400">{user.Email}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => handleAddClick(user, e)}
+                          disabled={actionLoading}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-colors disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
+
+        {/* Group Actions Section */}
+        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            onClick={() => toggleSection('actions')}
+            className="w-full p-4 flex items-center justify-between hover:bg-gray-700 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gray-700 rounded-lg">
+                <Settings className="w-5 h-5 text-gray-300" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Group Actions</h3>
+            </div>
+            {expandedSections.actions ? (
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            )}
+          </button>
+          
+          {expandedSections.actions && (
+            <div className="p-4 border-t border-gray-700 space-y-3">
+              <button
+                onClick={leaveGroup}
+                disabled={actionLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-500 transition-colors disabled:opacity-50"
+              >
+                <LogOut className="w-4 h-4" />
+                Leave Group
+              </button>
+              
+              {groupDetails.isAdmin && (
+                <button
+                  onClick={deleteGroup}
+                  disabled={actionLoading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-500 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Group
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
