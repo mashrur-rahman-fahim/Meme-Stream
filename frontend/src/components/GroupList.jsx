@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "../utils/axios";
 import GroupManager from "./GroupManager";
 
 export default function GroupList({ token: propToken }) {
@@ -20,9 +21,7 @@ export default function GroupList({ token: propToken }) {
     try {
       setLoading(true);
       // Changed from /api/chat/my-groups to /api/Group/my-groups
-      const response = await axios.get("http://localhost:5216/api/Group/my-groups", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get("/Group/my-groups");
       setGroups(response.data);
       setError("");
     } catch (err) {

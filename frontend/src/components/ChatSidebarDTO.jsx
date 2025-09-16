@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import api from "../utils/axios";
 import { ChatContext } from "../../context/ChatContext";
 import ChatNotificationItem from "./ChatNotificationItem";
 
@@ -28,9 +29,7 @@ const ChatSidebarDTO = () => {
         setLoading(true);
         
         // Fetch friends
-        const friendsRes = await axios.get("http://localhost:5216/api/friendrequest/get/friends", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const friendsRes = await api.get("/friendrequest/get/friends");
         
         const formattedFriends = friendsRes.data.map(friend => ({
           id: friend.friendId || friend.FriendId,
@@ -39,9 +38,7 @@ const ChatSidebarDTO = () => {
         setFriends(formattedFriends);
         
         // Fetch groups
-        const groupsRes = await axios.get("http://localhost:5216/api/chat/my-groups", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const groupsRes = await api.get("/chat/my-groups");
         setGroups(groupsRes.data);
         
       } catch (err) {

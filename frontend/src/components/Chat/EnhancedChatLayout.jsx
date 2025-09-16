@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from "react";
 import { ChatContext } from "../../../context/ChatContext";
 import axios from "axios";
+import api from "../../utils/axios";
 import { jwtDecode } from "jwt-decode";
 import globalSignalRManager from "../../services/GlobalSignalRManager";
 import globalNotificationManager from "../../services/GlobalNotificationManager";
@@ -342,9 +343,7 @@ const EnhancedChatLayout = () => {
       if (!token) return;
 
       try {
-        const response = await axios.get("http://localhost:5216/api/User/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get("/User/profile");
 
         const userId = response.data.id || response.data.userId;
         if (userId) {
@@ -389,12 +388,8 @@ const EnhancedChatLayout = () => {
         setSidebarError("");
 
         const [friendsRes, groupsRes] = await Promise.all([
-          axios.get("http://localhost:5216/api/friendrequest/get/friends", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get("http://localhost:5216/api/chat/my-groups", {
-            headers: { Authorization: `Bearer ${token}` },
-          })
+          api.get("/friendrequest/get/friends"),
+          api.get("/chat/my-groups")
         ]);
 
         const formattedFriends = friendsRes.data.map(friend => ({
@@ -426,13 +421,10 @@ const EnhancedChatLayout = () => {
       try {
         console.log(`📚 Fetching history for ${chatType} chat ${currentChat}`);
 
-        const res = await axios.get(
+        const res = await api.get(
           chatType === "group"
-            ? `http://localhost:5216/api/GroupMessage/group/${currentChat}/messages`
-            : `http://localhost:5216/api/PrivateMessage/private/${currentChat}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+            ? `/GroupMessage/group/${currentChat}/messages`
+            : `/PrivateMessage/private/${currentChat}`
         );
 
         const history = res.data.map((m) => ({
@@ -530,9 +522,7 @@ const EnhancedChatLayout = () => {
 
   const fetchReactionsForMessage = async (messageId) => {
     try {
-      const response = await axios.get(`http://localhost:5216/api/MessageReacton/${messageId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await api.get(`/MessageReacton/${messageId}`);
 
       if (response.status === 200) {
         setReactions(prev => ({

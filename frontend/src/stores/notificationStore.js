@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 import * as signalR from '@microsoft/signalr';
+import api from '../utils/axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5216/api';
 
 export const useNotificationStore = defineStore('notification', {
   state: () => ({
@@ -173,14 +174,11 @@ export const useNotificationStore = defineStore('notification', {
       this.error = null;
       
       try {
-        const response = await axios.get(`${API_URL}/api/notification`, {
+        const response = await api.get(`/notification`, {
           params: {
             page: this.page,
             pageSize: this.pageSize,
             unreadOnly
-          },
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
           }
         });
         
@@ -205,11 +203,8 @@ export const useNotificationStore = defineStore('notification', {
 
     async fetchRecentNotifications() {
       try {
-        const response = await axios.get(`${API_URL}/api/notification/recent`, {
-          params: { count: 5 },
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+        const response = await api.get(`/notification/recent`, {
+          params: { count: 5 }
         });
         
         this.recentNotifications = response.data;
@@ -220,14 +215,9 @@ export const useNotificationStore = defineStore('notification', {
 
     async markAsRead(notificationId) {
       try {
-        await axios.put(
-          `${API_URL}/api/notification/${notificationId}/read`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-          }
+        await api.put(
+          `/notification/${notificationId}/read`,
+          {}
         );
         
         const notification = this.notifications.find(n => n.id === notificationId);
@@ -243,14 +233,9 @@ export const useNotificationStore = defineStore('notification', {
 
     async markAllAsRead() {
       try {
-        await axios.put(
-          `${API_URL}/api/notification/read-all`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-          }
+        await api.put(
+          `/notification/read-all`,
+          {}
         );
         
         this.notifications.forEach(n => {
@@ -265,11 +250,7 @@ export const useNotificationStore = defineStore('notification', {
 
     async deleteNotification(notificationId) {
       try {
-        await axios.delete(`${API_URL}/api/notification/${notificationId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        await api.delete(`/notification/${notificationId}`);
         
         const index = this.notifications.findIndex(n => n.id === notificationId);
         if (index !== -1) {
@@ -286,11 +267,7 @@ export const useNotificationStore = defineStore('notification', {
 
     async deleteAllNotifications() {
       try {
-        await axios.delete(`${API_URL}/api/notification`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        await api.delete(`/notification`);
         
         this.notifications = [];
         this.recentNotifications = [];
@@ -302,11 +279,7 @@ export const useNotificationStore = defineStore('notification', {
 
     async fetchPreferences() {
       try {
-        const response = await axios.get(`${API_URL}/api/notification/preferences`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        const response = await api.get(`/notification/preferences`);
         
         this.preferences = response.data;
       } catch (error) {
@@ -316,14 +289,9 @@ export const useNotificationStore = defineStore('notification', {
 
     async updatePreferences(preferences) {
       try {
-        const response = await axios.put(
-          `${API_URL}/api/notification/preferences`,
-          preferences,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-          }
+        const response = await api.put(
+          `/notification/preferences`,
+          preferences
         );
         
         this.preferences = response.data;

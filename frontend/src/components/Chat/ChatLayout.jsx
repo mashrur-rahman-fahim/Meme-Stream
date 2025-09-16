@@ -5,6 +5,7 @@ import { ChatContext } from "../../../context/ChatContext";
 import { Navbar } from "../Navbar";
 import connectionManager from "../../services/ConnectionManagerService";
 import axios from "axios";
+import api from "../../utils/axios";
 import { jwtDecode } from "jwt-decode";
 import {
   startSignalRConnection,
@@ -96,9 +97,7 @@ const ChatLayout = () => {
   useEffect(() => {
     const getCurrentUserId = async () => {
       try {
-        const response = await axios.get("http://localhost:5216/api/User/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get("/User/profile");
         
         if (response.data.id) {
           setCurrentUserId(response.data.id);
@@ -140,19 +139,15 @@ const ChatLayout = () => {
       try {
         setSidebarLoading(true);
         
-        const friendsRes = await axios.get("http://localhost:5216/api/friendrequest/get/friends", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const friendsRes = await api.get("/friendrequest/get/friends");
         
         const formattedFriends = friendsRes.data.map(friend => ({
           id: friend.friendId || friend.FriendId,
           name: friend.friendName || friend.FriendName
         }));
         setFriends(formattedFriends);
-        
-        const groupsRes = await axios.get("http://localhost:5216/api/chat/my-groups", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+
+        const groupsRes = await api.get("/chat/my-groups");
         setGroups(groupsRes.data);
         
       } catch (err) {
@@ -203,9 +198,7 @@ const ChatLayout = () => {
   const handleGroupUpdate = () => {
     const fetchSidebarData = async () => {
       try {
-        const groupsRes = await axios.get("http://localhost:5216/api/chat/my-groups", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const groupsRes = await api.get("/chat/my-groups");
         setGroups(groupsRes.data);
       } catch (err) {
         console.error("Error refreshing groups:", err);
@@ -220,11 +213,7 @@ const ChatLayout = () => {
   // Function to fetch reactions for a message
   const fetchReactionsForMessage = async (messageId) => {
     try {
-      const response = await axios.get(`http://localhost:5216/api/MessageReacton/${messageId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await api.get(`/MessageReacton/${messageId}`);
       
       if (response.status === 200) {
         const reactionsData = response.data;
@@ -335,13 +324,10 @@ const ChatLayout = () => {
 
     const fetchHistory = async () => {
       try {
-        const res = await axios.get(
+        const res = await api.get(
           chatType === "group"
-            ? `http://localhost:5216/api/GroupMessage/group/${currentChat}/messages`
-            : `http://localhost:5216/api/PrivateMessage/private/${currentChat}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+            ? `/GroupMessage/group/${currentChat}/messages`
+            : `/PrivateMessage/private/${currentChat}`
         );
         const history = res.data.map((m) => ({
           id: m.id,
@@ -736,8 +722,8 @@ conn.on("ReceiveReaction", (reactionData) => {
     if (chatType === "group") formData.append("groupId", currentChat);
 
     try {
-      const res = await axios.post("http://localhost:5216/api/FileUpload/upload", formData, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.post("/FileUpload/upload", formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       setChatLog((prev) => [
