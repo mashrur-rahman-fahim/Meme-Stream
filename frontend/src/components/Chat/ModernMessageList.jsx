@@ -130,9 +130,6 @@ const ModernMessageList = ({
       );
     }
 
-    if (message.type === 'voice') {
-      return <VoiceMessage message={message} />;
-    }
 
     if (message.type === 'image' || message.type === 'video') {
       return <MediaMessage message={message} API_BASE_URL={API_BASE_URL} />;
@@ -183,47 +180,6 @@ const ModernMessageList = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Voice message component
-  const VoiceMessage = ({ message }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const audioRef = useRef(null);
-
-    const togglePlayback = () => {
-      if (audioRef.current) {
-        if (isPlaying) {
-          audioRef.current.pause();
-        } else {
-          audioRef.current.play();
-        }
-        setIsPlaying(!isPlaying);
-      }
-    };
-
-    return (
-      <div className="voice-message">
-        <audio
-          ref={audioRef}
-          src={message.audioUrl}
-          onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
-          onEnded={() => setIsPlaying(false)}
-        />
-        <button className="play-button" onClick={togglePlayback}>
-          {isPlaying ? '⏸️' : '▶️'}
-        </button>
-        <div className="voice-waveform">
-          <div className="waveform-bar"></div>
-          <div className="waveform-bar"></div>
-          <div className="waveform-bar"></div>
-          <div className="waveform-bar"></div>
-          <div className="waveform-bar"></div>
-        </div>
-        <div className="voice-duration">
-          {Math.floor(currentTime)}s / {message.duration}s
-        </div>
-      </div>
-    );
-  };
 
   // Media message component
   const MediaMessage = ({ message, API_BASE_URL }) => {
@@ -454,64 +410,6 @@ const ModernMessageList = ({
           font-size: 13px;
         }
 
-        .voice-message {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 4px 0;
-        }
-
-        .play-button {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          background: var(--chat-primary);
-          border: none;
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .play-button:hover {
-          transform: scale(1.1);
-          box-shadow: 0 4px 12px rgba(var(--chat-primary), 0.3);
-        }
-
-        .voice-waveform {
-          display: flex;
-          align-items: center;
-          gap: 2px;
-          flex: 1;
-        }
-
-        .waveform-bar {
-          width: 3px;
-          height: 20px;
-          background: var(--chat-primary);
-          border-radius: 2px;
-          animation: waveform 1.5s ease-in-out infinite;
-        }
-
-        .waveform-bar:nth-child(1) { animation-delay: 0s; height: 16px; }
-        .waveform-bar:nth-child(2) { animation-delay: 0.1s; height: 24px; }
-        .waveform-bar:nth-child(3) { animation-delay: 0.2s; height: 20px; }
-        .waveform-bar:nth-child(4) { animation-delay: 0.3s; height: 28px; }
-        .waveform-bar:nth-child(5) { animation-delay: 0.4s; height: 18px; }
-
-        @keyframes waveform {
-          0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
-          50% { transform: scaleY(1); opacity: 1; }
-        }
-
-        .voice-duration {
-          font-size: 12px;
-          color: rgba(var(--chat-text), 0.7);
-          font-weight: 500;
-          font-family: 'Courier New', monospace;
-        }
 
         .media-message {
           position: relative;

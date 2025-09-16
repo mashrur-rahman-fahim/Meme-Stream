@@ -7,8 +7,6 @@ const MessageInput = ({
   onFileUpload,
   replyingTo,
   onCancelReply,
-  onToggleVoiceRecorder,
-  showVoiceRecorder
 }) => {
   const [showFileOptions, setShowFileOptions] = useState(false);
 
@@ -96,14 +94,6 @@ const MessageInput = ({
           📎
         </button>
 
-        {/* Voice message button */}
-        <button
-          onClick={() => onToggleVoiceRecorder(!showVoiceRecorder)}
-          className={`btn btn-sm ${showVoiceRecorder ? 'btn-primary' : 'btn-ghost'}`}
-          title="Voice message"
-        >
-          🎤
-        </button>
 
         {/* Message input */}
         <textarea

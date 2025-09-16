@@ -179,7 +179,6 @@ const ChatMessageSearch = ({ chatId, isGroup, onMessageSelect, onClose }) => {
     switch (messageType) {
       case 'image': return '🖼️';
       case 'video': return '🎥';
-      case 'voice': return '🎵';
       case 'file': return '📎';
       default: return '💬';
     }
@@ -240,7 +239,6 @@ const ChatMessageSearch = ({ chatId, isGroup, onMessageSelect, onClose }) => {
             <option value="text">Text</option>
             <option value="image">Images</option>
             <option value="video">Videos</option>
-            <option value="voice">Voice</option>
             <option value="file">Files</option>
           </select>
 

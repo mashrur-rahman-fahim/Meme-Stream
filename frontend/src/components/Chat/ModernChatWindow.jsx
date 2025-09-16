@@ -24,30 +24,19 @@ const ModernChatWindow = ({
   onMessageChange,
   onSend,
   onFileUpload,
-  onVoiceMessage,
   onReaction,
   onReply,
   onPin,
   onEdit,
   onDelete,
   onEmojiToggle,
-  onVoiceToggle,
   onGroupManage,
   onCancelReply
 }) => {
   const [showMessageOptions, setShowMessageOptions] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
   const [showChatInfo, setShowChatInfo] = useState(false);
   const [mediaPreview, setMediaPreview] = useState(null);
 
-  const recordingIntervalRef = useRef(null);
-
-  // Handle recording timer
-  useEffect(() => {
-    if (isRecording) {
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
       }, 1000);
     } else {
       if (recordingIntervalRef.current) {
@@ -457,36 +446,12 @@ const ModernChatWindow = ({
           40% { transform: scale(1.2); opacity: 1; }
         }
 
-        .recording-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(239, 68, 68, 0.1);
-          backdrop-filter: blur(20px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          animation: recordingPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes recordingPulse {
-          0%, 100% { background: rgba(239, 68, 68, 0.1); }
-          50% { background: rgba(239, 68, 68, 0.2); }
-        }
 
         .recording-content {
           text-align: center;
           color: var(--chat-text);
         }
 
-        .recording-icon {
-          font-size: 64px;
-          margin-bottom: 16px;
-          animation: recordingBounce 1s ease-in-out infinite;
-        }
 
         @keyframes recordingBounce {
           0%, 100% { transform: scale(1); }
@@ -657,11 +622,6 @@ const ModernChatWindow = ({
             </svg>
           </button>
 
-          <button className="header-btn" onClick={onVoiceToggle} title="Voice message">
-            <svg viewBox="0 0 24 24">
-              <path fill="currentColor" d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/>
-            </svg>
-          </button>
 
           {chatType === 'group' && (
             <button className="header-btn" onClick={onGroupManage} title="Group settings">
@@ -755,36 +715,12 @@ const ModernChatWindow = ({
         onMessageChange={onMessageChange}
         onSend={onSend}
         onFileUpload={onFileUpload}
-        onVoiceMessage={onVoiceMessage}
         onEmojiToggle={onEmojiToggle}
         onCancelReply={onCancelReply}
         isRecording={isRecording}
         setIsRecording={setIsRecording}
       />
 
-      {/* Recording Overlay */}
-      {isRecording && (
-        <div className="recording-overlay">
-          <div className="recording-content">
-            <div className="recording-icon">🎤</div>
-            <div className="recording-text">Recording voice message...</div>
-            <div className="recording-time">{formatRecordingTime(recordingTime)}</div>
-            <div className="recording-actions">
-              <button
-                className="recording-btn stop"
-                onClick={() => setIsRecording(false)}
-              >
-                Stop & Send
-              </button>
-              <button
-                className="recording-btn cancel"
-                onClick={() => setIsRecording(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

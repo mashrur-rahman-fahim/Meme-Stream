@@ -19,7 +19,6 @@ const ChatMediaGallery = ({ chatId, isGroup, onClose, onMediaSelect }) => {
     { value: 'all', label: 'All Media', icon: '📎' },
     { value: 'image', label: 'Images', icon: '🖼️' },
     { value: 'video', label: 'Videos', icon: '🎥' },
-    { value: 'voice', label: 'Voice', icon: '🎵' },
     { value: 'file', label: 'Files', icon: '📄' }
   ];
 
@@ -155,7 +154,6 @@ const ChatMediaGallery = ({ chatId, isGroup, onClose, onMediaSelect }) => {
   const renderMediaItem = (media) => {
     const isImage = media.mediaType === 'image';
     const isVideo = media.mediaType === 'video';
-    const isVoice = media.mediaType === 'voice';
 
     return (
       <div
@@ -183,13 +181,7 @@ const ChatMediaGallery = ({ chatId, isGroup, onClose, onMediaSelect }) => {
               </div>
             </div>
           )}
-          {isVoice && (
-            <div className="voice-thumbnail">
-              <div className="voice-icon">🎵</div>
-              <div className="voice-duration">{Math.floor(media.duration / 60)}:{(media.duration % 60).toString().padStart(2, '0')}</div>
-            </div>
-          )}
-          {!isImage && !isVideo && !isVoice && (
+          {!isImage && !isVideo && (
             <div className="file-thumbnail">
               <div className="file-icon">📄</div>
               <div className="file-extension">
@@ -242,7 +234,6 @@ const ChatMediaGallery = ({ chatId, isGroup, onClose, onMediaSelect }) => {
 
     const isImage = selectedMedia.mediaType === 'image';
     const isVideo = selectedMedia.mediaType === 'video';
-    const isVoice = selectedMedia.mediaType === 'voice';
 
     return (
       <div className="media-viewer-overlay" onClick={() => setSelectedMedia(null)}>
@@ -289,27 +280,7 @@ const ChatMediaGallery = ({ chatId, isGroup, onClose, onMediaSelect }) => {
                 autoPlay
               />
             )}
-            {isVoice && (
-              <div className="viewer-voice">
-                <div className="voice-player">
-                  <audio
-                    src={selectedMedia.mediaUrl}
-                    controls
-                    className="voice-audio"
-                    autoPlay
-                  />
-                  <div className="voice-waveform">
-                    {/* Placeholder for waveform visualization */}
-                    <div className="waveform-bars">
-                      {Array.from({ length: 20 }, (_, i) => (
-                        <div key={i} className="waveform-bar"></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {!isImage && !isVideo && !isVoice && (
+            {!isImage && !isVideo && (
               <div className="viewer-file">
                 <div className="file-preview">
                   <div className="file-icon-large">📄</div>
@@ -482,7 +453,6 @@ export const MediaGalleryThumbnail = ({
             ) : (
               <div className={`thumbnail-placeholder ${media.mediaType}`}>
                 {media.mediaType === 'video' && '🎥'}
-                {media.mediaType === 'voice' && '🎵'}
                 {media.mediaType === 'file' && '📄'}
               </div>
             )}

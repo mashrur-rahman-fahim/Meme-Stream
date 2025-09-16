@@ -8,11 +8,8 @@ const ModernMessageInput = ({
   onMessageChange,
   onSend,
   onFileUpload,
-  onVoiceMessage,
   onEmojiToggle,
   onCancelReply,
-  isRecording,
-  setIsRecording
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [previewFiles, setPreviewFiles] = useState([]);
@@ -21,8 +18,6 @@ const ModernMessageInput = ({
 
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -139,41 +134,7 @@ const ModernMessageInput = ({
     setPreviewFiles([]);
   };
 
-  // Voice recording
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = [];
 
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const duration = Date.now() - recordingStartTime;
-        onVoiceMessage(audioBlob, Math.floor(duration / 1000));
-
-        // Stop all tracks
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      const recordingStartTime = Date.now();
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Failed to start recording:', error);
-      alert('Failed to access microphone. Please check permissions.');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
 
   // Handle keyboard shortcuts
   const handleKeyDown = (e) => {
@@ -766,15 +727,6 @@ const ModernMessageInput = ({
         />
 
         <div className="input-actions-right">
-          <button
-            className={`input-button ${isRecording ? 'recording' : ''}`}
-            onClick={isRecording ? stopRecording : startRecording}
-            title={isRecording ? "Stop recording" : "Record voice message"}
-          >
-            <svg viewBox="0 0 24 24">
-              <path fill="currentColor" d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/>
-            </svg>
-          </button>
 
           <button
             className={`send-button ${showSendButton || previewFiles.length > 0 ? 'show' : ''}`}

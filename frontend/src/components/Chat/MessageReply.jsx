@@ -72,7 +72,6 @@ const MessageReply = ({
     switch (messageType) {
       case 'image': return '🖼️';
       case 'video': return '🎥';
-      case 'voice': return '🎵';
       case 'file': return '📎';
       default: return null;
     }

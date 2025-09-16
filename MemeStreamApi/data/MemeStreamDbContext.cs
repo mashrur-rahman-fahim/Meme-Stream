@@ -36,8 +36,6 @@ namespace MemeStreamApi.data
         public DbSet<NotificationPreference> NotificationPreferences { get; set; }
 
         // Enhanced Chat Features
-        public DbSet<VoiceMessage> VoiceMessages { get; set; }
-        public DbSet<VoiceMessagePlay> VoiceMessagePlays { get; set; }
         public DbSet<MediaMessage> MediaMessages { get; set; }
         public DbSet<Friendship> Friendships { get; set; }
 

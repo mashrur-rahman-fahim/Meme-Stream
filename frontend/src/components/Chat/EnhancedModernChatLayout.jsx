@@ -18,7 +18,6 @@ import ModernChatSidebar from "./ModernChatSidebar";
 import ModernChatWindow from "./ModernChatWindow";
 import ModernGroupManagement from "./ModernGroupManagement";
 import ModernCreateGroup from "./ModernCreateGroup";
-import VoiceMessageRecorder from "./VoiceMessageRecorder";
 import ChatThemeSelector from "./ChatThemeSelector";
 import MessageSearchPanel from "./MessageSearchPanel";
 import EmojiPicker from "./EmojiPicker";
@@ -46,7 +45,6 @@ const EnhancedModernChatLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [showGroupManagement, setShowGroupManagement] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -67,7 +65,6 @@ const EnhancedModernChatLayout = () => {
   // Media and attachments
   const [mediaGallery, setMediaGallery] = useState([]);
   const [sharedFiles, setSharedFiles] = useState([]);
-  const [voiceMessages, setVoiceMessages] = useState([]);
 
   const token = localStorage.getItem("token");
   const {
@@ -214,47 +211,6 @@ const EnhancedModernChatLayout = () => {
     }
   }, []);
 
-  // Voice message handler
-  const handleVoiceMessage = async (audioBlob, duration) => {
-    try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'voice-message.webm');
-      formData.append('duration', duration.toString());
-
-      if (chatType === "private") {
-        formData.append("receiverId", currentChat);
-      } else {
-        formData.append("groupId", currentChat);
-      }
-
-      const response = await axios.post("http://localhost:5216/api/VoiceMessage/upload", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        },
-      });
-
-      const voiceMessage = {
-        id: response.data.id,
-        senderId: currentUserId,
-        type: 'voice',
-        audioUrl: response.data.audioUrl,
-        duration: duration,
-        sentAt: new Date(),
-        waveform: response.data.waveform || []
-      };
-
-      setChatLog(prev => [...prev, voiceMessage]);
-      setVoiceMessages(prev => [...prev, voiceMessage]);
-
-      const chatKey = chatType === "group" ? `group-${currentChat}` : currentChat.toString();
-      updateLatestMessage(chatKey, "🎤 Voice message", "You", new Date());
-
-    } catch (error) {
-      console.error("Voice message upload failed:", error);
-      alert("Failed to send voice message");
-    }
-  };
 
   // Message search functionality
   const searchMessages = async (query) => {
@@ -617,14 +573,12 @@ const EnhancedModernChatLayout = () => {
             setMessage("");
           }}
           onFileUpload={handleMediaUpload}
-          onVoiceMessage={handleVoiceMessage}
           onReaction={handleEnhancedReaction}
           onReply={handleReplyToMessage}
           onPin={handlePinMessage}
           onEdit={editMessage}
           onDelete={deleteMessage}
           onEmojiToggle={() => setShowEmojiPicker(!showEmojiPicker)}
-          onVoiceToggle={() => setShowVoiceRecorder(!showVoiceRecorder)}
           onGroupManage={() => {
             setSelectedGroup({ id: currentChat, name: chatName });
             setShowGroupManagement(true);
@@ -666,14 +620,6 @@ const EnhancedModernChatLayout = () => {
         </div>
       )}
 
-      {showVoiceRecorder && (
-        <div className="floating-panel">
-          <VoiceMessageRecorder
-            onRecordingComplete={handleVoiceMessage}
-            onClose={() => setShowVoiceRecorder(false)}
-          />
-        </div>
-      )}
 
       {showThemeSelector && (
         <div className="floating-panel">

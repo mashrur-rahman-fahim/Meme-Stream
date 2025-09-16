@@ -2,7 +2,6 @@ import React from "react";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import { TypingIndicator } from "./ChatStatusIndicator";
-import VoiceMessageRecorder from "./VoiceMessageRecorder";
 
 const ChatWindow = ({
   currentChat,
@@ -30,9 +29,6 @@ const ChatWindow = ({
   onReply,
   onCancelReply,
   onScrollToMessage,
-  onVoiceMessageSend,
-  showVoiceRecorder,
-  onToggleVoiceRecorder,
   typingUsers,
   userPresence,
   currentChatId
@@ -103,18 +99,8 @@ const ChatWindow = ({
         // Enhanced props
         replyingTo={replyingTo}
         onCancelReply={onCancelReply}
-        onToggleVoiceRecorder={onToggleVoiceRecorder}
-        showVoiceRecorder={showVoiceRecorder}
       />
 
-      {/* Voice Message Recorder */}
-      {showVoiceRecorder && (
-        <VoiceMessageRecorder
-          onSend={onVoiceMessageSend}
-          onCancel={() => onToggleVoiceRecorder(false)}
-          maxDuration={300}
-        />
-      )}
     </div>
   );
 };

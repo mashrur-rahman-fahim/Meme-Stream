@@ -21,7 +21,6 @@ import ChatMessageSearch from "./ChatMessageSearch";
 import ChatStatusIndicator, { ConnectionStatusIndicator } from "./ChatStatusIndicator";
 import ChatMediaGallery from "./ChatMediaGallery";
 import ChatThemeSelector from "./ChatThemeSelector";
-import VoiceMessageRecorder from "./VoiceMessageRecorder";
 import MessageReply, { ReplyComposer } from "./MessageReply"; 
 
 const ChatLayout = () => {
@@ -48,7 +47,6 @@ const ChatLayout = () => {
   const [showMessageSearch, setShowMessageSearch] = useState(false);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
-  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [chatTheme, setChatTheme] = useState('default');
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -253,34 +251,6 @@ const ChatLayout = () => {
   };
 
   // Enhanced feature handlers
-  const handleVoiceMessageSend = async (audioBlob, duration, waveform) => {
-    try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'voice-message.webm');
-      formData.append('duration', duration.toString());
-      if (chatType === 'private') formData.append('receiverId', currentChat.toString());
-      if (chatType === 'group') formData.append('groupId', currentChat.toString());
-
-      const response = await axios.post('http://localhost:5216/api/voicemessage/upload', formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // Add to chat log immediately for better UX
-      setChatLog(prev => [...prev, {
-        id: response.data.messageId,
-        senderId: currentUserId,
-        msg: `🎤 Voice message (${duration}s)`,
-        sentAt: new Date().toISOString(),
-        isVoiceMessage: true,
-        voiceData: response.data
-      }]);
-
-      setTimeout(scrollToBottom, 100);
-    } catch (error) {
-      console.error('Failed to send voice message:', error);
-      alert('Failed to send voice message');
-    }
-  };
 
   const handleReply = (message, replyText) => {
     if (replyText) {
@@ -575,31 +545,6 @@ conn.on("ReceiveReaction", (reactionData) => {
         });
 
         // Enhanced SignalR handlers
-        conn.on("ReceiveVoiceMessage", (voiceData) => {
-          const shouldAutoScroll = isScrolledToBottom();
-
-          setChatLog((prev) => {
-            const messageExists = prev.some(m => m.id === voiceData.messageId);
-            if (messageExists) return prev;
-
-            return [
-              ...prev,
-              {
-                id: voiceData.messageId,
-                senderId: voiceData.senderId,
-                msg: `🎤 Voice message (${voiceData.duration}s)`,
-                sentAt: voiceData.sentAt,
-                isVoiceMessage: true,
-                voiceData: voiceData
-              },
-            ];
-          });
-
-          if (shouldAutoScroll || voiceData.senderId === userIdRef.current) {
-            setTimeout(scrollToBottom, 100);
-          }
-        });
-
         conn.on("ReceiveMediaMessage", (mediaData) => {
           const shouldAutoScroll = isScrolledToBottom();
 
@@ -705,7 +650,6 @@ conn.on("ReceiveReaction", (reactionData) => {
         connectionRef.current.off("ReceiveMessageEdit");
         connectionRef.current.off("ReceiveMessageDelete");
         connectionRef.current.off("ReceiveReadReceipt");
-        connectionRef.current.off("ReceiveVoiceMessage");
         connectionRef.current.off("ReceiveMediaMessage");
         connectionRef.current.off("UserPresenceUpdate");
         connectionRef.current.off("ReceiveTypingStatus");
@@ -910,9 +854,6 @@ conn.on("ReceiveReaction", (reactionData) => {
           onReply={handleReply}
           onCancelReply={handleCancelReply}
           onScrollToMessage={handleScrollToMessage}
-          onVoiceMessageSend={handleVoiceMessageSend}
-          showVoiceRecorder={showVoiceRecorder}
-          onToggleVoiceRecorder={setShowVoiceRecorder}
           typingUsers={typingUsers}
           userPresence={userPresence}
         />
@@ -976,13 +917,6 @@ conn.on("ReceiveReaction", (reactionData) => {
         />
       )}
 
-      {showVoiceRecorder && (
-        <VoiceMessageRecorder
-          onSend={handleVoiceMessageSend}
-          onCancel={() => setShowVoiceRecorder(false)}
-          maxDuration={300} // 5 minutes
-        />
-      )}
     </div>
   );
 }
