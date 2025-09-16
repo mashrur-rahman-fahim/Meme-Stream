@@ -82,15 +82,33 @@ const NotificationBell = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target) && 
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target) &&
           !event.target.closest('.notification-bell')) {
         setShowDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape') {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscKey);
+      // Prevent body scroll on mobile when dropdown is open
+      if (window.innerWidth <= 640) {
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscKey);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showDropdown]);
 
   return (
     <div className="notification-bell-container" style={{ position: 'relative' }}>
@@ -124,30 +142,36 @@ const NotificationBell = () => {
       </button>
 
       {showDropdown && (
-        <div 
-          ref={dropdownRef}
-          className="notification-dropdown absolute top-12 right-0 w-96 max-h-96 bg-base-100 border border-base-300 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col"
-        >
+        <>
+          {/* Mobile Backdrop */}
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[999] sm:hidden" onClick={() => setShowDropdown(false)} />
+
+          <div
+            ref={dropdownRef}
+            className="notification-dropdown absolute top-12 right-0 w-72 sm:w-80 md:w-96 max-h-[70vh] sm:max-h-80 md:max-h-96 bg-base-100 border border-base-300 rounded-lg shadow-xl z-[1000] overflow-hidden flex flex-col"
+          >
           {/* Header */}
-          <div className="p-4 border-b border-base-300 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-base-content">
-              Notifications
+          <div className="p-3 sm:p-4 border-b border-base-300 flex justify-between items-center">
+            <h3 className="text-base sm:text-lg font-semibold text-base-content">
+              <span className="hidden sm:inline">Notifications</span>
+              <span className="sm:hidden">Alerts</span>
             </h3>
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-1 sm:gap-2 md:gap-3 items-center">
               {unreadCount > 0 && (
-                <button 
+                <button
                   onClick={handleMarkAllAsRead}
-                  className="btn btn-ghost btn-sm text-primary hover:text-primary-focus"
+                  className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm text-primary hover:text-primary-focus"
                 >
-                  Mark all as read
+                  <span className="hidden sm:inline">Mark all as read</span>
+                  <span className="sm:hidden">Mark all</span>
                 </button>
               )}
-              <button 
+              <button
                 onClick={() => {
                   navigate('/notifications');
                   setShowDropdown(false);
                 }}
-                className="btn btn-ghost btn-sm text-base-content/60 hover:text-primary"
+                className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm text-base-content/60 hover:text-primary"
               >
                 See all
               </button>
@@ -155,51 +179,52 @@ const NotificationBell = () => {
           </div>
 
           {/* Notifications List */}
-          <div className="notifications-list flex-1 overflow-y-auto max-h-80">
+          <div className="notifications-list flex-1 overflow-y-auto max-h-64 sm:max-h-80">
             {recentNotifications && recentNotifications.length > 0 ? (
               recentNotifications.map((notification) => (
-                <div 
+                <div
                   key={notification.id}
-                  className={`notification-item flex items-start p-3 cursor-pointer hover:bg-base-200 transition-colors relative ${
+                  className={`notification-item flex items-start p-2 sm:p-3 cursor-pointer hover:bg-base-200 transition-colors relative group ${
                     !notification.isRead ? 'bg-primary/10 border-l-2 border-l-primary' : ''
                   }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   {/* Icon */}
-                  <div className="w-10 h-10 rounded-full bg-base-300 flex items-center justify-center mr-3 flex-shrink-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-base-300 flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                     {getNotificationIcon(notification.type)}
                   </div>
-                  
+
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-base-content leading-relaxed m-0 break-words">
+                    <p className="text-xs sm:text-sm text-base-content leading-relaxed m-0 break-words">
                       {notification.message}
                     </p>
                     <span className="text-xs text-base-content/60 mt-1 block">
                       {formatTime(notification.createdAt)}
                     </span>
                   </div>
-                  
+
                   {/* Delete Button */}
-                  <button 
+                  <button
                     onClick={(e) => handleDeleteNotification(notification.id, e)}
-                    className="delete-btn btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 hover:text-error"
+                    className="delete-btn btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 hover:text-error p-1"
                   >
-                    <FaTimes size={12} />
+                    <FaTimes size={10} className="sm:text-xs" />
                   </button>
                 </div>
               ))
             ) : (
-              <div className="p-10 text-center text-base-content/60">
-                <FaBell 
-                  size={48} 
-                  className="text-base-content/30 mb-4 mx-auto" 
+              <div className="p-6 sm:p-10 text-center text-base-content/60">
+                <FaBell
+                  size={32}
+                  className="sm:text-5xl text-base-content/30 mb-3 sm:mb-4 mx-auto"
                 />
-                <p className="m-0">No new notifications</p>
+                <p className="m-0 text-xs sm:text-sm">No new notifications</p>
               </div>
             )}
           </div>
         </div>
+        </>
       )}
 
       {/* Styles for animations */}
@@ -209,16 +234,98 @@ const NotificationBell = () => {
           10%, 30% { transform: rotate(-10deg); }
           20%, 40% { transform: rotate(10deg); }
         }
-        
+
         .notification-item:hover .delete-btn {
           opacity: 1 !important;
         }
-        
-        @media (max-width: 640px) {
+
+        /* Mobile first - Extra small screens */
+        @media (max-width: 480px) {
           .notification-dropdown {
-            width: calc(100vw - 32px) !important;
-            right: -16px !important;
+            position: fixed !important;
+            top: 60px !important;
+            left: 8px !important;
+            right: 8px !important;
+            width: calc(100vw - 16px) !important;
+            max-height: calc(100vh - 80px) !important;
+            z-index: 9999 !important;
+            border-radius: 12px !important;
+            animation: slideInMobile 0.3s ease-out;
+            transform-origin: top center;
           }
+
+          .notification-item .delete-btn {
+            opacity: 1 !important;
+          }
+
+          .notifications-list {
+            max-height: calc(100vh - 200px) !important;
+          }
+        }
+
+        @keyframes slideInMobile {
+          0% {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        /* Small mobile screens */
+        @media (min-width: 481px) and (max-width: 640px) {
+          .notification-dropdown {
+            position: fixed !important;
+            top: 60px !important;
+            left: 16px !important;
+            right: 16px !important;
+            width: calc(100vw - 32px) !important;
+            max-height: calc(100vh - 80px) !important;
+            z-index: 9999 !important;
+            animation: slideInMobile 0.3s ease-out;
+            transform-origin: top center;
+          }
+
+          .notification-item .delete-btn {
+            opacity: 1 !important;
+          }
+        }
+
+        /* Tablet portrait */
+        @media (min-width: 641px) and (max-width: 768px) {
+          .notification-dropdown {
+            width: 360px !important;
+            right: -50px !important;
+          }
+        }
+
+        /* Tablet landscape and small desktop */
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .notification-dropdown {
+            width: 380px !important;
+            right: -20px !important;
+          }
+        }
+
+        /* Large desktop */
+        @media (min-width: 1025px) {
+          .notification-dropdown {
+            width: 384px !important;
+            right: 0 !important;
+          }
+        }
+
+        /* Prevent dropdown from going off screen */
+        .notification-dropdown {
+          transform-origin: top right;
+        }
+
+        /* Ensure proper stacking */
+        .notification-bell-container {
+          position: relative;
+          z-index: 1000;
         }
       `}</style>
     </div>

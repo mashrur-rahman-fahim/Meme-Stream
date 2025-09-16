@@ -4,12 +4,14 @@ import { PostCard } from "./PostCard";
 import { EditPostModal } from "./EditPostModal";
 import VirtualScrollFeed from "./VirtualScrollFeed";
 import { FeedSkeleton } from "./LoadingSkeleton";
-import { useFeedQuery, useDeletePostMutation, useSharePostMutation } from "../hooks/useFeedQuery";
+import PostVisibilityTracker from "./PostVisibilityTracker";
+import { useDeletePostMutation, useSharePostMutation } from "../hooks/useFeedQuery";
+import { useEnhancedFeed } from "../hooks/useEnhancedFeed";
 import api from "../utils/axios";
 import toast from "react-hot-toast";
 
 export const Feed = () => {
-  // React Query hooks
+  // Enhanced React Query hooks with seen posts tracking
   const {
     data: feedData,
     fetchNextPage,
@@ -18,8 +20,15 @@ export const Feed = () => {
     isLoading,
     isError,
     error: feedError,
-    refetch
-  } = useFeedQuery();
+    posts: enhancedPosts,
+    unseenPosts,
+    seenPosts,
+    smartRefresh,
+    markPostAsSeen,
+    stats,
+    clearSeenPosts,
+    isSmartRefreshAvailable
+  } = useEnhancedFeed();
 
   const deletePostMutation = useDeletePostMutation();
   const sharePostMutation = useSharePostMutation();
@@ -31,11 +40,8 @@ export const Feed = () => {
   const [useVirtualScroll, setUseVirtualScroll] = useState(false);
   const [showEndMessage, setShowEndMessage] = useState(false);
 
-  // Flatten pages into posts array
-  const posts = useMemo(() => {
-    if (!feedData?.pages) return [];
-    return feedData.pages.flatMap(page => page.data?.posts || []);
-  }, [feedData]);
+  // Use enhanced posts from the hook
+  const posts = enhancedPosts;
 
   const error = isError ? feedError?.message || "Failed to load posts" : "";
 
@@ -85,7 +91,8 @@ export const Feed = () => {
   }, []);
 
   const refreshFeed = () => {
-    refetch();
+    // Use smart refresh that prioritizes unseen content
+    smartRefresh();
   };
 
   // Handler functions for PostCard
@@ -136,28 +143,51 @@ export const Feed = () => {
 
   return (
     <div>
-      {/* Refresh button - Mobile optimized */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={refreshFeed}
-          disabled={isLoading}
-          className="btn btn-sm btn-ghost btn-circle"
-          aria-label="Refresh posts"
-        >
-          <svg 
-            className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
+      {/* Enhanced refresh controls - Mobile optimized */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-base-content/60">
+          <span>📊 {stats.unseenCount} new</span>
+          <span className="hidden sm:inline">• {stats.totalSeenInStorage} seen</span>
+        </div>
+        <div className="flex gap-2">
+          {stats.totalSeenInStorage > 0 && (
+            <button
+              onClick={() => {
+                if (window.confirm('Clear all seen posts history? This will show all posts again on next refresh.')) {
+                  clearSeenPosts();
+                  toast.success('Seen posts cleared!');
+                }
+              }}
+              className="btn btn-xs btn-ghost text-xs"
+              title="Clear seen posts"
+            >
+              🗑️
+            </button>
+          )}
+          <button
+            onClick={refreshFeed}
+            disabled={isLoading}
+            className={`btn btn-sm btn-ghost btn-circle ${
+              isSmartRefreshAvailable ? 'btn-primary' : ''
+            }`}
+            aria-label="Smart refresh - prioritizes unseen content"
+            title={isSmartRefreshAvailable ? 'New unseen content available!' : 'Refresh feed'}
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-            />
-          </svg>
-        </button>
+            <svg
+              className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -214,24 +244,16 @@ export const Feed = () => {
           ) : (
             <div className="space-y-4 sm:space-y-6">
               {currentUser && posts.map((post, index) => {
-                // Add ref to last post for infinite scroll
-                if (index === posts.length - 1) {
-                  return (
-                    <div ref={lastPostElementRef} key={`${post.isShared ? "shared" : "post"}-${post.id}`}>
-                      <PostCard
-                        post={post}
-                        currentUser={currentUser}
-                        onEdit={handleEditPost}
-                        onDelete={handleDeletePost}
-                        onUnshare={handleUnsharePost}
-                        onChange={refreshFeed}
-                      />
-                    </div>
-                  );
-                } else {
-                  return (
+                // Check if this is the first seen post (after all unseen posts)
+                const isFirstSeenPost = post.isSeen &&
+                  (index === 0 || !posts[index - 1]?.isSeen);
+
+                const postContent = (
+                  <PostVisibilityTracker
+                    postId={post.id}
+                    onVisible={markPostAsSeen}
+                  >
                     <PostCard
-                      key={`${post.isShared ? "shared" : "post"}-${post.id}`}
                       post={post}
                       currentUser={currentUser}
                       onEdit={handleEditPost}
@@ -239,6 +261,41 @@ export const Feed = () => {
                       onUnshare={handleUnsharePost}
                       onChange={refreshFeed}
                     />
+                  </PostVisibilityTracker>
+                );
+
+                // Add ref to last post for infinite scroll
+                if (index === posts.length - 1) {
+                  return (
+                    <div key={`${post.isShared ? "shared" : "post"}-${post.id}`}>
+                      {isFirstSeenPost && stats.unseenCount > 0 && (
+                        <div className="flex items-center justify-center py-4 my-6">
+                          <div className="flex-1 h-px bg-base-300"></div>
+                          <div className="px-4 text-xs sm:text-sm text-base-content/60 bg-base-100">
+                            📚 Previously seen posts
+                          </div>
+                          <div className="flex-1 h-px bg-base-300"></div>
+                        </div>
+                      )}
+                      <div ref={lastPostElementRef}>
+                        {postContent}
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div key={`${post.isShared ? "shared" : "post"}-${post.id}`}>
+                      {isFirstSeenPost && stats.unseenCount > 0 && (
+                        <div className="flex items-center justify-center py-4 my-6">
+                          <div className="flex-1 h-px bg-base-300"></div>
+                          <div className="px-4 text-xs sm:text-sm text-base-content/60 bg-base-100">
+                            📚 Previously seen posts
+                          </div>
+                          <div className="flex-1 h-px bg-base-300"></div>
+                        </div>
+                      )}
+                      {postContent}
+                    </div>
                   );
                 }
               })}

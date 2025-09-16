@@ -13,20 +13,37 @@ import {
   markMessageAsRead,
 } from "../services/signalRService";
 import { ChatContext } from "../../context/ChatContext";
-import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
 
-const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
+const ChatWindowDTO = ({ token, receiverId, groupName, currentUserId }) => {
   const [message, setMessage] = useState("");
   const [chatLog, setChatLog] = useState([]);
   const [otherTyping, setOtherTyping] = useState(false);
   const [reactions, setReactions] = useState({});
-  const [readMap, setReadMap] = useState({}); // ✅ NEW: Read receipts
-  const { incrementUnread, clearUnread } = useContext(ChatContext);
+  const [readMap, setReadMap] = useState({});
+  const { incrementUnread, clearUnread, addNotification, updateLatestMessage } = useContext(ChatContext);
   const [searchParams] = useSearchParams();
   const anchorMessageId = parseInt(searchParams.get("msg"));
   const scrollRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
   const ding = new Audio("/sounds/ding.mp3");
+  const connectionRef = useRef(null);
+
+  const userIdRef = useRef(currentUserId);
+  useEffect(() => {
+    userIdRef.current = currentUserId;
+  }, [currentUserId]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const isScrolledToBottom = () => {
+    if (!chatContainerRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    return scrollHeight - scrollTop - clientHeight < 50;
+  };
 
   useEffect(() => {
     const key = receiverId || `group-${groupName}`;
@@ -41,6 +58,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
+
         const history = res.data.map((m) => ({
           id: m.id,
           senderId: m.senderId,
@@ -60,45 +78,78 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
     const initConnection = async () => {
       const conn = await startSignalRConnection(
         token,
-        (senderId, msg) => {
-          setChatLog((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              senderId,
-              msg,
-              sentAt: new Date().toISOString(),
-            },
-          ]);
-        },
-        (senderId, msg) => {
-          setChatLog((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              senderId,
-              msg,
-              sentAt: new Date().toISOString(),
-            },
-          ]);
-        },
-        ({ type, senderId, message }) => {
-          const notifyKey = type === "private" ? senderId : `group-${groupName}`;
-          incrementUnread(notifyKey);
-          toast.success(`New ${type} message from ${senderId}`, {
-            duration: 3000,
-            position: "bottom-right",
+        (senderId, msg, messageId, sentAt, senderName) => {
+          const shouldAutoScroll = isScrolledToBottom();
+
+          setChatLog((prev) => {
+            const messageExists = prev.some(m => m.id === messageId);
+            if (messageExists) return prev;
+            return [
+              ...prev,
+              { id: messageId, senderId: parseInt(senderId), msg, sentAt },
+            ];
           });
+
+          updateLatestMessage(
+            receiverId.toString(),
+            msg,
+            senderName || `User ${senderId}`,
+            sentAt
+          );
+
+          if (shouldAutoScroll || parseInt(senderId) === userIdRef.current) {
+            setTimeout(scrollToBottom, 100);
+          }
+        },
+        (senderId, msg, messageId, sentAt, senderName, groupId) => {
+          const shouldAutoScroll = isScrolledToBottom();
+
+          setChatLog((prev) => {
+            const messageExists = prev.some(m => m.id === messageId);
+            if (messageExists) return prev;
+            return [
+              ...prev,
+              { id: messageId, senderId: parseInt(senderId), msg, sentAt },
+            ];
+          });
+
+          updateLatestMessage(
+            `group-${groupId || groupName.replace("group-", "")}`,
+            msg,
+            senderName || `User ${senderId}`,
+            sentAt
+          );
+
+          if (shouldAutoScroll || parseInt(senderId) === userIdRef.current) {
+            setTimeout(scrollToBottom, 100);
+          }
+        },
+        ({ type, senderId, message, senderName, groupId, timestamp }) => {
+          const notifyKey = type === "private" ? senderId : `group-${groupId || groupName}`;
+          incrementUnread(notifyKey);
+
+          addNotification({
+            type,
+            senderId,
+            senderName: senderName || `User ${senderId}`,
+            message,
+            groupId,
+            timestamp: timestamp || new Date(),
+            chatKey: notifyKey
+          });
+
           if (document.visibilityState !== "visible") {
             ding.play();
           }
         },
         (senderId, isTyping) => {
-          if (senderId !== currentUserId) {
+          if (senderId !== userIdRef.current) {
             setOtherTyping(isTyping);
           }
         }
       );
+
+      connectionRef.current = conn;
 
       conn.on("ReceiveReaction", (messageId, userId, emoji) => {
         setReactions((prev) => {
@@ -126,7 +177,6 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         );
       });
 
-      // ✅ NEW: Listen for read receipts
       conn.on("ReceiveReadReceipt", (messageId, userId) => {
         setReadMap((prev) => ({
           ...prev,
@@ -154,21 +204,23 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
 
     fetchHistory();
     initConnection();
+
+    return () => {
+      if (connectionRef.current) {
+        connectionRef.current.off("ReceiveReaction");
+        connectionRef.current.off("ReceiveMessageEdit");
+        connectionRef.current.off("ReceiveMessageDelete");
+        connectionRef.current.off("ReceiveReadReceipt");
+      }
+    };
   }, [token, receiverId, groupName]);
 
-  // ✅ Trigger marking messages as read
   useEffect(() => {
-    chatLog.forEach((msg) => {
-      if (msg.senderId !== currentUserId) {
-        markMessageAsRead(msg.id);
-      }
-    });
-  }, [chatLog]);
-
-  useEffect(() => {
-    if (scrollRef.current) {
+    if (anchorMessageId && scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+
+    setTimeout(scrollToBottom, 100);
   }, [chatLog]);
 
   const handleTyping = (e) => {
@@ -185,14 +237,20 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   const handleSend = () => {
     if (!message.trim()) return;
 
-    if (groupName) sendGroupMessage(groupName, message);
-    else sendPrivateMessage(receiverId, message);
+    if (groupName) {
+      sendGroupMessage(groupName, message);
+    } else {
+      sendPrivateMessage(receiverId, message);
+    }
+
+    const chatKey = groupName ? `group-${groupName.replace("group-", "")}` : receiverId.toString();
+    updateLatestMessage(chatKey, message, "You", new Date());
 
     setMessage("");
     if (receiverId) sendTypingStatus(receiverId, false);
+    setTimeout(scrollToBottom, 50);
   };
 
-  // ✅ File upload handler
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -204,6 +262,7 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
 
     try {
       const res = await api.post("/chat/upload", formData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       setChatLog((prev) => [
@@ -217,18 +276,24 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         },
       ]);
 
-      toast.success(`File sent: ${res.data.fileName}`);
+      const chatKey = groupName ? `group-${groupName.replace("group-", "")}` : receiverId.toString();
+      updateLatestMessage(chatKey, "📎 File", "You", new Date());
+
+      setTimeout(scrollToBottom, 100);
     } catch (err) {
-      toast.error("Upload failed");
-      console.error(err);
+      console.error("File upload failed:", err);
     }
   };
 
   return (
     <div className="p-4 bg-base-200 rounded shadow w-full max-w-md">
-      <div className="overflow-y-auto h-64 mb-2 border border-base-300 rounded px-2 py-1">
+      <div
+        ref={chatContainerRef}
+        className="overflow-y-auto h-64 mb-2 border border-base-300 rounded px-2 py-1"
+        style={{ scrollBehavior: "smooth" }}
+      >
         {chatLog.map((entry, idx) => {
-          const isSender = entry.senderId === currentUserId;
+          const isSender = entry.senderId === userIdRef.current;
           const ref = entry.id === anchorMessageId ? scrollRef : null;
 
           return (
@@ -304,7 +369,6 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
                   </div>
                 )}
 
-                {/* ✅ Read Receipt (Seen) */}
                 {isSender && readMap[entry.id]?.length > 0 && (
                   <div className="text-xs text-right text-green-500 mt-1">
                     {groupName ? (
@@ -318,12 +382,13 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
             </div>
           );
         })}
+
+        <div ref={messagesEndRef} />
         {otherTyping && (
           <div className="text-xs text-gray-500 italic mt-1">Typing...</div>
         )}
       </div>
 
-      {/* ✅ File Input */}
       <input
         type="file"
         onChange={handleFileUpload}
@@ -335,6 +400,12 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
         value={message}
         onChange={handleTyping}
         placeholder="Type your message..."
+        onKeyPress={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+          }
+        }}
       />
       <button className="btn btn-primary w-full" onClick={handleSend}>
         Send
@@ -343,4 +414,4 @@ const ChatWindow = ({ token, receiverId, groupName, currentUserId }) => {
   );
 };
 
-export default ChatWindow;
+export default ChatWindowDTO;

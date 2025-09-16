@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useRef, useCallback } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context";
 import { Post } from "../components/Post";
@@ -18,13 +18,10 @@ export const HomePage = () => {
     if (isVerified === false && !loading) {
       navigate("/auth");
     } else if (isVerified === true && !pageReady) {
-      // Give components time to mount and start fetching data
-      // This prevents showing the page until everything is ready
       setTimeout(() => setPageReady(true), 100);
     }
   }, [isVerified, navigate, loading, pageReady]);
 
-  // Fetch current user data
   useEffect(() => {
     const fetchUserData = async () => {
       if (isVerified) {
@@ -45,13 +42,12 @@ export const HomePage = () => {
     navigate("/auth");
   };
 
-  // Show loading while authentication is in progress OR page is not ready yet
   if (loading || isVerified === null || (isVerified === true && !pageReady)) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <div className="text-center">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="mt-4 text-base-content">Loading...</p>
+          <span className="loading loading-spinner loading-md sm:loading-lg text-primary"></span>
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-base-content">Loading...</p>
         </div>
       </div>
     );
@@ -65,17 +61,17 @@ export const HomePage = () => {
     <div className="min-h-screen bg-base-200 animate-fadeIn">
       <Navbar />
 
-      <div className="pt-16 pb-4">
+      <div className="pt-16 sm:pt-18 md:pt-20 pb-3 sm:pb-4">
         {/* Main Container */}
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-4 px-2 sm:px-4 lg:h-[calc(100vh-6rem)] scrollbar-hide">
+          <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 lg:gap-5 px-2 sm:px-4 lg:px-6 xl:h-[calc(100vh-6rem)] scrollbar-hide">
             
-            {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
-            <div className="hidden lg:block lg:w-80 flex-shrink-0 group overflow-y-auto scrollbar-hide">
+            {/* Left Sidebar */}
+            <div className="hidden xl:block xl:w-72 2xl:w-80 flex-shrink-0 group overflow-y-auto scrollbar-hide">
               <div>
                 <div className="card bg-base-100 shadow-lg border border-base-300">
-                  <div className="card-body p-4">
-                    <h2 className="text-lg font-bold text-base-content mb-3">
+                  <div className="card-body p-3 xl:p-4">
+                    <h2 className="text-base xl:text-lg font-bold text-base-content mb-3">
                       Create Meme
                     </h2>
                     <Post />
@@ -84,43 +80,41 @@ export const HomePage = () => {
               </div>
             </div>
 
-            {/* Main Feed Container */}
-            <div className="flex-1 min-w-0 lg:overflow-y-auto lg:scrollbar-hide">
-              {/* Mobile Create Post Button */}
-              <div className="lg:hidden mb-4">
+            {/* Main Feed */}
+            <div className="flex-1 min-w-0 xl:overflow-y-auto xl:scrollbar-hide">
+              <div className="xl:hidden mb-3 sm:mb-4">
                 <button
                   onClick={() => setIsCreatePostOpen(true)}
-                  className="w-full bg-base-100 hover:bg-base-200 border border-base-300 rounded-lg p-4 flex items-center gap-3 transition-colors"
+                  className="w-full bg-base-100 hover:bg-base-200 border border-base-300 rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3 transition-colors"
                 >
-                  <div className="avatar">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <div className="avatar flex-shrink-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                       {currentUser?.image ? (
-                        <img 
-                          src={currentUser.image} 
-                          alt={currentUser?.name || 'User'} 
+                        <img
+                          src={currentUser.image}
+                          alt={currentUser?.name || 'User'}
                           className="w-full h-full rounded-full object-cover"
                         />
                       ) : (
-                        <span className="text-white font-bold">
+                        <span className="text-white font-bold text-xs sm:text-sm md:text-base">
                           {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
                         </span>
                       )}
                     </div>
                   </div>
-                  <span className="text-base-content/70">Ready to drop some fire content? 🔥</span>
+                  <span className="text-base-content/70 text-xs sm:text-sm md:text-base truncate">Ready to drop some fire content? 🔥</span>
                 </button>
               </div>
 
-              {/* Posts Feed */}
               <Feed />
             </div>
 
-            {/* Right Sidebar - Friend Requests - Hidden on mobile */}
-            <div className="hidden xl:block xl:w-80 flex-shrink-0 lg:overflow-y-auto scrollbar-hide">
+            {/* Right Sidebar - Friend Requests - Hidden on mobile and tablet */}
+            <div className="hidden 2xl:block 2xl:w-72 3xl:w-80 flex-shrink-0 xl:overflow-y-auto scrollbar-hide">
               <div>
                 <div className="card bg-base-100 shadow-lg border border-base-300">
-                  <div className="card-body p-4">
-                    <h2 className="text-lg font-bold text-base-content mb-3">
+                  <div className="card-body p-3 2xl:p-4">
+                    <h2 className="text-base 2xl:text-lg font-bold text-base-content mb-3">
                       Friends
                     </h2>
                     <FriendsList />
@@ -134,15 +128,15 @@ export const HomePage = () => {
 
       {/* Mobile Create Post Modal */}
       {isCreatePostOpen && (
-        <div className="modal modal-open lg:hidden">
-          <div className="modal-box bg-base-100 max-w-lg mx-auto">
+        <div className="modal modal-open xl:hidden">
+          <div className="modal-box bg-base-100 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsCreatePostOpen(false)}
-              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              className="btn btn-xs sm:btn-sm btn-circle btn-ghost absolute right-2 top-2"
             >
               ✕
             </button>
-            <h3 className="font-bold text-lg mb-4">Create Meme</h3>
+            <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 pr-8">Create Meme</h3>
             <Post onSuccess={() => setIsCreatePostOpen(false)} />
           </div>
           <div className="modal-backdrop" onClick={() => setIsCreatePostOpen(false)}></div>

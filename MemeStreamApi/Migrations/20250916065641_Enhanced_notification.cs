@@ -5,7 +5,7 @@
 namespace MemeStreamApi.Migrations
 {
     /// <inheritdoc />
-    public partial class AddMessageReadReceipts2 : Migration
+    public partial class Enhanced_notification : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

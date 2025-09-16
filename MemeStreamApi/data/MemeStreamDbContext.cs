@@ -29,14 +29,16 @@ namespace MemeStreamApi.data
         public DbSet<MessageReacton> MessageReactons { get; set; }
 
         public DbSet<ChatFile> ChatFiles { get; set; }
+
         public DbSet<MessageReadReceipt> MessageReadReceipts { get; set; }
         
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<NotificationPreference> NotificationPreferences { get; set; }
 
+        // Enhanced Chat Features
+        public DbSet<MediaMessage> MediaMessages { get; set; }
+        public DbSet<Friendship> Friendships { get; set; }
 
-
-        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -129,6 +131,10 @@ namespace MemeStreamApi.data
             modelBuilder.Entity<MessageReadReceipt>()
                 .HasIndex(mrr => new { mrr.MessageId, mrr.SeenAt })
                 .HasDatabaseName("IX_MessageReadReceipts_MessageId_SeenAt");
+
+            modelBuilder.Entity<MessageReacton>()
+                .HasIndex(r => new { r.MessageId, r.ReactorId })
+                .IsUnique();
 
             // Configure Comment self-referencing relationship for replies
             modelBuilder.Entity<Comment>()
