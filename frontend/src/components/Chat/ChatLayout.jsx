@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { VerifyContext } from "../../../context/create_verify_context";
 import { ChatContext } from "../../../context/ChatContext";
+import { Navbar } from "../Navbar";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import {
@@ -24,6 +27,9 @@ import ChatThemeSelector from "./ChatThemeSelector";
 import MessageReply, { ReplyComposer } from "./MessageReply"; 
 
 const ChatLayout = () => {
+  const { isVerified, loading, logout } = useContext(VerifyContext);
+  const navigate = useNavigate();
+  const [pageReady, setPageReady] = useState(false);
   const [friends, setFriends] = useState([]);
   const [groups, setGroups] = useState([]);
   const [sidebarLoading, setSidebarLoading] = useState(true);
@@ -71,6 +77,15 @@ const ChatLayout = () => {
   const chatContainerRef = useRef(null);
   const connectionRef = useRef(null);
   const userIdRef = useRef(currentUserId);
+
+  // Route protection effect
+  useEffect(() => {
+    if (isVerified === false && !loading) {
+      navigate("/auth");
+    } else if (isVerified === true && !pageReady) {
+      setTimeout(() => setPageReady(true), 100);
+    }
+  }, [isVerified, navigate, loading, pageReady]);
   
   useEffect(() => {
     userIdRef.current = currentUserId;
@@ -746,8 +761,27 @@ conn.on("ReceiveReaction", (reactionData) => {
 
   const totalUnread = Object.values(unreadMap).reduce((sum, count) => sum + count, 0);
 
+  // Loading and verification checks
+  if (loading || isVerified === null || (isVerified === true && !pageReady)) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <div className="text-center">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="mt-4 text-base-content">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isVerified === false) {
+    return null;
+  }
+
   return (
-    <div className={`flex h-screen bg-base-100 ${isDarkMode ? 'dark' : ''}`} data-chat-theme={chatTheme}>
+    <div className={`min-h-screen bg-base-200 animate-fadeIn ${isDarkMode ? 'dark' : ''}`} data-chat-theme={chatTheme}>
+      <Navbar />
+
+      <div className="pt-16 flex h-[calc(100vh-4rem)] bg-base-100">
       {/* Connection Status Indicator */}
       <ConnectionStatusIndicator
         isConnected={connection?.state === 'Connected'}
@@ -917,6 +951,7 @@ conn.on("ReceiveReaction", (reactionData) => {
         />
       )}
 
+      </div>
     </div>
   );
 }
