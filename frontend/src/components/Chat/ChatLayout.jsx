@@ -782,63 +782,107 @@ conn.on("ReceiveReaction", (reactionData) => {
     <div className={`min-h-screen bg-base-200 animate-fadeIn ${isDarkMode ? 'dark' : ''}`} data-chat-theme={chatTheme}>
       <Navbar />
 
-      <div className="pt-16 flex h-[calc(100vh-4rem)] bg-base-100">
-      {/* Sidebar on the left */}
-      <ChatSidebar
-        loading={sidebarLoading}
-        error={sidebarError}
-        friends={friends}
-        groups={groups}
-        unreadMap={unreadMap}
-        latestMessages={latestMessages}
-        totalUnread={totalUnread}
-        notifications={notifications}
-        onChatSelect={handleChatSelect}
-        onClearAllNotifications={clearAllNotifications}
-        onRemoveNotification={removeNotification}
-        onCreateGroup={() => setShowCreateGroup(true)}
-        // Enhanced props
-        userPresence={userPresence}
-        onlineUsers={onlineUsers}
-      />
+      <div className="pt-16 sm:pt-18 md:pt-20 flex flex-col lg:flex-row h-[calc(100vh-4rem)] sm:h-[calc(100vh-4.5rem)] md:h-[calc(100vh-5rem)] bg-base-100">
+      {/* Mobile Chat Selector - Show when no chat selected */}
+      {!currentChat && (
+        <div className="lg:hidden flex-1 flex flex-col">
+          <div className="p-3 sm:p-4 border-b border-base-300 bg-base-200">
+            <h2 className="text-lg sm:text-xl font-semibold text-base-content">Choose a Chat</h2>
+            <p className="text-sm text-base-content/70">Select a friend or group to start messaging</p>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <ChatSidebar
+              loading={sidebarLoading}
+              error={sidebarError}
+              friends={friends}
+              groups={groups}
+              unreadMap={unreadMap}
+              latestMessages={latestMessages}
+              totalUnread={totalUnread}
+              notifications={notifications}
+              onChatSelect={handleChatSelect}
+              onClearAllNotifications={clearAllNotifications}
+              onRemoveNotification={removeNotification}
+              onCreateGroup={() => setShowCreateGroup(true)}
+              userPresence={userPresence}
+              onlineUsers={onlineUsers}
+              isMobile={true}
+            />
+          </div>
+        </div>
+      )}
 
-      {/* Main chat area on the right */}
-      <div className="flex-1 flex flex-col">
+      {/* Desktop Sidebar - Always visible on desktop */}
+      <div className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 border-r border-base-300 bg-base-200">
+        <ChatSidebar
+          loading={sidebarLoading}
+          error={sidebarError}
+          friends={friends}
+          groups={groups}
+          unreadMap={unreadMap}
+          latestMessages={latestMessages}
+          totalUnread={totalUnread}
+          notifications={notifications}
+          onChatSelect={handleChatSelect}
+          onClearAllNotifications={clearAllNotifications}
+          onRemoveNotification={removeNotification}
+          onCreateGroup={() => setShowCreateGroup(true)}
+          userPresence={userPresence}
+          onlineUsers={onlineUsers}
+          isMobile={false}
+        />
+      </div>
+
+      {/* Main chat area - Show when chat selected */}
+      <div className={`${!currentChat ? 'hidden lg:flex' : 'flex'} flex-1 flex-col min-w-0`}>
         {/* Enhanced Chat Header */}
         {currentChat && (
-          <div className="bg-base-200 p-4 border-b border-base-300 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold">{chatName}</h2>
-              {chatType === 'private' && friends.find(f => f.id === currentChat) && (
-                <ChatStatusIndicator
-                  userId={currentChat}
-                  isOnline={userPresence[currentChat]?.isOnline}
-                  lastSeen={userPresence[currentChat]?.lastSeen}
-                  typingUsers={typingUsers}
-                  chatType={chatType}
-                  size="medium"
-                />
-              )}
+          <div className="bg-base-200 p-3 sm:p-4 border-b border-base-300 flex justify-between items-center">
+            {/* Back button for mobile */}
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <button
+                onClick={() => setCurrentChat(null)}
+                className="btn btn-ghost btn-xs sm:btn-sm lg:hidden"
+                title="Back to chats"
+              >
+                ←
+              </button>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base sm:text-lg md:text-xl font-semibold truncate">{chatName}</h2>
+                {chatType === 'private' && friends.find(f => f.id === currentChat) && (
+                  <div className="hidden sm:block">
+                    <ChatStatusIndicator
+                      userId={currentChat}
+                      isOnline={userPresence[currentChat]?.isOnline}
+                      lastSeen={userPresence[currentChat]?.lastSeen}
+                      typingUsers={typingUsers}
+                      chatType={chatType}
+                      size="small"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <button
                 onClick={() => setShowMessageSearch(true)}
-                className="btn btn-ghost btn-sm"
+                className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm"
                 title="Search Messages"
               >
-                🔍
+                <span className="hidden sm:inline">🔍</span>
+                <span className="sm:hidden">🔍</span>
               </button>
               <button
                 onClick={() => setShowMediaGallery(true)}
-                className="btn btn-ghost btn-sm"
+                className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm hidden sm:inline-flex"
                 title="Media Gallery"
               >
                 🖼️
               </button>
               <button
                 onClick={() => setShowThemeSelector(true)}
-                className="btn btn-ghost btn-sm"
+                className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm hidden md:inline-flex"
                 title="Theme Settings"
               >
                 🎨
@@ -846,7 +890,7 @@ conn.on("ReceiveReaction", (reactionData) => {
               {chatType === 'group' && (
                 <button
                   onClick={toggleGroupManagement}
-                  className="btn btn-ghost btn-sm"
+                  className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm"
                   title="Group Settings"
                 >
                   ⚙️
@@ -856,35 +900,49 @@ conn.on("ReceiveReaction", (reactionData) => {
           </div>
         )}
 
-        <ChatWindow
-          currentChat={currentChat}
-          currentUserId={currentUserId}
-          chatType={chatType}
-          chatName={chatName}
-          message={message}
-          chatLog={chatLog}
-          otherTyping={otherTyping}
-          reactions={reactions}
-          readMap={readMap}
-          connectionError={connectionError}
-          messagesEndRef={messagesEndRef}
-          chatContainerRef={chatContainerRef}
-          onToggleGroupManagement={toggleGroupManagement}
-          onTyping={handleTyping}
-          onSend={handleSend}
-          onFileUpload={handleFileUpload}
-          onReactToMessage={handleReactToMessage}
-          onEditMessage={handleEditMessage}
-          onDeleteMessage={handleDeleteMessage}
-          onFetchReactions={fetchReactionsForMessage}
-          // Enhanced props
-          replyingTo={replyingTo}
-          onReply={handleReply}
-          onCancelReply={handleCancelReply}
-          onScrollToMessage={handleScrollToMessage}
-          typingUsers={typingUsers}
-          userPresence={userPresence}
-        />
+        {/* Empty State for Desktop */}
+        {!currentChat && (
+          <div className="hidden lg:flex flex-1 items-center justify-center">
+            <div className="text-center">
+              <div className="text-4xl sm:text-5xl md:text-6xl mb-4">💬</div>
+              <h3 className="text-lg sm:text-xl font-semibold text-base-content/70 mb-2">Select a Chat</h3>
+              <p className="text-sm sm:text-base text-base-content/50">Choose a conversation from the sidebar to start messaging</p>
+            </div>
+          </div>
+        )}
+
+        {currentChat && (
+          <ChatWindow
+            currentChat={currentChat}
+            currentUserId={currentUserId}
+            chatType={chatType}
+            chatName={chatName}
+            message={message}
+            chatLog={chatLog}
+            otherTyping={otherTyping}
+            reactions={reactions}
+            readMap={readMap}
+            connectionError={connectionError}
+            messagesEndRef={messagesEndRef}
+            chatContainerRef={chatContainerRef}
+            onToggleGroupManagement={toggleGroupManagement}
+            onTyping={handleTyping}
+            onSend={handleSend}
+            onFileUpload={handleFileUpload}
+            onReactToMessage={handleReactToMessage}
+            onEditMessage={handleEditMessage}
+            onDeleteMessage={handleDeleteMessage}
+            onFetchReactions={fetchReactionsForMessage}
+            // Enhanced props
+            replyingTo={replyingTo}
+            onReply={handleReply}
+            onCancelReply={handleCancelReply}
+            onScrollToMessage={handleScrollToMessage}
+            typingUsers={typingUsers}
+            userPresence={userPresence}
+            isMobile={window?.innerWidth < 1024}
+          />
+        )}
 
         {/* Reply Composer */}
         {replyingTo && (
@@ -918,31 +976,46 @@ conn.on("ReceiveReaction", (reactionData) => {
 
       {/* Enhanced Modal Components */}
       {showMessageSearch && (
-        <ChatMessageSearch
-          chatId={currentChat}
-          isGroup={chatType === 'group'}
-          onMessageSelect={handleScrollToMessage}
-          onClose={() => setShowMessageSearch(false)}
-        />
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-2xl max-h-[80vh] overflow-hidden">
+            <ChatMessageSearch
+              chatId={currentChat}
+              isGroup={chatType === 'group'}
+              onMessageSelect={handleScrollToMessage}
+              onClose={() => setShowMessageSearch(false)}
+              isMobile={window?.innerWidth < 768}
+            />
+          </div>
+        </div>
       )}
 
       {showMediaGallery && (
-        <ChatMediaGallery
-          chatId={currentChat}
-          isGroup={chatType === 'group'}
-          onMediaSelect={handleMediaSelect}
-          onClose={() => setShowMediaGallery(false)}
-        />
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] overflow-hidden">
+            <ChatMediaGallery
+              chatId={currentChat}
+              isGroup={chatType === 'group'}
+              onMediaSelect={handleMediaSelect}
+              onClose={() => setShowMediaGallery(false)}
+              isMobile={window?.innerWidth < 768}
+            />
+          </div>
+        </div>
       )}
 
       {showThemeSelector && (
-        <ChatThemeSelector
-          currentTheme={chatTheme}
-          isDarkMode={isDarkMode}
-          onThemeChange={handleThemeChange}
-          onDarkModeToggle={handleDarkModeToggle}
-          onClose={() => setShowThemeSelector(false)}
-        />
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-xs sm:max-w-sm md:max-w-md max-h-[90vh] overflow-hidden">
+            <ChatThemeSelector
+              currentTheme={chatTheme}
+              isDarkMode={isDarkMode}
+              onThemeChange={handleThemeChange}
+              onDarkModeToggle={handleDarkModeToggle}
+              onClose={() => setShowThemeSelector(false)}
+              isMobile={window?.innerWidth < 768}
+            />
+          </div>
+        </div>
       )}
 
       </div>

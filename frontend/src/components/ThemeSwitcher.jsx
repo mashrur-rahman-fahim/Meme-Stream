@@ -159,25 +159,28 @@ const ThemeSwitcher = () => {
       </div>
       
       {isOpen && (
-        <div 
-          className="dropdown-content mt-3 z-[100] shadow-2xl bg-base-100 border border-base-300 rounded-2xl w-80 max-h-[85vh] flex flex-col"
+        <div
+          className="dropdown-content mt-3 z-[100] shadow-2xl bg-base-100 border border-base-300 rounded-2xl w-72 sm:w-80 max-h-[85vh] flex flex-col"
         >
           {/* Header */}
-          <div className="p-4 border-b border-base-300">
-            <div className="flex items-center justify-between mb-3">
+          <div className="p-3 sm:p-4 border-b border-base-300">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               <div className="flex items-center gap-2">
-                <FaPalette className="text-primary" />
-                <span className="font-bold">Theme Switcher</span>
+                <FaPalette className="text-primary text-sm sm:text-base" />
+                <span className="font-bold text-sm sm:text-base">
+                  <span className="hidden sm:inline">Theme Switcher</span>
+                  <span className="sm:hidden">Themes</span>
+                </span>
               </div>
               <div className="flex items-center gap-1">
-                <button 
+                <button
                   onClick={handleRandomTheme}
                   className="btn btn-xs btn-outline btn-primary hover:scale-110 transition-transform"
                   title="Random Theme"
                 >
                   <FaRandom className="text-xs" />
                 </button>
-                <button 
+                <button
                   onClick={() => setIsOpen(false)}
                   className="btn btn-xs btn-ghost hover:scale-110 transition-transform"
                   title="Close"
@@ -193,15 +196,15 @@ const ThemeSwitcher = () => {
                 ref={searchRef}
                 type="text"
                 placeholder="Search themes..."
-                className="input input-sm input-bordered w-full pl-8 pr-8"
+                className="input input-xs sm:input-sm input-bordered w-full pl-7 sm:pl-8 pr-7 sm:pr-8 text-xs sm:text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 text-xs" />
+              <FaSearch className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 text-xs" />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/50 hover:text-base-content"
+                  className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-base-content/50 hover:text-base-content"
                 >
                   <FaTimes className="text-xs" />
                 </button>
@@ -210,16 +213,16 @@ const ThemeSwitcher = () => {
           </div>
 
           {/* Current Theme Display */}
-          <div className="p-4 bg-primary/5">
-            <div className="flex items-center gap-3 bg-primary/10 border border-primary/30 rounded-lg p-3">
-              <span className="text-2xl">{getCurrentThemeData().emoji}</span>
-              <div className="flex-1">
-                <p className="font-semibold text-primary">{getCurrentThemeData().label}</p>
-                <p className="text-xs text-base-content/70">{getCurrentThemeData().description}</p>
+          <div className="p-3 sm:p-4 bg-primary/5">
+            <div className="flex items-center gap-2 sm:gap-3 bg-primary/10 border border-primary/30 rounded-lg p-2 sm:p-3">
+              <span className="text-lg sm:text-2xl">{getCurrentThemeData().emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-primary text-sm sm:text-base truncate">{getCurrentThemeData().label}</p>
+                <p className="text-xs text-base-content/70 truncate">{getCurrentThemeData().description}</p>
               </div>
               <button
                 onClick={() => toggleFavorite(currentTheme)}
-                className={`btn btn-xs btn-circle ${favorites.includes(currentTheme) ? 'btn-error' : 'btn-ghost'}`}
+                className={`btn btn-xs btn-circle flex-shrink-0 ${favorites.includes(currentTheme) ? 'btn-error' : 'btn-ghost'}`}
                 title={favorites.includes(currentTheme) ? 'Remove from favorites' : 'Add to favorites'}
               >
                 <FaHeart className={`text-xs ${favorites.includes(currentTheme) ? 'text-white' : 'text-base-content/50'}`} />
@@ -228,17 +231,17 @@ const ThemeSwitcher = () => {
           </div>
 
           {/* Category Filters */}
-          <div className="px-4 py-2 border-b border-base-300">
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+          <div className="px-3 sm:px-4 py-2 border-b border-base-300">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none pb-1">
               {categories.map((category) => {
                 const Icon = typeof category.icon === 'string' ? null : category.icon;
                 return (
                   <button
                     key={category.id}
                     onClick={() => setActiveCategory(category.id)}
-                    className={`btn btn-xs whitespace-nowrap flex-shrink-0 ${
-                      activeCategory === category.id 
-                        ? 'btn-primary' 
+                    className={`btn btn-xs whitespace-nowrap flex-shrink-0 text-xs ${
+                      activeCategory === category.id
+                        ? 'btn-primary'
                         : 'btn-ghost'
                     }`}
                   >
@@ -250,14 +253,15 @@ const ThemeSwitcher = () => {
               {favorites.length > 0 && (
                 <button
                   onClick={() => setActiveCategory('favorites')}
-                  className={`btn btn-xs whitespace-nowrap flex-shrink-0 ${
-                    activeCategory === 'favorites' 
-                      ? 'btn-primary' 
+                  className={`btn btn-xs whitespace-nowrap flex-shrink-0 text-xs ${
+                    activeCategory === 'favorites'
+                      ? 'btn-primary'
                       : 'btn-ghost'
                   }`}
                 >
                   <FaHeart className="text-xs mr-1" />
-                  Favorites ({favorites.length})
+                  <span className="hidden sm:inline">Favorites ({favorites.length})</span>
+                  <span className="sm:hidden">♥ {favorites.length}</span>
                 </button>
               )}
             </div>
@@ -270,27 +274,27 @@ const ThemeSwitcher = () => {
                 {filteredThemes.map((theme) => (
                   <div
                     key={theme.name}
-                    className={`relative flex items-center gap-3 p-3 mx-2 rounded-lg transition-all duration-200 cursor-pointer hover:translate-x-1 hover:shadow-md ${
-                      currentTheme === theme.name 
-                        ? 'bg-primary/20 text-primary border-2 border-primary/40 shadow-lg' 
+                    className={`relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 mx-1 sm:mx-2 rounded-lg transition-all duration-200 cursor-pointer hover:translate-x-1 hover:shadow-md ${
+                      currentTheme === theme.name
+                        ? 'bg-primary/20 text-primary border-2 border-primary/40 shadow-lg'
                         : 'hover:bg-base-200 border border-base-300/30'
                     }`}
                     onClick={() => handleThemeChange(theme.name)}
                   >
-                    <span className="text-2xl flex-shrink-0">{theme.emoji}</span>
+                    <span className="text-lg sm:text-2xl flex-shrink-0">{theme.emoji}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-sm">{theme.label}</p>
+                      <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                        <p className="font-medium text-xs sm:text-sm truncate">{theme.label}</p>
                         {theme.popular && (
-                          <span className="badge badge-xs badge-primary">Popular</span>
+                          <span className="badge badge-xs badge-primary hidden sm:inline-flex">Popular</span>
                         )}
                         {currentTheme === theme.name && (
-                          <FaCheck className="text-primary text-sm ml-auto" />
+                          <FaCheck className="text-primary text-xs sm:text-sm ml-auto flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-xs opacity-70">{theme.description}</p>
+                      <p className="text-xs opacity-70 truncate">{theme.description}</p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -327,7 +331,7 @@ const ThemeSwitcher = () => {
           </div>
           
           {/* Footer */}
-          <div className="p-4 border-t border-base-300 text-center">
+          <div className="p-3 sm:p-4 border-t border-base-300 text-center">
             <p className="text-xs text-base-content/60">
               🎨 {filteredThemes.length} theme{filteredThemes.length !== 1 ? 's' : ''} available 🎨
             </p>

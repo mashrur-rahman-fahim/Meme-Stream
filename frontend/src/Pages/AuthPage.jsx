@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import api from "../utils/axios.js";
 import { useNavigate, Link } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context.jsx";
+import ThemeSwitcher from "../components/ThemeSwitcher.jsx";
 
 export const AuthPage = () => {
   const { isVerified, verifyUser, loading, checkEmailVerified } = useContext(VerifyContext);
@@ -128,6 +129,24 @@ export const AuthPage = () => {
 
   return (
     <div className="min-h-screen w-full bg-base-200 lg:relative lg:overflow-x-hidden flex flex-col lg:flex-row">
+      {/* Theme Switcher - Fixed position with responsive positioning */}
+      <div className="fixed top-3 right-3 sm:top-4 sm:right-4 md:top-5 md:right-5 z-50">
+        <div className="transform scale-90 sm:scale-100">
+          <ThemeSwitcher />
+        </div>
+      </div>
+
+      {/* Add responsive styles for theme switcher on auth page */}
+      <style jsx>{`
+        @media (max-width: 480px) {
+          :global(.dropdown-content) {
+            width: calc(100vw - 24px) !important;
+            right: -12px !important;
+            max-height: 80vh !important;
+          }
+        }
+      `}</style>
+
       <div
         className={`w-full lg:w-1/2 flex justify-center p-3 sm:p-4 md:p-6 lg:p-8 order-1 bg-base-100
                    lg:absolute lg:top-0 lg:h-full lg:overflow-y-auto
