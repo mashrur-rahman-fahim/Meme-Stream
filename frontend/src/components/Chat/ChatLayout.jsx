@@ -15,7 +15,14 @@ import {
 import GroupManagementSidebar from "./GroupManagementSidebar";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
-import CreateGroupPopup from "./CreateGroupPopup"; 
+import CreateGroupPopup from "./CreateGroupPopup";
+// Enhanced Components
+import ChatMessageSearch from "./ChatMessageSearch";
+import ChatStatusIndicator, { ConnectionStatusIndicator } from "./ChatStatusIndicator";
+import ChatMediaGallery from "./ChatMediaGallery";
+import ChatThemeSelector from "./ChatThemeSelector";
+import VoiceMessageRecorder from "./VoiceMessageRecorder";
+import MessageReply, { ReplyComposer } from "./MessageReply"; 
 
 const ChatLayout = () => {
   const [friends, setFriends] = useState([]);
@@ -35,7 +42,19 @@ const ChatLayout = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [connection, setConnection] = useState(null);
   const [connectionError, setConnectionError] = useState("");
-  const [showCreateGroup, setShowCreateGroup] = useState(false); 
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+
+  // Enhanced chat features state
+  const [showMessageSearch, setShowMessageSearch] = useState(false);
+  const [showMediaGallery, setShowMediaGallery] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [chatTheme, setChatTheme] = useState('default');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [userPresence, setUserPresence] = useState({});
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [typingUsers, setTypingUsers] = useState([]); 
 
   const token = localStorage.getItem("token");
   const { 
@@ -231,6 +250,84 @@ const ChatLayout = () => {
       console.error("Delete failed:", error);
       alert("Failed to delete message");
     }
+  };
+
+  // Enhanced feature handlers
+  const handleVoiceMessageSend = async (audioBlob, duration, waveform) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'voice-message.webm');
+      formData.append('duration', duration.toString());
+      if (chatType === 'private') formData.append('receiverId', currentChat.toString());
+      if (chatType === 'group') formData.append('groupId', currentChat.toString());
+
+      const response = await axios.post('http://localhost:5216/api/voicemessage/upload', formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Add to chat log immediately for better UX
+      setChatLog(prev => [...prev, {
+        id: response.data.messageId,
+        senderId: currentUserId,
+        msg: `🎤 Voice message (${duration}s)`,
+        sentAt: new Date().toISOString(),
+        isVoiceMessage: true,
+        voiceData: response.data
+      }]);
+
+      setTimeout(scrollToBottom, 100);
+    } catch (error) {
+      console.error('Failed to send voice message:', error);
+      alert('Failed to send voice message');
+    }
+  };
+
+  const handleReply = (message, replyText) => {
+    if (replyText) {
+      // Send reply with reference to original message
+      const replyContent = `@${message.senderName || `User ${message.senderId}`}: ${replyText}`;
+      if (chatType === "group") {
+        sendGroupMessage(`group-${currentChat}`, replyContent);
+      } else {
+        sendPrivateMessage(currentChat.toString(), replyContent);
+      }
+    } else {
+      // Just set reply mode
+      setReplyingTo(message);
+    }
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+  };
+
+  const handleScrollToMessage = (messageId, isThread = false) => {
+    // Find message and scroll to it
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Highlight message briefly
+      messageElement.classList.add('highlight-message');
+      setTimeout(() => {
+        messageElement.classList.remove('highlight-message');
+      }, 2000);
+    }
+  };
+
+  const handleThemeChange = (newTheme) => {
+    setChatTheme(newTheme);
+    // Apply theme to document root
+    document.documentElement.setAttribute('data-chat-theme', newTheme);
+  };
+
+  const handleDarkModeToggle = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle('dark', !isDarkMode);
+  };
+
+  const handleMediaSelect = (media) => {
+    // Handle media selection from gallery
+    console.log('Media selected:', media);
   };
 
   // Chat window functionality
@@ -477,6 +574,84 @@ conn.on("ReceiveReaction", (reactionData) => {
           }));
         });
 
+        // Enhanced SignalR handlers
+        conn.on("ReceiveVoiceMessage", (voiceData) => {
+          const shouldAutoScroll = isScrolledToBottom();
+
+          setChatLog((prev) => {
+            const messageExists = prev.some(m => m.id === voiceData.messageId);
+            if (messageExists) return prev;
+
+            return [
+              ...prev,
+              {
+                id: voiceData.messageId,
+                senderId: voiceData.senderId,
+                msg: `🎤 Voice message (${voiceData.duration}s)`,
+                sentAt: voiceData.sentAt,
+                isVoiceMessage: true,
+                voiceData: voiceData
+              },
+            ];
+          });
+
+          if (shouldAutoScroll || voiceData.senderId === userIdRef.current) {
+            setTimeout(scrollToBottom, 100);
+          }
+        });
+
+        conn.on("ReceiveMediaMessage", (mediaData) => {
+          const shouldAutoScroll = isScrolledToBottom();
+
+          setChatLog((prev) => {
+            const messageExists = prev.some(m => m.id === mediaData.messageId);
+            if (messageExists) return prev;
+
+            return [
+              ...prev,
+              {
+                id: mediaData.messageId,
+                senderId: mediaData.senderId,
+                msg: `${mediaData.mediaType === 'image' ? '🖼️' : mediaData.mediaType === 'video' ? '🎥' : '📎'} ${mediaData.fileName}`,
+                sentAt: mediaData.sentAt,
+                isMediaMessage: true,
+                mediaData: mediaData
+              },
+            ];
+          });
+
+          if (shouldAutoScroll || mediaData.senderId === userIdRef.current) {
+            setTimeout(scrollToBottom, 100);
+          }
+        });
+
+        conn.on("UserPresenceUpdate", (userId, isOnline, lastSeen) => {
+          setUserPresence(prev => ({
+            ...prev,
+            [userId]: { isOnline, lastSeen }
+          }));
+
+          if (isOnline) {
+            setOnlineUsers(prev => [...new Set([...prev, userId])]);
+          } else {
+            setOnlineUsers(prev => prev.filter(id => id !== userId));
+          }
+        });
+
+        conn.on("ReceiveTypingStatus", (senderId, isTyping, senderName) => {
+          if (senderId !== userIdRef.current) {
+            setTypingUsers(prev => {
+              if (isTyping) {
+                const existing = prev.find(u => u.userId === senderId);
+                if (existing) return prev;
+                return [...prev, { userId: senderId, userName: senderName || `User ${senderId}` }];
+              } else {
+                return prev.filter(u => u.userId !== senderId);
+              }
+            });
+          }
+        });
+
         // Add connection state handlers for debugging
         conn.onclose((error) => {
           console.error("SignalR connection closed:", error);
@@ -530,6 +705,10 @@ conn.on("ReceiveReaction", (reactionData) => {
         connectionRef.current.off("ReceiveMessageEdit");
         connectionRef.current.off("ReceiveMessageDelete");
         connectionRef.current.off("ReceiveReadReceipt");
+        connectionRef.current.off("ReceiveVoiceMessage");
+        connectionRef.current.off("ReceiveMediaMessage");
+        connectionRef.current.off("UserPresenceUpdate");
+        connectionRef.current.off("ReceiveTypingStatus");
         connectionRef.current.off("onclose");
         connectionRef.current.off("onreconnecting");
         connectionRef.current.off("onreconnected");
@@ -624,7 +803,14 @@ conn.on("ReceiveReaction", (reactionData) => {
   const totalUnread = Object.values(unreadMap).reduce((sum, count) => sum + count, 0);
 
   return (
-    <div className="flex h-screen bg-base-100">
+    <div className={`flex h-screen bg-base-100 ${isDarkMode ? 'dark' : ''}`} data-chat-theme={chatTheme}>
+      {/* Connection Status Indicator */}
+      <ConnectionStatusIndicator
+        isConnected={connection?.state === 'Connected'}
+        reconnecting={connection?.state === 'Reconnecting'}
+        lastConnected={connection?.lastConnected}
+      />
+
       {/* Sidebar on the left */}
       <ChatSidebar
         loading={sidebarLoading}
@@ -639,10 +825,65 @@ conn.on("ReceiveReaction", (reactionData) => {
         onClearAllNotifications={clearAllNotifications}
         onRemoveNotification={removeNotification}
         onCreateGroup={() => setShowCreateGroup(true)}
+        // Enhanced props
+        userPresence={userPresence}
+        onlineUsers={onlineUsers}
       />
-      
+
       {/* Main chat area on the right */}
       <div className="flex-1 flex flex-col">
+        {/* Enhanced Chat Header */}
+        {currentChat && (
+          <div className="bg-base-200 p-4 border-b border-base-300 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold">{chatName}</h2>
+              {chatType === 'private' && friends.find(f => f.id === currentChat) && (
+                <ChatStatusIndicator
+                  userId={currentChat}
+                  isOnline={userPresence[currentChat]?.isOnline}
+                  lastSeen={userPresence[currentChat]?.lastSeen}
+                  typingUsers={typingUsers}
+                  chatType={chatType}
+                  size="medium"
+                />
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowMessageSearch(true)}
+                className="btn btn-ghost btn-sm"
+                title="Search Messages"
+              >
+                🔍
+              </button>
+              <button
+                onClick={() => setShowMediaGallery(true)}
+                className="btn btn-ghost btn-sm"
+                title="Media Gallery"
+              >
+                🖼️
+              </button>
+              <button
+                onClick={() => setShowThemeSelector(true)}
+                className="btn btn-ghost btn-sm"
+                title="Theme Settings"
+              >
+                🎨
+              </button>
+              {chatType === 'group' && (
+                <button
+                  onClick={toggleGroupManagement}
+                  className="btn btn-ghost btn-sm"
+                  title="Group Settings"
+                >
+                  ⚙️
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         <ChatWindow
           currentChat={currentChat}
           currentUserId={currentUserId}
@@ -664,7 +905,27 @@ conn.on("ReceiveReaction", (reactionData) => {
           onEditMessage={handleEditMessage}
           onDeleteMessage={handleDeleteMessage}
           onFetchReactions={fetchReactionsForMessage}
+          // Enhanced props
+          replyingTo={replyingTo}
+          onReply={handleReply}
+          onCancelReply={handleCancelReply}
+          onScrollToMessage={handleScrollToMessage}
+          onVoiceMessageSend={handleVoiceMessageSend}
+          showVoiceRecorder={showVoiceRecorder}
+          onToggleVoiceRecorder={setShowVoiceRecorder}
+          typingUsers={typingUsers}
+          userPresence={userPresence}
         />
+
+        {/* Reply Composer */}
+        {replyingTo && (
+          <ReplyComposer
+            replyingTo={replyingTo}
+            onSend={(replyText) => handleReply(replyingTo, replyText)}
+            onCancel={handleCancelReply}
+            placeholder="Type your reply..."
+          />
+        )}
       </div>
       
       {/* Group Management Sidebar */}
@@ -683,6 +944,43 @@ conn.on("ReceiveReaction", (reactionData) => {
           token={token}
           onGroupCreated={handleGroupCreated}
           onClose={() => setShowCreateGroup(false)}
+        />
+      )}
+
+      {/* Enhanced Modal Components */}
+      {showMessageSearch && (
+        <ChatMessageSearch
+          chatId={currentChat}
+          isGroup={chatType === 'group'}
+          onMessageSelect={handleScrollToMessage}
+          onClose={() => setShowMessageSearch(false)}
+        />
+      )}
+
+      {showMediaGallery && (
+        <ChatMediaGallery
+          chatId={currentChat}
+          isGroup={chatType === 'group'}
+          onMediaSelect={handleMediaSelect}
+          onClose={() => setShowMediaGallery(false)}
+        />
+      )}
+
+      {showThemeSelector && (
+        <ChatThemeSelector
+          currentTheme={chatTheme}
+          isDarkMode={isDarkMode}
+          onThemeChange={handleThemeChange}
+          onDarkModeToggle={handleDarkModeToggle}
+          onClose={() => setShowThemeSelector(false)}
+        />
+      )}
+
+      {showVoiceRecorder && (
+        <VoiceMessageRecorder
+          onSend={handleVoiceMessageSend}
+          onCancel={() => setShowVoiceRecorder(false)}
+          maxDuration={300} // 5 minutes
         />
       )}
     </div>

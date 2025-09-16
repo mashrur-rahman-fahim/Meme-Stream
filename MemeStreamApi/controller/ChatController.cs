@@ -548,18 +548,18 @@ public async Task<IActionResult> GetGroupMessages(int groupId)
     try
     {
         var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        
+
         // Check if user is a member of the group
         var isMember = await _context.GroupMemberships
             .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId);
-        
+
         if (!isMember)
             return Unauthorized("You are not a member of this group");
 
         var messages = await _context.Messages
             .Where(m => m.GroupId == groupId && !m.IsDeleted) // Only get non-deleted messages
             .Include(m => m.Sender) // Include sender details
-            .Select(m => new 
+            .Select(m => new
             {
                 m.Id,
                 m.SenderId,
@@ -582,4 +582,236 @@ public async Task<IActionResult> GetGroupMessages(int groupId)
         return StatusCode(500, "Internal Server Error: " + ex.Message);
     }
 }
+
+    [HttpGet("search/group/{groupId}")]
+    public async Task<IActionResult> SearchGroupMessages(
+        int groupId,
+        [FromQuery] string query,
+        [FromQuery] string dateRange = "all",
+        [FromQuery] string messageType = "all",
+        [FromQuery] string sender = "all",
+        [FromQuery] int limit = 50)
+    {
+        try
+        {
+            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            // Check if user is a member of the group
+            var isMember = await _context.GroupMemberships
+                .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId);
+
+            if (!isMember)
+                return Unauthorized("You are not a member of this group");
+
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                return BadRequest("Query must be at least 2 characters long");
+
+            var messagesQuery = _context.Messages
+                .Where(m => m.GroupId == groupId && !m.IsDeleted)
+                .Include(m => m.Sender);
+
+            // Apply search query
+            var searchQuery = messagesQuery.Where(m =>
+                EF.Functions.Like(m.Content, $"%{query}%") ||
+                EF.Functions.Like(m.Sender.Name, $"%{query}%"));
+
+            // Apply date range filter
+            if (dateRange != "all")
+            {
+                var now = DateTime.UtcNow;
+                DateTime startDate = dateRange switch
+                {
+                    "today" => now.Date,
+                    "week" => now.AddDays(-7),
+                    "month" => now.AddMonths(-1),
+                    "year" => now.AddYears(-1),
+                    _ => DateTime.MinValue
+                };
+
+                if (startDate != DateTime.MinValue)
+                {
+                    searchQuery = searchQuery.Where(m => m.SentAt >= startDate);
+                }
+            }
+
+            // Apply message type filter - skipping for now as MessageType property doesn't exist
+            // TODO: Add MessageType property to Message model or implement type detection logic
+
+            // Apply sender filter
+            if (sender != "all" && int.TryParse(sender, out int senderId))
+            {
+                searchQuery = searchQuery.Where(m => m.SenderId == senderId);
+            }
+
+            var searchResults = await searchQuery
+                .OrderByDescending(m => m.SentAt)
+                .Take(limit)
+                .Select(m => new
+                {
+                    m.Id,
+                    m.SenderId,
+                    SenderName = m.Sender.Name,
+                    m.Content,
+                    m.SentAt,
+                    MessageType = "text", // Default to text since MessageType property doesn't exist
+                    FileName = (string?)null // MediaMessageId property doesn't exist yet
+                })
+                .ToListAsync();
+
+            return Ok(new { messages = searchResults });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ Error searching group messages: " + ex.Message);
+            return StatusCode(500, "Internal Server Error: " + ex.Message);
+        }
+    }
+
+    [HttpGet("search/private/{userId}")]
+    public async Task<IActionResult> SearchPrivateMessages(
+        int userId,
+        [FromQuery] string query,
+        [FromQuery] string dateRange = "all",
+        [FromQuery] string messageType = "all",
+        [FromQuery] string sender = "all",
+        [FromQuery] int limit = 50)
+    {
+        try
+        {
+            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            // Check if users are friends
+            var friendship = await _context.Friendships
+                .FirstOrDefaultAsync(f =>
+                    (f.UserId == currentUserId && f.FriendId == userId) ||
+                    (f.UserId == userId && f.FriendId == currentUserId));
+
+            if (friendship == null)
+                return Unauthorized("You can only search messages with friends");
+
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                return BadRequest("Query must be at least 2 characters long");
+
+            var messagesQuery = _context.Messages
+                .Where(m =>
+                    ((m.SenderId == currentUserId && m.ReceiverId == userId) ||
+                     (m.SenderId == userId && m.ReceiverId == currentUserId)) &&
+                    !m.IsDeleted)
+                .Include(m => m.Sender);
+
+            // Apply search query
+            var searchQuery = messagesQuery.Where(m =>
+                EF.Functions.Like(m.Content, $"%{query}%") ||
+                EF.Functions.Like(m.Sender.Name, $"%{query}%"));
+
+            // Apply date range filter
+            if (dateRange != "all")
+            {
+                var now = DateTime.UtcNow;
+                DateTime startDate = dateRange switch
+                {
+                    "today" => now.Date,
+                    "week" => now.AddDays(-7),
+                    "month" => now.AddMonths(-1),
+                    "year" => now.AddYears(-1),
+                    _ => DateTime.MinValue
+                };
+
+                if (startDate != DateTime.MinValue)
+                {
+                    searchQuery = searchQuery.Where(m => m.SentAt >= startDate);
+                }
+            }
+
+            // Apply message type filter - skipping for now as MessageType property doesn't exist
+            // TODO: Add MessageType property to Message model or implement type detection logic
+
+            // Apply sender filter
+            if (sender != "all" && int.TryParse(sender, out int senderId))
+            {
+                searchQuery = searchQuery.Where(m => m.SenderId == senderId);
+            }
+
+            var searchResults = await searchQuery
+                .OrderByDescending(m => m.SentAt)
+                .Take(limit)
+                .Select(m => new
+                {
+                    m.Id,
+                    m.SenderId,
+                    SenderName = m.Sender.Name,
+                    m.Content,
+                    m.SentAt,
+                    MessageType = "text", // Default to text since MessageType property doesn't exist
+                    FileName = (string?)null // MediaMessageId property doesn't exist yet
+                })
+                .ToListAsync();
+
+            return Ok(new { messages = searchResults });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ Error searching private messages: " + ex.Message);
+            return StatusCode(500, "Internal Server Error: " + ex.Message);
+        }
+    }
+
+    [HttpGet("private/{userId}/participants")]
+    public async Task<IActionResult> GetPrivateMessageParticipants(int userId)
+    {
+        try
+        {
+            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            // Check if users are friends
+            var friendship = await _context.Friendships
+                .FirstOrDefaultAsync(f =>
+                    (f.UserId == currentUserId && f.FriendId == userId) ||
+                    (f.UserId == userId && f.FriendId == currentUserId));
+
+            if (friendship == null)
+                return Unauthorized("You can only access messages with friends");
+
+            var participants = await _context.Users
+                .Where(u => u.Id == currentUserId || u.Id == userId)
+                .Select(u => new { u.Id, u.Name })
+                .ToListAsync();
+
+            return Ok(participants);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ Error getting private message participants: " + ex.Message);
+            return StatusCode(500, "Internal Server Error: " + ex.Message);
+        }
+    }
+
+    [HttpGet("group/{groupId}/members")]
+    public async Task<IActionResult> GetGroupMembers(int groupId)
+    {
+        try
+        {
+            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            // Check if user is a member of the group
+            var isMember = await _context.GroupMemberships
+                .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == currentUserId);
+
+            if (!isMember)
+                return Unauthorized("You are not a member of this group");
+
+            var members = await _context.GroupMemberships
+                .Where(gm => gm.GroupId == groupId)
+                .Include(gm => gm.User)
+                .Select(gm => new { gm.User.Id, gm.User.Name })
+                .ToListAsync();
+
+            return Ok(members);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ Error getting group members: " + ex.Message);
+            return StatusCode(500, "Internal Server Error: " + ex.Message);
+        }
+    }
 }

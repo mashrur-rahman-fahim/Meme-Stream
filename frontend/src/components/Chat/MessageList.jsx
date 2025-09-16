@@ -14,7 +14,12 @@ const MessageList = ({
   onEditMessage,
   onDeleteMessage,
   currentChat,
-  onFetchReactions
+  onFetchReactions,
+  // Enhanced props
+  onReply,
+  onScrollToMessage,
+  replyingTo,
+  userPresence
 }) => {
   // Get API base URL and remove /api suffix for file downloads
   const API_BASE_URL = getApiBaseUrl().replace("/api", "");
@@ -343,12 +348,38 @@ const MessageList = ({
         const userHasReacted = groupedReactions.some(r => r.userReacted);
         
         return (
-          <div key={entry.id || idx} className={`flex ${isSender ? "justify-end" : "justify-start"} mb-2`}>
+          <div
+            key={entry.id || idx}
+            id={`message-${entry.id}`}
+            className={`flex ${isSender ? "justify-end" : "justify-start"} mb-2 ${replyingTo?.id === entry.id ? 'bg-yellow-100 rounded-lg p-2' : ''}`}
+          >
+            {/* User Presence Indicator for non-sender messages */}
+            {!isSender && userPresence && userPresence[entry.senderId] && (
+              <div
+                className={`w-2 h-2 rounded-full mr-2 mt-4 ${
+                  userPresence[entry.senderId].isOnline ? 'bg-green-500' : 'bg-gray-400'
+                }`}
+                title={userPresence[entry.senderId].isOnline ? 'Online' : 'Offline'}
+              />
+            )}
+
             <div
               className={`max-w-xs px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                 isSender ? "bg-blue-500 text-white" : "bg-gray-200 text-black"
               }`}
             >
+              {/* Reply indicator if this message is replying to another */}
+              {entry.replyTo && (
+                <div className="mb-2 p-2 bg-black bg-opacity-10 rounded border-l-2 border-blue-300">
+                  <div className="text-xs font-semibold opacity-80">
+                    Replying to {entry.replyTo.senderName || `User ${entry.replyTo.senderId}`}
+                  </div>
+                  <div className="text-xs opacity-70 truncate">
+                    {entry.replyTo.content || entry.replyTo.msg}
+                  </div>
+                </div>
+              )}
+
               {entry.msg && !entry.isDeleted && <div>{entry.msg}</div>}
               
               {entry.isDeleted && (
@@ -410,8 +441,20 @@ const MessageList = ({
 
               {!entry.isDeleted && (
                 <div className="message-actions">
+                  {/* Reply Button */}
+                  <div
+                    className="action-button"
+                    onClick={() => onReply && onReply(entry)}
+                    title="Reply to message"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 20h4l10.5-10.5a1.5 1.5 0 0 0-4-4L3 16v4z"/>
+                      <path d="m14.5 5.5 4 4"/>
+                    </svg>
+                  </div>
+
                   {/* Add Reaction Button */}
-                  <div 
+                  <div
                     className="action-button"
                     onClick={(e) => {
                       e.stopPropagation();
