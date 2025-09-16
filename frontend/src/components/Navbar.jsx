@@ -134,17 +134,24 @@ export const Navbar = () => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Close search dropdown
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         // Only close if we're on desktop (not mobile search overlay)
         if (!mobileSearchRef.current || !mobileSearchRef.current.contains(event.target)) {
           setSearchOpen(false);
         }
       }
+
+      // Close profile dropdown
+      const profileDropdown = event.target.closest('.profile-dropdown-container');
+      if (!profileDropdown && isProfileOpen) {
+        setIsProfileOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isProfileOpen]);
 
   // Debounce utility function
   function debounce(func, wait) {
@@ -161,27 +168,39 @@ export const Navbar = () => {
 
   return (
     <>
-      {/* Mobile touch improvements */}
+      {/* Mobile touch and animation improvements */}
       <style jsx>{`
         @media (max-width: 640px) {
-          .mobile-search-button {
+          .mobile-search-button, .mobile-search-input, .mobile-search-result, .profile-dropdown-container button, .mobile-menu-button {
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
           }
           .mobile-search-input {
             -webkit-appearance: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+            font-size: 16px; /* Prevent iOS zoom */
           }
-          .mobile-search-result {
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+          /* Smooth animations */
+          .animate-in {
+            animation-fill-mode: both;
+          }
+          /* Better backdrop blur support */
+          @supports (backdrop-filter: blur(12px)) {
+            .backdrop-blur-sm {
+              backdrop-filter: blur(12px);
+            }
+          }
+        }
+
+        /* Desktop hover improvements */
+        @media (min-width: 641px) {
+          .hover\\:scale-105:hover {
+            transform: scale(1.05);
           }
         }
       `}</style>
 
       {/* Facebook-Style Navbar */}
-      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 z-50 h-14">
+      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 z-50 h-14 supports-backdrop-blur:bg-white/80 supports-backdrop-blur:dark:bg-gray-800/80 supports-backdrop-blur:backdrop-blur-sm">
         <div className="max-w-[1920px] mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-3 items-center h-14">
             
@@ -227,7 +246,7 @@ export const Navbar = () => {
                   
                   {/* Search Results Dropdown */}
                   {(searchOpen && (searchResults.length > 0 || (searchQuery && !searchLoading))) && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto animate-in slide-in-from-top-2 fade-in duration-200">
                       {searchLoading ? (
                         <div className="p-4 text-center">
                           <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
@@ -303,7 +322,7 @@ export const Navbar = () => {
             <div className="flex items-center justify-end gap-2">
               {/* Mobile Search Button */}
               <button
-                className="mobile-search-button p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors sm:hidden"
+                className="mobile-search-button p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 sm:hidden touch-manipulation active:scale-95"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -311,6 +330,7 @@ export const Navbar = () => {
                 }}
                 type="button"
                 onTouchStart={(e) => e.stopPropagation()}
+                aria-label="Open mobile search"
               >
                 <FaSearch className="text-gray-600 dark:text-gray-400 text-sm" />
               </button>
@@ -324,10 +344,11 @@ export const Navbar = () => {
               <NotificationBell />
 
               {/* Profile Dropdown */}
-              <div className="relative">
+              <div className="relative profile-dropdown-container">
                 <button
-                  className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 touch-manipulation active:scale-95"
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  aria-label="Open profile menu"
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                     {currentUser?.image ? (
@@ -345,8 +366,11 @@ export const Navbar = () => {
                 </button>
 
                 {isProfileOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50">
-                    <div className="p-4">
+                  <>
+                    {/* Mobile backdrop for profile dropdown */}
+                    <div className="fixed inset-0 z-40 sm:hidden" onClick={() => setIsProfileOpen(false)} />
+                    <div className="absolute right-0 sm:right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[51] animate-in slide-in-from-top-2 fade-in duration-200">
+                      <div className="p-4">
                       {/* User Info */}
                       <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -407,14 +431,16 @@ export const Navbar = () => {
                         </button>
                       </div>
                     </div>
-                  </div>
+                    </div>
+                  </>
                 )}
               </div>
 
               {/* Mobile Menu Button */}
-              <button 
-                className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors lg:hidden"
+              <button
+                className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 lg:hidden touch-manipulation active:scale-95"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileMenuOpen ? <FaTimes className="text-gray-600 dark:text-gray-400" /> : <FaBars className="text-gray-600 dark:text-gray-400" />}
               </button>
@@ -425,16 +451,16 @@ export const Navbar = () => {
 
       {/* Mobile Search Overlay */}
       {searchOpen && (
-        <div className="fixed inset-0 z-40 sm:hidden">
+        <div className="fixed inset-0 z-[60] sm:hidden">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setSearchOpen(false);
             }}
           />
-          <div className="absolute top-14 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-xl">
+          <div className="absolute top-14 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-xl animate-in slide-in-from-top-4 fade-in duration-300">
             <div className="p-4" ref={mobileSearchRef} onClick={(e) => e.stopPropagation()}>
               <form onSubmit={handleSearchSubmit}>
                 <div className="relative">
@@ -446,8 +472,16 @@ export const Navbar = () => {
                     value={searchQuery}
                     onChange={handleSearchChange}
                     autoFocus
-                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      // Prevent iOS zoom on focus
+                      e.target.style.fontSize = '16px';
+                    }}
                     onTouchEnd={(e) => e.stopPropagation()}
+                    onBlur={(e) => {
+                      // Restore font size after blur
+                      e.target.style.fontSize = '';
+                    }}
                   />
                 </div>
               </form>
@@ -503,12 +537,12 @@ export const Navbar = () => {
 
       {/* Mobile Navigation Menu */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+        <div className="fixed inset-0 z-[55] lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="absolute top-14 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-xl">
+          <div className="absolute top-14 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-xl animate-in slide-in-from-top-4 fade-in duration-300">
             <div className="p-4">
               <div className="space-y-2">
                 {navItems.map((item) => (
