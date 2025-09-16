@@ -251,72 +251,73 @@ export const FriendsPage = () => {
     <div className="min-h-screen bg-base-200">
       <Navbar />
       
-      <div className="pt-20 pb-8">
-        <div className="max-w-[1400px] mx-auto px-4">
-          
+      <div className="pt-16 sm:pt-18 md:pt-20 pb-4 sm:pb-6 md:pb-8">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
+
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-base-content mb-2">Friends</h1>
-            <p className="text-base-content/70">Connect with people and build your network</p>
+          <div className="mb-4 sm:mb-5 md:mb-6">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-base-content mb-1 sm:mb-2">Friends</h1>
+            <p className="text-sm sm:text-base text-base-content/70">Connect with people and build your network</p>
           </div>
 
           {/* Message Alert */}
           {message && (
-            <div className="alert alert-info mb-6">
+            <div className="alert alert-info mb-4 sm:mb-5 md:mb-6 text-xs sm:text-sm">
               <span>{message}</span>
-              <button onClick={() => setMessage("")} className="btn btn-sm btn-ghost">
+              <button onClick={() => setMessage("")} className="btn btn-xs sm:btn-sm btn-ghost">
                 <FaTimes />
               </button>
             </div>
           )}
 
-          <div className="flex flex-col lg:flex-row gap-6">
-            
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6">
+
             {/* Left Sidebar */}
-            <div className="lg:w-80 flex-shrink-0">
-              <div className="space-y-6">
+            <div className="lg:w-72 xl:w-80 flex-shrink-0">
+              <div className="space-y-4 sm:space-y-5 md:space-y-6">
                 
                 {/* Friend Requests Section */}
                 <div className="card bg-base-100 shadow-lg border border-base-300">
-                  <div className="card-body p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-bold text-base-content flex items-center gap-2">
-                        <FaBell className="text-primary" />
-                        Friend Requests
+                  <div className="card-body p-3 sm:p-4">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <h2 className="text-base sm:text-lg font-bold text-base-content flex items-center gap-2">
+                        <FaBell className="text-primary text-sm sm:text-base" />
+                        <span className="hidden sm:inline">Friend Requests</span>
+                        <span className="sm:hidden">Requests</span>
                       </h2>
                       {friendRequests.length > 0 && (
-                        <div className="badge badge-error badge-sm">{friendRequests.length}</div>
+                        <div className="badge badge-error badge-xs sm:badge-sm">{friendRequests.length}</div>
                       )}
                     </div>
                     
                     {friendRequests.length === 0 ? (
-                      <p className="text-base-content/60 text-sm text-center py-4">
+                      <p className="text-base-content/60 text-xs sm:text-sm text-center py-3 sm:py-4">
                         No pending requests
                       </p>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         {/* Show limited requests initially */}
-                        <div className={`space-y-3 ${showMoreRequests ? 'max-h-96 overflow-y-auto' : ''}`}>
+                        <div className={`space-y-2 sm:space-y-3 ${showMoreRequests ? 'max-h-80 sm:max-h-96 overflow-y-auto' : ''}`}>
                           {(showMoreRequests ? friendRequests : friendRequests.slice(0, 3)).map((request) => (
-                          <div key={request.id} className="p-3 bg-base-200 rounded-lg">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div 
+                          <div key={request.id} className="p-2 sm:p-3 bg-base-200 rounded-lg">
+                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                              <div
                                 className="avatar cursor-pointer hover:scale-105 transition-transform"
                                 onClick={() => navigate(`/profile/${request.senderId}`)}
                               >
-                                <div className="w-10 h-10 rounded-full bg-primary">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary">
                                   {request.senderImage ? (
-                                    <img src={request.senderImage} alt={request.senderName} />
+                                    <img src={request.senderImage} alt={request.senderName} className="rounded-full" />
                                   ) : (
-                                    <span className="text-sm text-primary-content flex items-center justify-center w-full h-full">
+                                    <span className="text-xs sm:text-sm text-primary-content flex items-center justify-center w-full h-full">
                                       {request.senderName.charAt(0).toUpperCase()}
                                     </span>
                                   )}
                                 </div>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p 
-                                  className="font-medium text-sm text-base-content truncate cursor-pointer hover:text-primary transition-colors"
+                                <p
+                                  className="font-medium text-xs sm:text-sm text-base-content truncate cursor-pointer hover:text-primary transition-colors"
                                   onClick={() => navigate(`/profile/${request.senderId}`)}
                                 >
                                   {request.senderName}
@@ -326,16 +327,16 @@ export const FriendsPage = () => {
                                 </p>
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-1 sm:gap-2">
                               <button
                                 onClick={() => acceptFriendRequest(request.id)}
-                                className="btn btn-primary btn-xs flex-1"
+                                className="btn btn-primary btn-xs text-xs flex-1"
                               >
                                 Accept
                               </button>
                               <button
                                 onClick={() => declineFriendRequest(request.senderId)}
-                                className="btn btn-ghost btn-xs flex-1"
+                                className="btn btn-ghost btn-xs text-xs flex-1"
                               >
                                 Decline
                               </button>
@@ -392,19 +393,20 @@ export const FriendsPage = () => {
 
                 {/* Search Friends Section */}
                 <div className="card bg-base-100 shadow-lg border border-base-300">
-                  <div className="card-body p-4">
-                    <h2 className="text-lg font-bold text-base-content flex items-center gap-2 mb-4">
-                      <FaSearch className="text-primary" />
-                      Search Your Friends
+                  <div className="card-body p-3 sm:p-4">
+                    <h2 className="text-base sm:text-lg font-bold text-base-content flex items-center gap-2 mb-3 sm:mb-4">
+                      <FaSearch className="text-primary text-sm sm:text-base" />
+                      <span className="hidden sm:inline">Search Your Friends</span>
+                      <span className="sm:hidden">Search</span>
                     </h2>
                     
-                    <div className="form-control mb-4">
+                    <div className="form-control mb-3 sm:mb-4">
                       <input
                         type="text"
                         placeholder="Search among your friends..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="input input-bordered input-sm w-full"
+                        className="input input-bordered input-xs sm:input-sm w-full text-xs sm:text-sm"
                       />
                     </div>
                     
@@ -413,27 +415,27 @@ export const FriendsPage = () => {
                         <div className="loading loading-spinner loading-sm text-primary"></div>
                       </div>
                     ) : searchResults.length > 0 ? (
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                      <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
                         {searchResults.slice(0, 3).map((user) => (
-                          <div key={user.id} className="p-3 bg-base-200 rounded-lg">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div 
+                          <div key={user.id} className="p-2 sm:p-3 bg-base-200 rounded-lg">
+                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                              <div
                                 className="avatar cursor-pointer hover:scale-105 transition-transform"
                                 onClick={() => navigate(`/profile/${user.id}`)}
                               >
-                                <div className="w-10 h-10 rounded-full bg-primary">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary">
                                   {user.image ? (
-                                    <img src={user.image} alt={user.name} />
+                                    <img src={user.image} alt={user.name} className="rounded-full" />
                                   ) : (
-                                    <span className="text-sm text-primary-content flex items-center justify-center w-full h-full">
+                                    <span className="text-xs sm:text-sm text-primary-content flex items-center justify-center w-full h-full">
                                       {user.name.charAt(0).toUpperCase()}
                                     </span>
                                   )}
                                 </div>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p 
-                                  className="font-medium text-sm text-base-content truncate cursor-pointer hover:text-primary transition-colors"
+                                <p
+                                  className="font-medium text-xs sm:text-sm text-base-content truncate cursor-pointer hover:text-primary transition-colors"
                                   onClick={() => navigate(`/profile/${user.id}`)}
                                 >
                                   {user.name}
@@ -447,13 +449,13 @@ export const FriendsPage = () => {
                             </div>
                             
                             {/* Since we're searching only friends, show friend actions */}
-                            <div className="flex gap-2">
-                              <button className="btn btn-primary btn-xs flex-1">
+                            <div className="flex gap-1 sm:gap-2">
+                              <button className="btn btn-primary btn-xs text-xs flex-1">
                                 Message
                               </button>
                               <button
                                 onClick={() => unfriendUser(user.id, user.name)}
-                                className="btn btn-ghost btn-xs text-error"
+                                className="btn btn-ghost btn-xs text-xs text-error"
                               >
                                 Unfriend
                               </button>
@@ -483,77 +485,79 @@ export const FriendsPage = () => {
             {/* Main Content - Friends List */}
             <div className="flex-1 min-w-0">
               <div className="card bg-base-100 shadow-lg border border-base-300">
-                <div className="card-body p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-base-content flex items-center gap-2">
-                      <FaUserFriends className="text-primary" />
-                      Your Friends
+                <div className="card-body p-3 sm:p-4 md:p-6">
+                  <div className="flex items-center justify-between mb-4 sm:mb-5 md:mb-6">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-base-content flex items-center gap-2">
+                      <FaUserFriends className="text-primary text-base sm:text-lg md:text-xl" />
+                      <span className="hidden sm:inline">Your Friends</span>
+                      <span className="sm:hidden">Friends</span>
                     </h2>
-                    <div className="text-sm text-base-content/70">
+                    <div className="text-xs sm:text-sm text-base-content/70">
                       {friends.length} {friends.length === 1 ? 'friend' : 'friends'}
                     </div>
                   </div>
 
                   {loading ? (
-                    <div className="flex justify-center py-12">
-                      <div className="loading loading-spinner loading-lg text-primary"></div>
+                    <div className="flex justify-center py-8 sm:py-10 md:py-12">
+                      <div className="loading loading-spinner loading-md sm:loading-lg text-primary"></div>
                     </div>
                   ) : friends.length === 0 ? (
-                    <div className="text-center py-16">
-                      <FaUserFriends className="text-6xl text-base-content/20 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-base-content mb-2">Your friend list is as empty as your dating life 💔</h3>
-                      <p className="text-base-content/70 mb-6">Time to find your meme squad and build that social empire! 👑</p>
-                      <div className="text-sm text-base-content/50">
+                    <div className="text-center py-8 sm:py-12 md:py-16">
+                      <FaUserFriends className="text-4xl sm:text-5xl md:text-6xl text-base-content/20 mx-auto mb-3 sm:mb-4" />
+                      <h3 className="text-lg sm:text-xl font-semibold text-base-content mb-2">Your friend list is as empty as your dating life 💔</h3>
+                      <p className="text-sm sm:text-base text-base-content/70 mb-4 sm:mb-6">Time to find your meme squad and build that social empire! 👑</p>
+                      <div className="text-xs sm:text-sm text-base-content/50">
                         Use the search box on the left to find people to connect with
                       </div>
                     </div>
                   ) : (
                     <div>
                       {/* Friends Grid */}
-                      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${showMoreFriends ? 'max-h-96 overflow-y-auto' : ''}`}>
+                      <div className={`grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 ${showMoreFriends ? 'max-h-80 sm:max-h-96 overflow-y-auto' : ''}`}>
                         {(showMoreFriends ? friends : friends.slice(0, 8)).map((friend) => (
                         <div key={friend.id} className="card bg-base-200 border border-base-300 hover:shadow-md transition-shadow">
-                          <div className="card-body p-4">
+                          <div className="card-body p-3 sm:p-4">
                             <div className="flex flex-col items-center text-center">
-                              <div 
-                                className="avatar mb-3 cursor-pointer hover:scale-105 transition-transform"
+                              <div
+                                className="avatar mb-2 sm:mb-3 cursor-pointer hover:scale-105 transition-transform"
                                 onClick={() => navigate(`/profile/${friend.friendId}`)}
                               >
-                                <div className="w-16 h-16 rounded-full bg-primary">
+                                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-primary">
                                   {friend.friendImage ? (
-                                    <img src={friend.friendImage} alt={friend.friendName} className="rounded-full" />
+                                    <img src={friend.friendImage} alt={friend.friendName} className="rounded-full object-cover" />
                                   ) : (
-                                    <span className="text-2xl text-primary-content flex items-center justify-center w-full h-full">
+                                    <span className="text-lg sm:text-xl md:text-2xl text-primary-content flex items-center justify-center w-full h-full">
                                       {friend.friendName.charAt(0).toUpperCase()}
                                     </span>
                                   )}
                                 </div>
                               </div>
                               
-                              <h3 
-                                className="font-semibold text-base-content mb-1 cursor-pointer hover:text-primary transition-colors"
+                              <h3
+                                className="font-semibold text-sm sm:text-base text-base-content mb-1 cursor-pointer hover:text-primary transition-colors truncate w-full"
                                 onClick={() => navigate(`/profile/${friend.friendId}`)}
+                                title={friend.friendName}
                               >
                                 {friend.friendName}
                               </h3>
                               
                               {friend.friendBio && (
-                                <p className="text-sm text-base-content/70 line-clamp-2 mb-2">
+                                <p className="text-xs sm:text-sm text-base-content/70 line-clamp-2 mb-1 sm:mb-2">
                                   {friend.friendBio}
                                 </p>
                               )}
-                              
-                              <p className="text-xs text-base-content/50 mb-4">
+
+                              <p className="text-xs text-base-content/50 mb-2 sm:mb-3 md:mb-4 truncate w-full" title={friend.friendEmail}>
                                 {friend.friendEmail}
                               </p>
                               
-                              <div className="flex gap-2 w-full">
-                                <button className="btn btn-primary btn-sm flex-1">
+                              <div className="flex gap-1 sm:gap-2 w-full">
+                                <button className="btn btn-primary btn-xs sm:btn-sm text-xs sm:text-sm flex-1">
                                   Message
                                 </button>
                                 <button
                                   onClick={() => unfriendUser(friend.friendId, friend.friendName)}
-                                  className="btn btn-ghost btn-sm text-error hover:btn-error hover:text-error-content"
+                                  className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm text-error hover:btn-error hover:text-error-content"
                                 >
                                   Unfriend
                                 </button>

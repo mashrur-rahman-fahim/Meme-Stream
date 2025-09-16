@@ -39,8 +39,8 @@ const GroupChatPage = ({ groupId, embedded = false }) => {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <div className="text-center">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="mt-4 text-base-content">Loading...</p>
+          <span className="loading loading-spinner loading-md sm:loading-lg text-primary"></span>
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-base-content">Loading...</p>
         </div>
       </div>
     );
@@ -54,9 +54,9 @@ const GroupChatPage = ({ groupId, embedded = false }) => {
     <div className={embedded ? "h-full" : "min-h-screen bg-base-200 animate-fadeIn"}>
       {!embedded && <Navbar />}
 
-      <div className={embedded ? "h-full" : "pt-16 pb-4"}>
-        <div className="max-w-7xl mx-auto px-4">
-          {!embedded && <h2 className="text-xl font-bold mb-4">Group Chat</h2>}
+      <div className={embedded ? "h-full" : "pt-16 sm:pt-18 md:pt-20 pb-3 sm:pb-4"}>
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
+          {!embedded && <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 px-1 sm:px-2">Group Chat</h2>}
           <ChatWindow
             token={token}
             groupName={`group-${targetGroupId}`}

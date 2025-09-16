@@ -192,8 +192,8 @@ export const ProfilePage = () => {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center transition-opacity duration-300">
         <div className="text-center">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="mt-4 text-base-content animate-pulse">Loading...</p>
+          <span className="loading loading-spinner loading-md sm:loading-lg text-primary"></span>
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-base-content animate-pulse">Loading...</p>
         </div>
       </div>
     );
@@ -206,7 +206,7 @@ export const ProfilePage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-base-300">
-        <div className="loading loading-bars loading-lg text-primary"></div>
+        <div className="loading loading-bars loading-md sm:loading-lg text-primary"></div>
       </div>
     );
   }
@@ -214,16 +214,16 @@ export const ProfilePage = () => {
   return (
     <div className="bg-base-300 min-h-screen">
       <Navbar />
-      <div className="max-w-7xl mx-auto pt-16 sm:pt-20 px-2 sm:px-4 lg:px-6">
+      <div className="max-w-6xl mx-auto pt-16 sm:pt-18 md:pt-20 px-2 sm:px-4 lg:px-6">
         <div className="bg-base-200 shadow-lg rounded-lg sm:rounded-b-lg">
           <div className="p-3 sm:p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-              <div className="avatar">
-                <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full ring-2 sm:ring-4 ring-primary ring-offset-base-100 ring-offset-1 sm:ring-offset-2 bg-base-100">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 md:gap-6">
+              <div className="avatar flex-shrink-0">
+                <div className="w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full ring-2 sm:ring-3 md:ring-4 ring-primary ring-offset-base-100 ring-offset-1 sm:ring-offset-2 bg-base-100">
                   {user.image ? (
                     <img src={user.image} alt={user.name} className="rounded-full object-cover" />
                   ) : (
-                    <span className="text-3xl sm:text-5xl md:text-6xl text-base-content flex items-center justify-center w-full h-full">
+                    <span className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-base-content flex items-center justify-center w-full h-full">
                       {user.name.charAt(0).toUpperCase()}
                     </span>
                   )}
@@ -231,27 +231,27 @@ export const ProfilePage = () => {
               </div>
 
               <div className="text-center sm:text-left flex-1 min-w-0">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-base-content break-words">{user.name}</h1>
-                <p className="text-base-content/60 mt-1 text-sm sm:text-base truncate">{user.email}</p>
+                <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-base-content break-words">{user.name}</h1>
+                <p className="text-base-content/60 mt-1 text-xs xs:text-sm sm:text-base truncate">{user.email}</p>
                 {user.bio && (
-                  <p className="text-base-content/80 mt-2 sm:mt-3 max-w-full sm:max-w-lg text-sm sm:text-base leading-relaxed">{user.bio}</p>
+                  <p className="text-base-content/80 mt-2 sm:mt-3 max-w-full sm:max-w-lg text-xs xs:text-sm sm:text-base leading-relaxed">{user.bio}</p>
                 )}
               </div>
 
               <div className="flex-shrink-0 w-full sm:w-auto">
                 <button
                   onClick={openEditModal}
-                  className="btn btn-outline btn-primary w-full sm:w-auto btn-sm sm:btn-md"
+                  className="btn btn-outline btn-primary w-full sm:w-auto btn-xs xs:btn-sm sm:btn-md text-xs sm:text-sm"
                 >
-                  <FaUserEdit className="text-sm sm:text-base" />
+                  <FaUserEdit className="text-xs xs:text-sm sm:text-base" />
                   <span className="hidden sm:inline">Edit Profile</span>
                   <span className="sm:hidden">Edit</span>
                 </button>
               </div>
             </div>
           </div>
-          <div className="px-2 sm:px-4 md:px-6 mt-2 sm:mt-4 border-t border-base-content/10">
-            <div className="flex items-center gap-1 sm:gap-2 md:gap-4 overflow-x-auto scrollbar-hide">
+          <div className="px-2 sm:px-4 md:px-6 mt-2 sm:mt-3 md:mt-4 border-t border-base-content/10">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4 overflow-x-auto scrollbar-hide pb-1">
               <TabButton
                 icon={<FaClipboardList />}
                 label="Posts"
@@ -282,12 +282,12 @@ export const ProfilePage = () => {
 
         <div className="p-3 sm:p-4 md:p-6">
           {activeTab === "posts" && (
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-4 md:space-y-6">
               {posts?.length === 0 ? (
-                <div className="mt-5 text-center text-base-content">
-                  <div className="text-4xl sm:text-6xl mb-4">📝</div>
-                  <h3 className="text-lg sm:text-xl font-semibold mb-2">No posts yet</h3>
-                  <p className="text-sm sm:text-base text-base-content/60">Time to share some epic memes! 🔥</p>
+                <div className="mt-4 sm:mt-5 text-center text-base-content">
+                  <div className="text-3xl sm:text-4xl md:text-6xl mb-3 sm:mb-4">📝</div>
+                  <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2">No posts yet</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-base-content/60">Time to share some epic memes! 🔥</p>
                 </div>
               ) : (
                 posts?.map((post) => (
@@ -306,26 +306,26 @@ export const ProfilePage = () => {
           )}
           
           {activeTab === "about" && (
-            <div className="space-y-4 sm:space-y-6">
-              <div className="bg-base-100 rounded-lg p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-                  <FaUserCircle className="text-primary text-lg sm:text-xl" />
+            <div className="space-y-3 sm:space-y-4 md:space-y-6">
+              <div className="bg-base-100 rounded-lg p-3 sm:p-4 md:p-6">
+                <h2 className="text-base sm:text-lg md:text-xl font-semibold text-base-content mb-3 sm:mb-4 flex items-center gap-2">
+                  <FaUserCircle className="text-primary text-base sm:text-lg md:text-xl" />
                   About Me
                 </h2>
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <h3 className="font-medium text-base-content mb-2 text-sm sm:text-base">Bio</h3>
-                    <p className="text-base-content/70 text-sm sm:text-base leading-relaxed">
+                    <h3 className="font-medium text-base-content mb-2 text-xs sm:text-sm md:text-base">Bio</h3>
+                    <p className="text-base-content/70 text-xs sm:text-sm md:text-base leading-relaxed">
                       {user.bio || "No bio available yet. Time to add some personality! ✨"}
                     </p>
                   </div>
                   <div>
-                    <h3 className="font-medium text-base-content mb-2 text-sm sm:text-base">Member Since</h3>
-                    <p className="text-base-content/70 text-sm sm:text-base">
-                      {new Date(user.createdAt).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
+                    <h3 className="font-medium text-base-content mb-2 text-xs sm:text-sm md:text-base">Member Since</h3>
+                    <p className="text-base-content/70 text-xs sm:text-sm md:text-base">
+                      {new Date(user.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
                       }) || "Recently joined"}
                     </p>
                   </div>
@@ -334,26 +334,26 @@ export const ProfilePage = () => {
               
               {/* Comedy Level Section */}
               {laughScore && (
-                <div className="bg-base-100 rounded-lg p-4 sm:p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <FaLaugh className="text-primary text-lg sm:text-xl" />
-                    <h2 className="text-lg sm:text-xl font-semibold text-base-content">Comedy Level</h2>
+                <div className="bg-base-100 rounded-lg p-3 sm:p-4 md:p-6">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <FaLaugh className="text-primary text-base sm:text-lg md:text-xl" />
+                    <h2 className="text-base sm:text-lg md:text-xl font-semibold text-base-content">Comedy Level</h2>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="space-y-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+                    <div className="space-y-3 sm:space-y-4">
                       <div className="text-center lg:text-left">
                         <div className="flex items-center justify-center lg:justify-start gap-2 mb-2">
-                          <span className="text-3xl sm:text-4xl font-bold text-primary">{laughScore.totalScore}</span>
-                          <span className="text-base-content/60 text-base sm:text-lg">points</span>
+                          <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">{laughScore.totalScore}</span>
+                          <span className="text-base-content/60 text-sm sm:text-base md:text-lg">points</span>
                         </div>
-                        <div className="text-base sm:text-lg font-medium text-primary">
+                        <div className="text-sm sm:text-base md:text-lg font-medium text-primary">
                           {laughScore.funninessLevel}
                         </div>
                       </div>
                       
-                      <div className="bg-base-200 rounded-lg p-3 sm:p-4">
-                        <h3 className="font-medium text-base-content mb-3 text-sm sm:text-base">Activity Breakdown</h3>
-                        <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                      <div className="bg-base-200 rounded-lg p-2 sm:p-3 md:p-4">
+                        <h3 className="font-medium text-base-content mb-2 sm:mb-3 text-xs sm:text-sm md:text-base">Activity Breakdown</h3>
+                        <div className="grid grid-cols-2 gap-1 sm:gap-2 md:gap-3 text-xs sm:text-sm">
                           <div className="flex justify-between">
                             <span className="text-base-content/70">Posts:</span>
                             <span className="font-medium">{laughScore.totalPosts}</span>
@@ -374,9 +374,9 @@ export const ProfilePage = () => {
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      <div className="bg-base-200 rounded-lg p-3 sm:p-4">
-                        <h3 className="font-medium text-base-content mb-2 text-sm sm:text-base">Performance</h3>
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="bg-base-200 rounded-lg p-2 sm:p-3 md:p-4">
+                        <h3 className="font-medium text-base-content mb-2 text-xs sm:text-sm md:text-base">Performance</h3>
                         <div className="text-xs sm:text-sm text-base-content/70">
                           <p>Average per meme: <span className="font-medium">{laughScore.averageScorePerMeme?.toFixed(1) || 0} pts</span></p>
                         </div>
@@ -389,50 +389,51 @@ export const ProfilePage = () => {
           )}
           
           {activeTab === "leaderboard" && (
-            <div className="space-y-4 sm:space-y-6">
-              <div className="text-center mb-4 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-base-content flex items-center justify-center gap-2">
-                  <FaTrophy className="text-yellow-500 text-xl sm:text-2xl" />
-                  Comedy Leaderboard
+            <div className="space-y-3 sm:space-y-4 md:space-y-6">
+              <div className="text-center mb-3 sm:mb-4 md:mb-6">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-base-content flex items-center justify-center gap-2">
+                  <FaTrophy className="text-yellow-500 text-lg sm:text-xl md:text-2xl" />
+                  <span className="hidden sm:inline">Comedy Leaderboard</span>
+                  <span className="sm:hidden">Leaderboard</span>
                 </h2>
-                <p className="text-base-content/60 mt-1 text-sm sm:text-base">The funniest users on MemeStream</p>
+                <p className="text-base-content/60 mt-1 text-xs sm:text-sm md:text-base">The funniest users on MemeStream</p>
               </div>
               
               {!Array.isArray(leaderboard) || leaderboard.length === 0 ? (
                 <div className="text-center text-base-content">
-                  <div className="text-4xl sm:text-6xl mb-4">🏆</div>
-                  <p className="text-lg sm:text-xl mb-4">No leaderboard data available</p>
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md mx-auto">
-                    <button 
+                  <div className="text-3xl sm:text-4xl md:text-6xl mb-3 sm:mb-4">🏆</div>
+                  <p className="text-base sm:text-lg md:text-xl mb-3 sm:mb-4">No leaderboard data available</p>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 justify-center max-w-xs sm:max-w-sm md:max-w-md mx-auto">
+                    <button
                       onClick={handleInitializeMyScore}
-                      className="btn btn-primary btn-sm sm:btn-md flex-1 sm:flex-none"
+                      className="btn btn-primary btn-xs sm:btn-sm md:btn-md text-xs sm:text-sm flex-1 sm:flex-none"
                     >
                       Initialize My Score
                     </button>
-                    <button 
+                    <button
                       onClick={handleRecalculateAllScores}
-                      className="btn btn-secondary btn-sm sm:btn-md flex-1 sm:flex-none"
+                      className="btn btn-secondary btn-xs sm:btn-sm md:btn-md text-xs sm:text-sm flex-1 sm:flex-none"
                     >
                       Initialize All Scores
                     </button>
                   </div>
-                  <p className="text-xs sm:text-sm text-base-content/60 mt-3 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-base-content/60 mt-2 sm:mt-3 leading-relaxed px-4">
                     Initialize your score first to appear in the leaderboard
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-2 sm:space-y-3 md:space-y-4">
                   {leaderboard.map((userItem, index) => (
                     <div
                       key={userItem.userId || userItem.id}
-                      className={`p-3 sm:p-4 rounded-lg border flex items-center justify-between ${
-                        (userItem.userId || userItem.id) === user.id 
-                          ? 'bg-primary/10 border-primary/30' 
+                      className={`p-2 sm:p-3 md:p-4 rounded-lg border flex items-center justify-between ${
+                        (userItem.userId || userItem.id) === user.id
+                          ? 'bg-primary/10 border-primary/30'
                           : 'bg-base-100 border-base-300'
                       }`}
                     >
-                      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                        <div className={`text-lg sm:text-2xl font-bold w-6 sm:w-8 text-center flex-shrink-0 ${
+                      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
+                        <div className={`text-sm sm:text-lg md:text-2xl font-bold w-5 sm:w-6 md:w-8 text-center flex-shrink-0 ${
                           index === 0 ? 'text-yellow-500' :
                           index === 1 ? 'text-gray-400' :
                           index === 2 ? 'text-yellow-600' :
@@ -440,13 +441,13 @@ export const ProfilePage = () => {
                         }`}>
                           {index + 1}
                         </div>
-                        
+
                         <div className="avatar flex-shrink-0">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-base-200">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-base-200">
                             {userItem.image ? (
                               <img src={userItem.image} alt={userItem.name} className="rounded-full object-cover" />
                             ) : (
-                              <span className="text-sm sm:text-lg flex items-center justify-center w-full h-full">
+                              <span className="text-xs sm:text-sm md:text-lg flex items-center justify-center w-full h-full">
                                 {userItem.name?.charAt(0)?.toUpperCase()}
                               </span>
                             )}
@@ -454,10 +455,10 @@ export const ProfilePage = () => {
                         </div>
                         
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-base-content text-sm sm:text-base truncate">
+                          <div className="font-semibold text-base-content text-xs sm:text-sm md:text-base truncate">
                             {userItem.name}
                             {(userItem.userId || userItem.id) === user.id && (
-                              <span className="ml-2 text-xs sm:text-sm text-primary">(You)</span>
+                              <span className="ml-1 sm:ml-2 text-xs text-primary">(You)</span>
                             )}
                           </div>
                           <div className="text-xs sm:text-sm text-primary truncate">
@@ -467,8 +468,8 @@ export const ProfilePage = () => {
                       </div>
                       
                       <div className="text-right flex-shrink-0">
-                        <div className="text-lg sm:text-2xl font-bold text-primary">{userItem.laughScore}</div>
-                        <div className="text-xs sm:text-sm text-base-content/60">points</div>
+                        <div className="text-sm sm:text-lg md:text-2xl font-bold text-primary">{userItem.laughScore}</div>
+                        <div className="text-xs text-base-content/60">points</div>
                       </div>
                     </div>
                   ))}
@@ -504,13 +505,13 @@ export const ProfilePage = () => {
 const TabButton = ({ icon, label, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-3 font-medium sm:font-semibold border-b-2 sm:border-b-4 transition-all duration-300 text-xs sm:text-sm md:text-base whitespace-nowrap ${isActive
+    className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-3 font-medium sm:font-semibold border-b-2 sm:border-b-3 md:border-b-4 transition-all duration-300 text-xs sm:text-sm md:text-base whitespace-nowrap min-w-0 ${isActive
       ? "border-primary text-primary"
       : "border-transparent text-base-content/70 hover:text-base-content"
       }`}
   >
-    <span className="text-sm sm:text-base">{icon}</span>
-    <span className="hidden sm:inline">{label}</span>
-    <span className="sm:hidden text-xs">{label.split(' ')[0]}</span>
+    <span className="text-xs sm:text-sm md:text-base flex-shrink-0">{icon}</span>
+    <span className="hidden sm:inline truncate">{label}</span>
+    <span className="sm:hidden text-xs truncate">{label.split(' ')[0]}</span>
   </button>
 );
