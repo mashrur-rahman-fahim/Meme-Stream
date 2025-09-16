@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "../utils/axios";
 
 export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
   const [groupDetails, setGroupDetails] = useState(null);
@@ -21,9 +22,8 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
     try {
       setLoading(true);
       // Changed from /api/chat/group/{groupId}/details to /api/Group/{groupId}/details
-      const response = await axios.get(
-        `http://localhost:5216/api/Group/${group.id}/details`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.get(
+        `/Group/${group.id}/details`
       );
       setGroupDetails(response.data);
       setGroupName(response.data.name);
@@ -39,11 +39,8 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
 
   const fetchAllFriends = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:5216/api/friendrequest/get/friends`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await api.get(
+        `/friendrequest/get/friends`
       );
       
       console.log("Friends response:", response.data); // Debug log
@@ -71,15 +68,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setSuccess("");
       
       // Changed from /api/chat/group/{groupId}/add to /api/GroupMembership/group/{groupId}/add
-      const response = await axios.post(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/add`,
-        userId, // Send just the userId integer, not an object
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        }
+      const response = await api.post(
+        `/GroupMembership/group/${group.id}/add`,
+        userId // Send just the userId integer, not an object
       );
       
       setSuccess("User added successfully");
@@ -114,11 +105,10 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setSuccess("");
       
       // Changed from /api/chat/group/{groupId}/remove/{userId} to /api/GroupMembership/group/{groupId}/remove/{userId}
-      const response = await axios.delete(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/remove/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.delete(
+        `/GroupMembership/group/${group.id}/remove/${userId}`
       );
-      
+
       setSuccess("User removed successfully");
       fetchGroupDetails();
       
@@ -144,11 +134,10 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       const userId = JSON.parse(atob(token.split('.')[1]))["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
       
       // Changed from /api/chat/group/{groupId}/remove/{userId} to /api/GroupMembership/group/{groupId}/remove/{userId}
-      const response = await axios.delete(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/remove/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.delete(
+        `/GroupMembership/group/${group.id}/remove/${userId}`
       );
-      
+
       setSuccess("You have left the group");
       setTimeout(() => {
         onBack();
@@ -169,17 +158,11 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setSuccess("");
       
       // Changed from /api/chat/group/{groupId} to /api/Group/{groupId}
-      const response = await axios.put(
-        `http://localhost:5216/api/Group/${group.id}`,
+      const response = await api.put(
+        `/Group/${group.id}`,
         {
           name: groupName,
           description: groupDescription
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
         }
       );
       
@@ -204,10 +187,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setSuccess("");
       
       // Changed from /api/chat/group/{groupId}/promote/{userId} to /api/GroupMembership/group/{groupId}/promote/{userId}
-      const response = await axios.post(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/promote/${userId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.post(
+        `/GroupMembership/group/${group.id}/promote/${userId}`,
+        {}
       );
       
       setSuccess("User promoted to co-admin");
@@ -229,10 +211,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setSuccess("");
       
       // Changed from /api/chat/group/{groupId}/demote/{userId} to /api/GroupMembership/group/{groupId}/demote/{userId}
-      const response = await axios.post(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/demote/${userId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.post(
+        `/GroupMembership/group/${group.id}/demote/${userId}`,
+        {}
       );
       
       setSuccess("User demoted from co-admin");
@@ -258,10 +239,9 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setSuccess("");
       
       // Changed from /api/chat/group/{groupId}/transfer-admin/{userId} to /api/GroupMembership/group/{groupId}/transfer-admin/{userId}
-      const response = await axios.post(
-        `http://localhost:5216/api/GroupMembership/group/${group.id}/transfer-admin/${userId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.post(
+        `/GroupMembership/group/${group.id}/transfer-admin/${userId}`,
+        {}
       );
       
       setSuccess("Admin rights transferred successfully");
@@ -288,9 +268,8 @@ export default function GroupManager({ group, token, onBack, onGroupUpdate }) {
       setSuccess("");
       
       // Changed from /api/chat/group/{groupId} to /api/Group/{groupId}
-      const response = await axios.delete(
-        `http://localhost:5216/api/Group/${group.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.delete(
+        `/Group/${group.id}`
       );
       
       setSuccess("Group deleted successfully");

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { ChatContext } from "../../context/ChatContext";
 import axios from "axios";
+import api from "../utils/axios";
 import { jwtDecode } from "jwt-decode";
 import {
   startSignalRConnection,
@@ -67,9 +68,7 @@ const ChatLayoutDTO = () => {
   useEffect(() => {
     const getCurrentUserId = async () => {
       try {
-        const response = await axios.get("http://localhost:5216/api/User/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get("/User/profile");
         
         if (response.data.id) {
           setCurrentUserId(response.data.id);
@@ -111,19 +110,15 @@ const ChatLayoutDTO = () => {
       try {
         setSidebarLoading(true);
         
-        const friendsRes = await axios.get("http://localhost:5216/api/friendrequest/get/friends", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const friendsRes = await api.get("/friendrequest/get/friends");
         
         const formattedFriends = friendsRes.data.map(friend => ({
           id: friend.friendId || friend.FriendId,
           name: friend.friendName || friend.FriendName
         }));
         setFriends(formattedFriends);
-        
-        const groupsRes = await axios.get("http://localhost:5216/api/chat/my-groups", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+
+        const groupsRes = await api.get("/chat/my-groups");
         setGroups(groupsRes.data);
         
       } catch (err) {
@@ -168,9 +163,7 @@ const ChatLayoutDTO = () => {
   const handleGroupUpdate = () => {
     const fetchSidebarData = async () => {
       try {
-        const groupsRes = await axios.get("http://localhost:5216/api/chat/my-groups", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const groupsRes = await api.get("/chat/my-groups");
         setGroups(groupsRes.data);
       } catch (err) {
         console.error("Error refreshing groups:", err);
@@ -201,13 +194,10 @@ const ChatLayoutDTO = () => {
 
     const fetchHistory = async () => {
       try {
-        const res = await axios.get(
+        const res = await api.get(
           chatType === "group"
-            ? `http://localhost:5216/api/GroupMessage/group/${currentChat}/messages`
-            : `http://localhost:5216/api/PrivateMessage/private/${currentChat}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+            ? `/GroupMessage/group/${currentChat}/messages`
+            : `/PrivateMessage/private/${currentChat}`
         );
         const history = res.data.map((m) => ({
           id: m.id,
@@ -425,16 +415,14 @@ const ChatLayoutDTO = () => {
       
       try {
         if (chatType === "group") {
-          await axios.post(
-            `http://localhost:5216/api/GroupMessage/send`,
-            { groupId: currentChat, content: message },
-            { headers: { Authorization: `Bearer ${token}` } }
+          await api.post(
+            `/GroupMessage/send`,
+            { groupId: currentChat, content: message }
           );
         } else {
-          await axios.post(
-            `http://localhost:5216/api/PrivateMessage/send`,
-            { receiverId: currentChat, content: message },
-            { headers: { Authorization: `Bearer ${token}` } }
+          await api.post(
+            `/PrivateMessage/send`,
+            { receiverId: currentChat, content: message }
           );
         }
         
@@ -466,8 +454,8 @@ const ChatLayoutDTO = () => {
     if (chatType === "group") formData.append("groupId", currentChat);
 
     try {
-      const res = await axios.post("http://localhost:5216/api/FileUpload/upload", formData, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.post("/FileUpload/upload", formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       setChatLog((prev) => [
@@ -765,7 +753,7 @@ const renderSidebar = () => {
                   {entry.filePath && (
                     <div className="mt-2">
                       <a
-                        href={`http://localhost:5216/${entry.filePath}`}
+                        href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5216'}/${entry.filePath}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 underline"

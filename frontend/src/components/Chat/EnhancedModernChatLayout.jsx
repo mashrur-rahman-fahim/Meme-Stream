@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from "react";
 import { ChatContext } from "../../../context/ChatContext";
 import axios from "axios";
+import api from "../../utils/axios";
 import { jwtDecode } from "jwt-decode";
 import {
   startSignalRConnection,
@@ -221,11 +222,10 @@ const EnhancedModernChatLayout = () => {
 
     try {
       const endpoint = chatType === "group"
-        ? `http://localhost:5216/api/GroupMessage/search/${currentChat}`
-        : `http://localhost:5216/api/PrivateMessage/search/${currentChat}`;
+        ? `/GroupMessage/search/${currentChat}`
+        : `/PrivateMessage/search/${currentChat}`;
 
-      const response = await axios.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get(endpoint, {
         params: { query: query.trim() }
       });
 
@@ -295,10 +295,9 @@ const EnhancedModernChatLayout = () => {
   // Pin/unpin messages
   const handlePinMessage = async (messageId) => {
     try {
-      const response = await axios.post(
-        `http://localhost:5216/api/Message/${messageId}/pin`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.post(
+        `/Message/${messageId}/pin`,
+        {}
       );
 
       if (response.data.isPinned) {
@@ -321,9 +320,8 @@ const EnhancedModernChatLayout = () => {
     if (chatType === "group") formData.append("groupId", currentChat);
 
     try {
-      const response = await axios.post("http://localhost:5216/api/Media/upload", formData, {
+      const response = await api.post("/Media/upload", formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         },
       });
@@ -354,9 +352,7 @@ const EnhancedModernChatLayout = () => {
   useEffect(() => {
     const getCurrentUserId = async () => {
       try {
-        const response = await axios.get("http://localhost:5216/api/User/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get("/User/profile");
 
         if (response.data.id) {
           setCurrentUserId(response.data.id);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from '../utils/axios';
 
 export default function CreateGroup({ token: propToken, onGroupCreated }) {
   const [groupName, setGroupName] = useState("");
@@ -16,10 +16,8 @@ export default function CreateGroup({ token: propToken, onGroupCreated }) {
     if (!token) return;
 
     setLoading(true);
-    axios
-      .get("http://localhost:5216/api/friendrequest/get/friends", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api
+      .get("/friendrequest/get/friends")
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : [];
         setFriends(data);
@@ -58,17 +56,11 @@ export default function CreateGroup({ token: propToken, onGroupCreated }) {
 
     try {
       // Changed from /api/chat/create-group to /api/Group/create
-      const res = await axios.post(
-        "http://localhost:5216/api/Group/create", // Updated endpoint
+      const res = await api.post(
+        "/Group/create", // Updated endpoint
         {
           name: groupName,
           memberIds: selectedIds,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
         }
       );
 
