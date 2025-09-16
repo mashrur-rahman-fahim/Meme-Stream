@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../../context/create_verify_context";
 import { ChatContext } from "../../../context/ChatContext";
 import { Navbar } from "../Navbar";
+import connectionManager from "../../services/ConnectionManagerService";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import {
@@ -21,7 +22,7 @@ import ChatWindow from "./ChatWindow";
 import CreateGroupPopup from "./CreateGroupPopup";
 // Enhanced Components
 import ChatMessageSearch from "./ChatMessageSearch";
-import ChatStatusIndicator, { ConnectionStatusIndicator } from "./ChatStatusIndicator";
+import ChatStatusIndicator from "./ChatStatusIndicator";
 import ChatMediaGallery from "./ChatMediaGallery";
 import ChatThemeSelector from "./ChatThemeSelector";
 import MessageReply, { ReplyComposer } from "./MessageReply"; 
@@ -782,13 +783,6 @@ conn.on("ReceiveReaction", (reactionData) => {
       <Navbar />
 
       <div className="pt-16 flex h-[calc(100vh-4rem)] bg-base-100">
-      {/* Connection Status Indicator */}
-      <ConnectionStatusIndicator
-        isConnected={connection?.state === 'Connected'}
-        reconnecting={connection?.state === 'Reconnecting'}
-        lastConnected={connection?.lastConnected}
-      />
-
       {/* Sidebar on the left */}
       <ChatSidebar
         loading={sidebarLoading}
