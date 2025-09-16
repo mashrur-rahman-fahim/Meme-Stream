@@ -6,6 +6,7 @@ import api from '../utils/axios';
 import ThemeSwitcher from './ThemeSwitcher';
 import NotificationBell from './NotificationBell';
 
+
 export const Navbar = () => {
   const { logout } = useContext(VerifyContext);
   const navigate = useNavigate();
@@ -107,9 +108,9 @@ export const Navbar = () => {
       count: friendRequestCount
     },
     { 
-      path: '/messages', 
+      path: '/Chat', 
       icon: FaCommentAlt, 
-      label: 'Messages',
+      label: 'Chat',
       count: 0
     },
   ];
@@ -121,6 +122,12 @@ export const Navbar = () => {
   const handleNavClick = (path) => {
     navigate(path);
     setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+    setIsProfileOpen(false);
   };
 
   // Close dropdowns when clicking outside
@@ -358,7 +365,7 @@ export const Navbar = () => {
                         <hr className="border-gray-200 dark:border-gray-700 my-2" />
                         
                         <button
-                          onClick={() => { logout(); navigate('/auth'); setIsProfileOpen(false); }}
+                          onClick={handleLogout}
                           className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left text-red-600 dark:text-red-400"
                         >
                           <FaSignOutAlt />

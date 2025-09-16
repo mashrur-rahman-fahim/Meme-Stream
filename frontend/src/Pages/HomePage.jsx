@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useRef, useCallback } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "../../context/create_verify_context";
 import { Post } from "../components/Post";
@@ -18,13 +18,10 @@ export const HomePage = () => {
     if (isVerified === false && !loading) {
       navigate("/auth");
     } else if (isVerified === true && !pageReady) {
-      // Give components time to mount and start fetching data
-      // This prevents showing the page until everything is ready
       setTimeout(() => setPageReady(true), 100);
     }
   }, [isVerified, navigate, loading, pageReady]);
 
-  // Fetch current user data
   useEffect(() => {
     const fetchUserData = async () => {
       if (isVerified) {
@@ -45,7 +42,6 @@ export const HomePage = () => {
     navigate("/auth");
   };
 
-  // Show loading while authentication is in progress OR page is not ready yet
   if (loading || isVerified === null || (isVerified === true && !pageReady)) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
@@ -70,7 +66,7 @@ export const HomePage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-4 px-2 sm:px-4 lg:h-[calc(100vh-6rem)] scrollbar-hide">
             
-            {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
+            {/* Left Sidebar */}
             <div className="hidden lg:block lg:w-80 flex-shrink-0 group overflow-y-auto scrollbar-hide">
               <div>
                 <div className="card bg-base-100 shadow-lg border border-base-300">
@@ -84,9 +80,8 @@ export const HomePage = () => {
               </div>
             </div>
 
-            {/* Main Feed Container */}
+            {/* Main Feed */}
             <div className="flex-1 min-w-0 lg:overflow-y-auto lg:scrollbar-hide">
-              {/* Mobile Create Post Button */}
               <div className="lg:hidden mb-4">
                 <button
                   onClick={() => setIsCreatePostOpen(true)}
@@ -111,7 +106,6 @@ export const HomePage = () => {
                 </button>
               </div>
 
-              {/* Posts Feed */}
               <Feed />
             </div>
 

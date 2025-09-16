@@ -3,6 +3,7 @@ using System;
 using MemeStreamApi.data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MemeStreamApi.Migrations
 {
     [DbContext(typeof(MemeStreamDbContext))]
-    partial class MemeStreamDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250906111010_UpdatedGroup")]
+    partial class UpdatedGroup
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,9 +73,6 @@ namespace MemeStreamApi.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("ParentCommentId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("PostId")
                         .HasColumnType("integer");
 
@@ -81,12 +81,9 @@ namespace MemeStreamApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentCommentId");
+                    b.HasIndex("PostId");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("PostId", "CreatedAt")
-                        .HasDatabaseName("IX_Comments_PostId_CreatedAt");
 
                     b.ToTable("Comments");
                 });
@@ -113,11 +110,9 @@ namespace MemeStreamApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ReceiverId", "Status")
-                        .HasDatabaseName("IX_FriendRequests_ReceiverId_Status");
+                    b.HasIndex("ReceiverId");
 
-                    b.HasIndex("SenderId", "Status")
-                        .HasDatabaseName("IX_FriendRequests_SenderId_Status");
+                    b.HasIndex("SenderId");
 
                     b.ToTable("FriendRequests");
                 });
@@ -175,8 +170,7 @@ namespace MemeStreamApi.Migrations
 
                     b.HasIndex("GroupId");
 
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("IX_GroupMemberships_UserId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("GroupMemberships");
                 });
@@ -216,13 +210,11 @@ namespace MemeStreamApi.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GroupId");
+
                     b.HasIndex("ReceiverId");
 
-                    b.HasIndex("GroupId", "SentAt")
-                        .HasDatabaseName("IX_Messages_GroupId_SentAt");
-
-                    b.HasIndex("SenderId", "SentAt")
-                        .HasDatabaseName("IX_Messages_SenderId_SentAt");
+                    b.HasIndex("SenderId");
 
                     b.ToTable("Messages");
                 });
@@ -247,10 +239,9 @@ namespace MemeStreamApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ReactorId");
+                    b.HasIndex("MessageId");
 
-                    b.HasIndex("MessageId", "ReactorId")
-                        .IsUnique();
+                    b.HasIndex("ReactorId");
 
                     b.ToTable("MessageReactons");
                 });
@@ -274,134 +265,11 @@ namespace MemeStreamApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MessageId", "SeenAt")
-                        .HasDatabaseName("IX_MessageReadReceipts_MessageId_SeenAt");
-
-                    b.HasIndex("UserId", "MessageId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_MessageReadReceipts_UserId_MessageId");
-
-                    b.ToTable("MessageReadReceipts");
-                });
-
-            modelBuilder.Entity("MemeStreamApi.model.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ActionUrl")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<int?>("CommentId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int?>("PostId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime?>("ReadAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("RelatedUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CommentId");
-
-                    b.HasIndex("PostId");
-
-                    b.HasIndex("RelatedUserId");
-
-                    b.HasIndex("UserId", "IsRead", "CreatedAt")
-                        .HasDatabaseName("IX_Notifications_UserId_IsRead_CreatedAt");
-
-                    b.ToTable("Notifications");
-                });
-
-            modelBuilder.Entity("MemeStreamApi.model.NotificationPreference", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("CommentNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("EmailNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("FollowNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("FriendRequestNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("InAppNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("LikeNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("MentionNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("PushNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("ShareNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
+                    b.HasIndex("MessageId");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("NotificationPreferences");
+                    b.ToTable("MessageReadReceipts");
                 });
 
             modelBuilder.Entity("MemeStreamApi.model.Post", b =>
@@ -428,11 +296,7 @@ namespace MemeStreamApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("IX_Posts_CreatedAt");
-
-                    b.HasIndex("UserId", "CreatedAt")
-                        .HasDatabaseName("IX_Posts_UserId_CreatedAt");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Posts");
                 });
@@ -463,10 +327,6 @@ namespace MemeStreamApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("PostId", "UserId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Reactions_PostId_UserId");
-
                     b.ToTable("Reactions");
                 });
 
@@ -491,8 +351,7 @@ namespace MemeStreamApi.Migrations
 
                     b.HasIndex("PostId");
 
-                    b.HasIndex("UserId", "SharedAt")
-                        .HasDatabaseName("IX_SharedPosts_UserId_SharedAt");
+                    b.HasIndex("UserId");
 
                     b.ToTable("SharedPosts");
                 });
@@ -529,12 +388,6 @@ namespace MemeStreamApi.Migrations
                     b.Property<bool>("IsEmailVerified")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("LastLaughScoreUpdate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("LaughScore")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -554,20 +407,11 @@ namespace MemeStreamApi.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("IsEmailVerified");
-
-                    b.HasIndex("LaughScore");
-
                     b.ToTable("Users");
                 });
 
             modelBuilder.Entity("MemeStreamApi.model.Comment", b =>
                 {
-                    b.HasOne("MemeStreamApi.model.Comment", "ParentComment")
-                        .WithMany("Replies")
-                        .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("MemeStreamApi.model.Post", "Post")
                         .WithMany()
                         .HasForeignKey("PostId")
@@ -579,8 +423,6 @@ namespace MemeStreamApi.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("ParentComment");
 
                     b.Navigation("Post");
 
@@ -697,46 +539,6 @@ namespace MemeStreamApi.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("MemeStreamApi.model.Notification", b =>
-                {
-                    b.HasOne("MemeStreamApi.model.Comment", "Comment")
-                        .WithMany()
-                        .HasForeignKey("CommentId");
-
-                    b.HasOne("MemeStreamApi.model.Post", "Post")
-                        .WithMany()
-                        .HasForeignKey("PostId");
-
-                    b.HasOne("MemeStreamApi.model.User", "RelatedUser")
-                        .WithMany()
-                        .HasForeignKey("RelatedUserId");
-
-                    b.HasOne("MemeStreamApi.model.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Comment");
-
-                    b.Navigation("Post");
-
-                    b.Navigation("RelatedUser");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("MemeStreamApi.model.NotificationPreference", b =>
-                {
-                    b.HasOne("MemeStreamApi.model.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("MemeStreamApi.model.Post", b =>
                 {
                     b.HasOne("MemeStreamApi.model.User", "User")
@@ -784,11 +586,6 @@ namespace MemeStreamApi.Migrations
                     b.Navigation("Post");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("MemeStreamApi.model.Comment", b =>
-                {
-                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("MemeStreamApi.model.Group", b =>

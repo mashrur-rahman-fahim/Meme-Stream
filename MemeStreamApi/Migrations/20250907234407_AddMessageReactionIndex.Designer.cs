@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MemeStreamApi.Migrations
 {
     [DbContext(typeof(MemeStreamDbContext))]
-    [Migration("20250903232634_AddMessageReadReceipts2")]
-    partial class AddMessageReadReceipts2
+    [Migration("20250907234407_AddMessageReactionIndex")]
+    partial class AddMessageReactionIndex
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -131,6 +131,10 @@ namespace MemeStreamApi.Migrations
                     b.Property<int>("CreatedById")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -152,6 +156,12 @@ namespace MemeStreamApi.Migrations
 
                     b.Property<int>("GroupId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsCoAdmin")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -229,9 +239,10 @@ namespace MemeStreamApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MessageId");
-
                     b.HasIndex("ReactorId");
+
+                    b.HasIndex("MessageId", "ReactorId")
+                        .IsUnique();
 
                     b.ToTable("MessageReactons");
                 });
