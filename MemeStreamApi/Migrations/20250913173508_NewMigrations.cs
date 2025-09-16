@@ -65,11 +65,12 @@ namespace MemeStreamApi.Migrations
                 table: "SharedPosts",
                 columns: new[] { "UserId", "SharedAt" });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Reactions_PostId_UserId",
-                table: "Reactions",
-                columns: new[] { "PostId", "UserId" },
-                unique: true);
+            // Temporarily disabled due to duplicate data
+            // migrationBuilder.CreateIndex(
+            //     name: "IX_Reactions_PostId_UserId",
+            //     table: "Reactions",
+            //     columns: new[] { "PostId", "UserId" },
+            //     unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Posts_CreatedAt",
@@ -138,9 +139,9 @@ namespace MemeStreamApi.Migrations
                 name: "IX_SharedPosts_UserId_SharedAt",
                 table: "SharedPosts");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Reactions_PostId_UserId",
-                table: "Reactions");
+            // migrationBuilder.DropIndex(
+            //     name: "IX_Reactions_PostId_UserId",
+            //     table: "Reactions");
 
             migrationBuilder.DropIndex(
                 name: "IX_Posts_CreatedAt",

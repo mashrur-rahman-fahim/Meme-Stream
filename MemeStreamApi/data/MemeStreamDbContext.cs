@@ -80,11 +80,12 @@ namespace MemeStreamApi.data
                 .HasIndex(fr => new { fr.ReceiverId, fr.Status })
                 .HasDatabaseName("IX_FriendRequests_ReceiverId_Status");
 
-            // Reaction indexes for engagement queries
-            modelBuilder.Entity<Reaction>()
-                .HasIndex(r => new { r.PostId, r.UserId })
-                .IsUnique()
-                .HasDatabaseName("IX_Reactions_PostId_UserId");
+            // Reaction indexes for engagement queries - temporarily disabled due to duplicates
+            // TODO: Clean up duplicate reactions first, then re-enable this unique index
+            // modelBuilder.Entity<Reaction>()
+            //     .HasIndex(r => new { r.PostId, r.UserId })
+            //     .IsUnique()
+            //     .HasDatabaseName("IX_Reactions_PostId_UserId");
             
             modelBuilder.Entity<Reaction>()
                 .HasIndex(r => r.PostId);
