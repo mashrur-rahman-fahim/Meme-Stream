@@ -23,6 +23,7 @@ export const Navbar = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
 
   // Fetch user data and notifications
   useEffect(() => {
@@ -134,7 +135,10 @@ export const Navbar = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setSearchOpen(false);
+        // Only close if we're on desktop (not mobile search overlay)
+        if (!mobileSearchRef.current || !mobileSearchRef.current.contains(event.target)) {
+          setSearchOpen(false);
+        }
       }
     };
 
@@ -157,6 +161,25 @@ export const Navbar = () => {
 
   return (
     <>
+      {/* Mobile touch improvements */}
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .mobile-search-button {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+          }
+          .mobile-search-input {
+            -webkit-appearance: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+          }
+          .mobile-search-result {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+          }
+        }
+      `}</style>
+
       {/* Facebook-Style Navbar */}
       <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 z-50 h-14">
         <div className="max-w-[1920px] mx-auto px-6 lg:px-8">
@@ -215,8 +238,13 @@ export const Navbar = () => {
                           {searchResults.slice(0, 8).map((user) => (
                             <button
                               key={user.id}
-                              onClick={() => handleUserClick(user.id)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleUserClick(user.id);
+                              }}
                               className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 text-left border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                              type="button"
                             >
                               <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
                                 {user.image ? (
@@ -274,9 +302,15 @@ export const Navbar = () => {
             {/* Right Section: User Actions */}
             <div className="flex items-center justify-end gap-2">
               {/* Mobile Search Button */}
-              <button 
-                className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors sm:hidden"
-                onClick={() => setSearchOpen(!searchOpen)}
+              <button
+                className="mobile-search-button p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors sm:hidden"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSearchOpen(!searchOpen);
+                }}
+                type="button"
+                onTouchStart={(e) => e.stopPropagation()}
               >
                 <FaSearch className="text-gray-600 dark:text-gray-400 text-sm" />
               </button>
@@ -392,21 +426,28 @@ export const Navbar = () => {
       {/* Mobile Search Overlay */}
       {searchOpen && (
         <div className="fixed inset-0 z-40 sm:hidden">
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
-            onClick={() => setSearchOpen(false)}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSearchOpen(false);
+            }}
           />
           <div className="absolute top-14 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-xl">
-            <div className="p-4">
+            <div className="p-4" ref={mobileSearchRef} onClick={(e) => e.stopPropagation()}>
               <form onSubmit={handleSearchSubmit}>
                 <div className="relative">
                   <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Find your meme squad... 🔍"
-                    className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-gray-700 border-none rounded-full text-sm placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mobile-search-input w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-gray-700 border-none rounded-full text-sm placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={searchQuery}
                     onChange={handleSearchChange}
+                    autoFocus
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
                   />
                 </div>
               </form>
@@ -424,8 +465,14 @@ export const Navbar = () => {
                       {searchResults.slice(0, 8).map((user) => (
                         <button
                           key={user.id}
-                          onClick={() => handleUserClick(user.id)}
-                          className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 text-left rounded-lg"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleUserClick(user.id);
+                          }}
+                          className="mobile-search-result w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 text-left rounded-lg"
+                          type="button"
+                          onTouchStart={(e) => e.stopPropagation()}
                         >
                           <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
                             {user.image ? (
