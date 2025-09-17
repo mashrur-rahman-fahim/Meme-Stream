@@ -26,7 +26,8 @@ namespace MemeStreamApi.Migrations
             migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS \"IX_Users_IsEmailVerified\" ON \"Users\" (\"IsEmailVerified\");");
             migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS \"IX_Users_LaughScore\" ON \"Users\" (\"LaughScore\");");
             migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS \"IX_SharedPosts_UserId_SharedAt\" ON \"SharedPosts\" (\"UserId\", \"SharedAt\");");
-            migrationBuilder.Sql("CREATE UNIQUE INDEX IF NOT EXISTS \"IX_Reactions_PostId_UserId\" ON \"Reactions\" (\"PostId\", \"UserId\");");
+            // Skip problematic unique index for now - will handle in separate migration
+            // migrationBuilder.Sql("CREATE UNIQUE INDEX IF NOT EXISTS \"IX_Reactions_PostId_UserId\" ON \"Reactions\" (\"PostId\", \"UserId\");");
             migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS \"IX_Posts_CreatedAt\" ON \"Posts\" (\"CreatedAt\");");
             migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS \"IX_Posts_UserId_CreatedAt\" ON \"Posts\" (\"UserId\", \"CreatedAt\");");
             migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS \"IX_Notifications_UserId_IsRead_CreatedAt\" ON \"Notifications\" (\"UserId\", \"IsRead\", \"CreatedAt\");");
@@ -46,7 +47,7 @@ namespace MemeStreamApi.Migrations
             migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Users_IsEmailVerified\";");
             migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Users_LaughScore\";");
             migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_SharedPosts_UserId_SharedAt\";");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Reactions_PostId_UserId\";");
+            // migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Reactions_PostId_UserId\";");
             migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Posts_CreatedAt\";");
             migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Posts_UserId_CreatedAt\";");
             migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Notifications_UserId_IsRead_CreatedAt\";");

@@ -464,7 +464,18 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
           {!isOriginalPost && sharer && (
             <div className="flex items-center gap-2 text-sm text-base-content/70 mb-3">
               <FaShareSquare className="text-primary" />
-              <span className="font-semibold">{sharer?.name || 'Someone'}</span> shared
+              <span
+                className="font-semibold hover:text-primary cursor-pointer transition-colors duration-200"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (sharer?.id) {
+                    navigate(`/profile/${sharer.id}`);
+                  }
+                }}
+              >
+                {sharer?.name || 'Someone'}
+              </span>
+              <span> shared</span>
             </div>
           )}
 
@@ -483,7 +494,17 @@ export const PostCard = ({ post, currentUser, onEdit, onDelete, onUnshare, onCha
                 </div>
               </div>
               <div>
-                <span className="font-semibold text-sm sm:text-base text-base-content">{author?.name || 'Unknown User'}</span>
+                <span
+                  className="font-semibold text-sm sm:text-base text-base-content hover:text-primary cursor-pointer transition-colors duration-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (author?.id) {
+                      navigate(`/profile/${author.id}`);
+                    }
+                  }}
+                >
+                  {author?.name || 'Unknown User'}
+                </span>
                 <p className="text-xs text-base-content/60">{formatDate(timestamp)}</p>
               </div>
             </div>

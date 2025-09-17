@@ -3,6 +3,7 @@ using System;
 using MemeStreamApi.data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MemeStreamApi.Migrations
 {
     [DbContext(typeof(MemeStreamDbContext))]
-    partial class MemeStreamDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250916131316_fix")]
+    partial class fix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -558,6 +561,10 @@ namespace MemeStreamApi.Migrations
                     b.HasIndex("PostId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("PostId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Reactions_PostId_UserId");
 
                     b.ToTable("Reactions");
                 });
