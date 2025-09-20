@@ -373,7 +373,7 @@ namespace MemeStreamApi.controller
         }
         [Authorize]
         [HttpGet("feed")]
-        public IActionResult GetFeed(int page = 1, int pageSize = 20)
+        public IActionResult GetFeed(int page = 1, int pageSize = 25)
         {
             try
             {
@@ -465,7 +465,8 @@ namespace MemeStreamApi.controller
                 // Combine regular posts and shared posts
                 var allFeedItems = regularPosts.Cast<dynamic>().Concat(sharedPosts.Cast<dynamic>()).ToList();
                 
-                // Calculate feed score using complex algorithm
+                // ENHANCED ALGORITHM: Process larger dataset for better scoring, then filter
+                // This ensures we have enough content for proper diversity and quality selection
                 var scoredPosts = allFeedItems
                     .Select(p => new {
                         Id = (int)p.Id,
@@ -480,20 +481,26 @@ namespace MemeStreamApi.controller
                         IsShared = (bool)p.IsShared,
                         SharedBy = p.SharedBy,
                         SharedAt = p.SharedAt,
-                        FeedScore = CalculateFeedScore((bool)p.IsFriend, (int)p.DaysOld, (int)p.EngagementScore)
+                        FeedScore = CalculateFeedScore((bool)p.IsFriend, (int)p.DaysOld, (int)p.EngagementScore, (int)p.UserId, (int)p.Id, (string?)p.Content, (string?)p.Image)
                     })
                     .OrderByDescending(p => p.FeedScore)
                     .ThenByDescending(p => p.CreatedAt)
                     .ToList();
                 
-                // Apply diverse feed algorithm to prevent consecutive posts from same user
+                // Apply enhanced diverse feed algorithm for optimal content mixing
                 var diverseFeedPosts = ApplyDiverseFeedAlgorithm(scoredPosts.Cast<dynamic>().ToList());
                 
-                // Apply pagination after diversification
+                // ENHANCED PAGINATION: Increased page size (25) provides better user experience
+                // and reduces API calls while maintaining performance
                 var feedPosts = diverseFeedPosts
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
+                
+                // PERFORMANCE METRICS: Track algorithm effectiveness (optional)
+                var friendPostsCount = feedPosts.Count(p => (bool)p.IsFriend);
+                var imagePostsCount = feedPosts.Count(p => !string.IsNullOrEmpty((string?)p.Image));
+                var highEngagementCount = feedPosts.Count(p => (int)p.EngagementScore >= 5);
                 
                 return Ok(new { posts = feedPosts, page, pageSize });
             }
@@ -504,63 +511,97 @@ namespace MemeStreamApi.controller
             }
         }
 
-        private double CalculateFeedScore(bool isFriend, int daysOld, int engagementScore)
+        private double CalculateFeedScore(bool isFriend, int daysOld, int engagementScore, int userId, int postId, string? content = null, string? image = null)
         {
-            double baseScore = 10.0;
+            double baseScore = 15.0; // Increased base for better score distribution
             
-            // Friend bonus - friends get significantly higher priority
+            // ENHANCED FRIEND ALGORITHM - Balanced approach (reduced from 50 to 30)
             if (isFriend)
             {
-                baseScore += 50.0;
+                baseScore += 30.0; // Still prioritize friends but allow more discovery
             }
             
-            // Time decay - newer posts are preferred with exponential decay
-            if (daysOld == 0) baseScore += 35.0; // Today - increased from 30
-            else if (daysOld == 1) baseScore += 28.0; // Yesterday - increased from 25
-            else if (daysOld <= 3) baseScore += 22.0; // Last 3 days - increased from 20
-            else if (daysOld <= 7) baseScore += 16.0; // Last week - increased from 15
-            else if (daysOld <= 14) baseScore += 10.0; // Last 2 weeks
-            else if (daysOld <= 30) baseScore += 3.0; // Last month - decreased from 5
-            else baseScore -= 15.0; // Very old posts get bigger penalty
+            // ENHANCED TIME DECAY - More granular and realistic
+            var hoursSincePost = daysOld * 24;
+            if (hoursSincePost <= 1) baseScore += 40.0;      // Last hour - peak freshness
+            else if (hoursSincePost <= 6) baseScore += 35.0;  // Last 6 hours
+            else if (hoursSincePost <= 24) baseScore += 30.0; // Today
+            else if (daysOld == 1) baseScore += 25.0;         // Yesterday
+            else if (daysOld <= 2) baseScore += 20.0;         // 2 days
+            else if (daysOld <= 3) baseScore += 16.0;         // 3 days
+            else if (daysOld <= 7) baseScore += 12.0;         // Week
+            else if (daysOld <= 14) baseScore += 8.0;         // 2 weeks
+            else if (daysOld <= 30) baseScore += 3.0;         // Month
+            else baseScore -= 20.0; // Stronger penalty for very old content
             
-            // Enhanced engagement scoring with diminishing returns
+            // ENHANCED ENGAGEMENT SCORING - Multiple engagement types
             if (engagementScore > 0)
             {
-                // Use logarithmic scaling to prevent extremely popular posts from dominating
-                baseScore += Math.Log(engagementScore + 1) * 5.0; // More balanced than linear 2.0
+                // Logarithmic base engagement
+                baseScore += Math.Log(engagementScore + 1) * 6.0; // Increased multiplier
+                
+                // Engagement rate bonuses
+                if (engagementScore >= 20) baseScore += 30.0;  // Viral content
+                else if (engagementScore >= 10) baseScore += 20.0; // High engagement
+                else if (engagementScore >= 5) baseScore += 12.0;  // Good engagement
+                else if (engagementScore >= 2) baseScore += 6.0;   // Moderate engagement
             }
             
-            // Special case: Fresh friend posts (within 3 days) get extra boost
-            if (isFriend && daysOld <= 3)
+            // CONTENT QUALITY SIGNALS - Based on modern algorithm insights
+            if (!string.IsNullOrEmpty(content))
             {
-                baseScore += 25.0; // Increased from 20
+                // Content length optimization (sweet spot for social media)
+                var contentLength = content.Length;
+                if (contentLength >= 50 && contentLength <= 300) baseScore += 8.0;  // Optimal length
+                else if (contentLength >= 20 && contentLength <= 500) baseScore += 4.0; // Good length
+                else if (contentLength < 10) baseScore -= 5.0; // Too short penalty
+                else if (contentLength > 1000) baseScore -= 3.0; // Too long penalty
+                
+                // Encourage discussion-starting content
+                if (content.Contains("?")) baseScore += 3.0; // Question encourages engagement
             }
             
-            // Special case: High engagement non-friend posts can compete with old friend posts
-            if (!isFriend && engagementScore >= 5)
+            // MEDIA CONTENT BONUS - Visual content performs better
+            if (!string.IsNullOrEmpty(image))
             {
-                baseScore += 18.0; // Increased from 15
+                baseScore += 12.0; // Images get priority (modern algorithm insight)
             }
             
-            // Viral content bonus - posts with exceptional engagement get extra boost
-            if (engagementScore >= 10)
+            // ENHANCED FRESH FRIEND CONTENT
+            if (isFriend && daysOld <= 2)
             {
-                baseScore += 25.0;
+                baseScore += 15.0; // Reduced but still significant
             }
             
-            // Content freshness bonus for very recent posts (within 6 hours)
-            if (daysOld == 0)
+            // DISCOVERY ALGORITHM - Promote quality non-friend content
+            if (!isFriend)
             {
-                baseScore += 10.0; // Extra boost for very fresh content
+                if (engagementScore >= 8) baseScore += 25.0;      // Excellent discovery content
+                else if (engagementScore >= 5) baseScore += 15.0; // Good discovery content  
+                else if (engagementScore >= 3) baseScore += 10.0; // Decent discovery content
+                else if (engagementScore >= 1) baseScore += 5.0;  // Basic discovery content
             }
             
-            // Diversity bonus for non-friend content to ensure feed variety
-            if (!isFriend && engagementScore >= 2)
+            // PEAK HOURS BONUS - Content posted during active hours
+            var postHour = DateTime.UtcNow.Hour; // You might want to adjust for user timezone
+            if ((postHour >= 9 && postHour <= 11) || (postHour >= 18 && postHour <= 21))
             {
-                baseScore += 8.0; // Small boost to promote discovery
+                baseScore += 5.0; // Peak engagement time bonus
             }
             
-            return baseScore;
+            // RECENCY MOMENTUM - Extra boost for very fresh content
+            if (daysOld == 0 && hoursSincePost <= 3)
+            {
+                baseScore += 8.0; // Catch the wave early
+            }
+            
+            // CONTENT DIVERSITY PROMOTION - Ensure varied feed
+            if (!isFriend && engagementScore >= 1)
+            {
+                baseScore += 6.0; // Promote discovery and variety
+            }
+            
+            return Math.Max(baseScore, 1.0); // Ensure minimum score
         }
 
         private List<dynamic> ApplyDiverseFeedAlgorithm(List<dynamic> scoredPosts)
@@ -570,52 +611,91 @@ namespace MemeStreamApi.controller
             var result = new List<dynamic>();
             var remaining = new List<dynamic>(scoredPosts);
             
-            // Algorithm: Smart interleaving to prevent consecutive posts from same user
+            // ENHANCED DIVERSITY ALGORITHM - Based on modern social media insights
             while (remaining.Count > 0)
             {
                 dynamic selectedPost = null;
-                int lastUserId = result.Count > 0 ? (int)result.Last().UserId : -1;
-                int lastSharedById = result.Count > 0 && (bool)result.Last().IsShared ? 
-                    (int)result.Last().SharedBy.Id : -1;
                 
-                // Find the highest-scored post that's NOT from the last user (or sharer)
-                foreach (var post in remaining.OrderByDescending(p => (double)p.FeedScore))
+                // Track recent users and content types for better diversity
+                var recentUserIds = result.TakeLast(3).Select(p => (int)p.UserId).ToList();
+                var recentSharerIds = result.TakeLast(3)
+                    .Where(p => (bool)p.IsShared)
+                    .Select(p => (int)p.SharedBy.Id)
+                    .ToList();
+                
+                // CONTENT TYPE DIVERSITY - Alternate between media and text
+                bool lastPostHadImage = result.Count > 0 && !string.IsNullOrEmpty((string?)result.Last().Image);
+                
+                // FRIEND/NON-FRIEND BALANCE - Ensure discovery content is mixed in
+                var recentFriendPosts = result.TakeLast(4).Count(p => (bool)p.IsFriend);
+                bool needNonFriendContent = recentFriendPosts >= 3; // Max 3 consecutive friend posts
+                
+                // ENGAGEMENT DIVERSITY - Mix high and moderate engagement content
+                var recentHighEngagement = result.TakeLast(3).Count(p => (int)p.EngagementScore >= 5);
+                bool preferModerateEngagement = recentHighEngagement >= 2;
+                
+                // SCORING SYSTEM - Find best post considering diversity factors
+                var candidatePosts = remaining.OrderByDescending(p => (double)p.FeedScore).ToList();
+                
+                foreach (var post in candidatePosts)
                 {
                     int currentUserId = (int)post.UserId;
-                    int currentSharedById = (bool)post.IsShared ? (int)post.SharedBy.Id : -1;
+                    int currentSharerId = (bool)post.IsShared ? (int)post.SharedBy.Id : -1;
+                    bool hasImage = !string.IsNullOrEmpty((string?)post.Image);
+                    bool isFriend = (bool)post.IsFriend;
+                    int engagement = (int)post.EngagementScore;
+                    double score = (double)post.FeedScore;
                     
-                    // Check if this post is from a different user than the last post
-                    bool differentFromLastUser = currentUserId != lastUserId;
-                    bool differentFromLastSharer = currentSharedById != lastSharedById;
+                    // DIVERSITY CHECKS
+                    bool isUserRecent = recentUserIds.Contains(currentUserId);
+                    bool isSharerRecent = recentSharerIds.Contains(currentSharerId);
+                    bool providesContentDiversity = lastPostHadImage != hasImage;
+                    bool providesEngagementDiversity = preferModerateEngagement ? engagement < 5 : true;
+                    bool providesRelationshipDiversity = needNonFriendContent ? !isFriend : true;
                     
-                    // Prefer posts from different users, but allow same user if significant score gap
-                    if (differentFromLastUser && differentFromLastSharer)
+                    // SCORING ADJUSTMENTS for diversity
+                    double diversityScore = score;
+                    
+                    // Bonus for content type diversity
+                    if (providesContentDiversity) diversityScore += 5.0;
+                    
+                    // Bonus for relationship diversity
+                    if (providesRelationshipDiversity) diversityScore += 8.0;
+                    
+                    // Bonus for engagement diversity
+                    if (providesEngagementDiversity) diversityScore += 3.0;
+                    
+                    // Penalty for recent users (but not complete exclusion)
+                    if (isUserRecent) diversityScore -= 15.0;
+                    if (isSharerRecent) diversityScore -= 10.0;
+                    
+                    // SELECT POST if it meets minimum diversity criteria
+                    bool isAcceptable = !isUserRecent || diversityScore >= score * 0.7; // Allow same user if score is high enough
+                    
+                    if (isAcceptable)
                     {
                         selectedPost = post;
                         break;
                     }
                 }
                 
-                // If no different user found, or if we're at the start, take the highest scoring
+                // FALLBACK - If no diverse option found, take the highest scoring with penalty protection
                 if (selectedPost == null)
                 {
-                    // If we couldn't find a different user, check if the score gap is significant enough
-                    var topPost = remaining.OrderByDescending(p => (double)p.FeedScore).First();
+                    var topPost = candidatePosts.First();
                     double topScore = (double)topPost.FeedScore;
                     
-                    // Look for posts from different users within 20% score range
-                    var alternativePosts = remaining
+                    // Look for alternatives within 25% score range that provide some diversity
+                    var diverseAlternatives = candidatePosts
                         .Where(p => {
-                            int currentUserId = (int)p.UserId;
-                            int currentSharedById = (bool)p.IsShared ? (int)p.SharedBy.Id : -1;
-                            bool differentFromLastUser = currentUserId != lastUserId;
-                            bool differentFromLastSharer = currentSharedById != lastSharedById;
-                            return (differentFromLastUser && differentFromLastSharer) && 
-                                   ((double)p.FeedScore >= topScore * 0.8);
+                            int userId = (int)p.UserId;
+                            bool notRecentUser = !recentUserIds.Contains(userId);
+                            double postScore = (double)p.FeedScore;
+                            return notRecentUser && postScore >= topScore * 0.75;
                         })
                         .OrderByDescending(p => (double)p.FeedScore);
                     
-                    selectedPost = alternativePosts.FirstOrDefault() ?? topPost;
+                    selectedPost = diverseAlternatives.FirstOrDefault() ?? topPost;
                 }
                 
                 result.Add(selectedPost);

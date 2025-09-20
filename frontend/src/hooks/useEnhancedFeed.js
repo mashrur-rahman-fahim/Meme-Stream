@@ -10,7 +10,7 @@ export const enhancedFeedKeys = {
   list: (filters) => [...enhancedFeedKeys.lists(), { ...filters }],
 };
 
-export const useEnhancedFeed = (pageSize = 20) => {
+export const useEnhancedFeed = (pageSize = 25) => {
   const queryClient = useQueryClient();
   const [lastSeenPosition, setLastSeenPosition] = useState(0);
   const [refreshCount, setRefreshCount] = useState(0);
