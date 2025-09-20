@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../utils/axios";
 
 export const FriendsList = () => {
+  const navigate = useNavigate();
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -40,7 +42,11 @@ export const FriendsList = () => {
   return (
     <div className="space-y-3">
       {friends.map((friend) => (
-        <div key={friend.id} className="flex items-center gap-3 p-2 hover:bg-base-200 rounded-lg transition-colors">
+        <div 
+          key={friend.id} 
+          className="flex items-center gap-3 p-2 hover:bg-base-200 rounded-lg transition-colors cursor-pointer"
+          onClick={() => navigate(`/profile/${friend.friendId}`)}
+        >
           <div className="avatar">
             <div className="w-10 h-10 rounded-full bg-primary">
               {friend.friendImage ? (

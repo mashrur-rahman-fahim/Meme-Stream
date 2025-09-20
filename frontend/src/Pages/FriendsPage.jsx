@@ -252,7 +252,7 @@ export const FriendsPage = () => {
       <Navbar />
       
       <div className="pt-16 sm:pt-18 md:pt-20 pb-4 sm:pb-6 md:pb-8">
-        <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
 
           {/* Header */}
           <div className="mb-4 sm:mb-5 md:mb-6">
@@ -270,15 +270,15 @@ export const FriendsPage = () => {
             </div>
           )}
 
-          <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6">
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6 lg:gap-8 items-start w-full overflow-hidden">
 
             {/* Left Sidebar */}
-            <div className="lg:w-72 xl:w-80 flex-shrink-0">
+            <div className="w-full lg:w-72 xl:w-80 2xl:w-96 flex-shrink-0">
               <div className="space-y-4 sm:space-y-5 md:space-y-6">
                 
                 {/* Friend Requests Section */}
-                <div className="card bg-base-100 shadow-lg border border-base-300">
-                  <div className="card-body p-3 sm:p-4">
+                <div className="card bg-base-100 shadow-lg border border-base-300 overflow-hidden">
+                  <div className="card-body p-3 sm:p-4 lg:p-5">
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
                       <h2 className="text-base sm:text-lg font-bold text-base-content flex items-center gap-2">
                         <FaBell className="text-primary text-sm sm:text-base" />
@@ -295,9 +295,9 @@ export const FriendsPage = () => {
                         No pending requests
                       </p>
                     ) : (
-                      <div className="space-y-2 sm:space-y-3">
+                      <div className="space-y-2 sm:space-y-3 w-full">
                         {/* Show limited requests initially */}
-                        <div className={`space-y-2 sm:space-y-3 ${showMoreRequests ? 'max-h-80 sm:max-h-96 overflow-y-auto' : ''}`}>
+                        <div className={`space-y-2 sm:space-y-3 w-full ${showMoreRequests ? 'max-h-80 sm:max-h-96 overflow-y-auto overflow-x-hidden pr-2' : ''}`}>
                           {(showMoreRequests ? friendRequests : friendRequests.slice(0, 3)).map((request) => (
                           <div key={request.id} className="p-2 sm:p-3 bg-base-200 rounded-lg">
                             <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
@@ -392,8 +392,8 @@ export const FriendsPage = () => {
                 </div>
 
                 {/* Search Friends Section */}
-                <div className="card bg-base-100 shadow-lg border border-base-300">
-                  <div className="card-body p-3 sm:p-4">
+                <div className="card bg-base-100 shadow-lg border border-base-300 overflow-hidden">
+                  <div className="card-body p-3 sm:p-4 lg:p-5">
                     <h2 className="text-base sm:text-lg font-bold text-base-content flex items-center gap-2 mb-3 sm:mb-4">
                       <FaSearch className="text-primary text-sm sm:text-base" />
                       <span className="hidden sm:inline">Search Your Friends</span>
@@ -415,7 +415,7 @@ export const FriendsPage = () => {
                         <div className="loading loading-spinner loading-sm text-primary"></div>
                       </div>
                     ) : searchResults.length > 0 ? (
-                      <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
+                      <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto overflow-x-hidden pr-2 w-full">
                         {searchResults.slice(0, 3).map((user) => (
                           <div key={user.id} className="p-2 sm:p-3 bg-base-200 rounded-lg">
                             <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
@@ -450,14 +450,11 @@ export const FriendsPage = () => {
                             
                             {/* Since we're searching only friends, show friend actions */}
                             <div className="flex gap-1 sm:gap-2">
-                              <button className="btn btn-primary btn-xs text-xs flex-1">
-                                Message
-                              </button>
                               <button
                                 onClick={() => unfriendUser(user.id, user.name)}
-                                className="btn btn-ghost btn-xs text-xs text-error"
+                                className="btn btn-error btn-xs text-xs w-full"
                               >
-                                Unfriend
+                                Remove Friend
                               </button>
                             </div>
                           </div>
@@ -483,9 +480,9 @@ export const FriendsPage = () => {
             </div>
 
             {/* Main Content - Friends List */}
-            <div className="flex-1 min-w-0">
-              <div className="card bg-base-100 shadow-lg border border-base-300">
-                <div className="card-body p-3 sm:p-4 md:p-6">
+            <div className="flex-1 min-w-0 w-full lg:w-auto">
+              <div className="card bg-base-100 shadow-lg border border-base-300 overflow-hidden h-fit">
+                <div className="card-body p-3 sm:p-4 md:p-6 lg:p-6 xl:p-8 overflow-hidden">
                   <div className="flex items-center justify-between mb-4 sm:mb-5 md:mb-6">
                     <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-base-content flex items-center gap-2">
                       <FaUserFriends className="text-primary text-base sm:text-lg md:text-xl" />
@@ -511,104 +508,108 @@ export const FriendsPage = () => {
                       </div>
                     </div>
                   ) : (
-                    <div>
-                      {/* Friends Grid */}
-                      <div className={`grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 ${showMoreFriends ? 'max-h-80 sm:max-h-96 overflow-y-auto' : ''}`}>
-                        {(showMoreFriends ? friends : friends.slice(0, 8)).map((friend) => (
-                        <div key={friend.id} className="card bg-base-200 border border-base-300 hover:shadow-md transition-shadow">
-                          <div className="card-body p-3 sm:p-4">
-                            <div className="flex flex-col items-center text-center">
-                              <div
-                                className="avatar mb-2 sm:mb-3 cursor-pointer hover:scale-105 transition-transform"
-                                onClick={() => navigate(`/profile/${friend.friendId}`)}
-                              >
-                                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-primary">
-                                  {friend.friendImage ? (
-                                    <img src={friend.friendImage} alt={friend.friendName} className="rounded-full object-cover" />
-                                  ) : (
-                                    <span className="text-lg sm:text-xl md:text-2xl text-primary-content flex items-center justify-center w-full h-full">
-                                      {friend.friendName.charAt(0).toUpperCase()}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <h3
-                                className="font-semibold text-sm sm:text-base text-base-content mb-1 cursor-pointer hover:text-primary transition-colors truncate w-full"
-                                onClick={() => navigate(`/profile/${friend.friendId}`)}
-                                title={friend.friendName}
-                              >
-                                {friend.friendName}
-                              </h3>
-                              
-                              {friend.friendBio && (
-                                <p className="text-xs sm:text-sm text-base-content/70 line-clamp-2 mb-1 sm:mb-2">
-                                  {friend.friendBio}
-                                </p>
-                              )}
-
-                              <p className="text-xs text-base-content/50 mb-2 sm:mb-3 md:mb-4 truncate w-full" title={friend.friendEmail}>
-                                {friend.friendEmail}
-                              </p>
-                              
-                              <div className="flex gap-1 sm:gap-2 w-full">
-                                <button className="btn btn-primary btn-xs sm:btn-sm text-xs sm:text-sm flex-1">
-                                  Message
-                                </button>
-                                <button
-                                  onClick={() => unfriendUser(friend.friendId, friend.friendName)}
-                                  className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm text-error hover:btn-error hover:text-error-content"
+                    <div className="space-y-4 w-full">
+                      {/* Friends Grid Container */}
+                      <div className={`w-full ${showMoreFriends ? 'max-h-[32rem] lg:max-h-[36rem] xl:max-h-[40rem] overflow-y-auto overflow-x-hidden pr-2' : ''}`}>
+                        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-4 w-full">
+                          {(showMoreFriends ? friends : friends.slice(0, 8)).map((friend) => (
+                          <div key={friend.id} className="card bg-base-200 border border-base-300 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 w-full max-w-full overflow-hidden">
+                            <div className="card-body p-3 sm:p-4 lg:p-4 xl:p-5 w-full">
+                              <div className="flex flex-col items-center text-center space-y-2 sm:space-y-3 w-full">
+                                <div
+                                  className="avatar cursor-pointer hover:scale-105 transition-transform duration-200"
+                                  onClick={() => navigate(`/profile/${friend.friendId}`)}
                                 >
-                                  Unfriend
-                                </button>
+                                  <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 xl:w-18 xl:h-18 rounded-full bg-primary">
+                                    {friend.friendImage ? (
+                                      <img src={friend.friendImage} alt={friend.friendName} className="rounded-full object-cover w-full h-full" />
+                                    ) : (
+                                      <span className="text-lg sm:text-xl lg:text-2xl xl:text-3xl text-primary-content flex items-center justify-center w-full h-full font-semibold">
+                                        {friend.friendName.charAt(0).toUpperCase()}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <div className="w-full space-y-1 overflow-hidden">
+                                  <h3
+                                    className="font-semibold text-sm sm:text-base lg:text-base xl:text-lg text-base-content cursor-pointer hover:text-primary transition-colors truncate w-full px-1"
+                                    onClick={() => navigate(`/profile/${friend.friendId}`)}
+                                    title={friend.friendName}
+                                  >
+                                    {friend.friendName}
+                                  </h3>
+                                  
+                                  {friend.friendBio && (
+                                    <p className="text-xs sm:text-sm lg:text-sm text-base-content/70 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] px-1 break-words">
+                                      {friend.friendBio}
+                                    </p>
+                                  )}
+
+                                  <p className="text-xs lg:text-xs text-base-content/50 truncate w-full px-1" title={friend.friendEmail}>
+                                    {friend.friendEmail}
+                                  </p>
+                                </div>
+                                
+                                <div className="flex gap-1 sm:gap-2 w-full pt-2">
+                                  <button
+                                    onClick={() => unfriendUser(friend.friendId, friend.friendName)}
+                                    className="btn btn-error btn-xs sm:btn-sm lg:btn-sm text-xs sm:text-sm w-full min-h-[2rem] sm:min-h-[2.5rem]"
+                                  >
+                                    Remove Friend
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
+                          ))}
                         </div>
-                        ))}
                       </div>
                       
-                      {/* Loading indicator for infinite scroll */}
-                      {showMoreFriends && friendsLoading && (
-                        <div className="flex justify-center py-4">
-                          <div className="loading loading-spinner loading-md text-primary"></div>
-                        </div>
-                      )}
-                      
-                      {/* Load more button for infinite scroll */}
-                      {showMoreFriends && friendsHasMore && !friendsLoading && (
-                        <div className="text-center pt-4">
-                          <button
-                            onClick={loadMoreFriends}
-                            className="btn btn-outline btn-primary btn-sm"
-                          >
-                            Load More Friends
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* See More/Less toggle */}
-                      {!showMoreFriends && friends.length > 8 && (
-                        <div className="text-center pt-4">
-                          <button
-                            onClick={() => setShowMoreFriends(true)}
-                            className="btn btn-outline btn-primary btn-sm"
-                          >
-                            See All Friends ({friends.length} total)
-                          </button>
-                        </div>
-                      )}
-                      
-                      {showMoreFriends && (
-                        <div className="text-center pt-4">
-                          <button
-                            onClick={() => setShowMoreFriends(false)}
-                            className="btn btn-ghost btn-sm"
-                          >
-                            Show Less
-                          </button>
-                        </div>
-                      )}
+                      {/* Action buttons container */}
+                      <div className="space-y-3 pt-2">
+                        {/* Loading indicator for infinite scroll */}
+                        {showMoreFriends && friendsLoading && (
+                          <div className="flex justify-center py-4">
+                            <div className="loading loading-spinner loading-md text-primary"></div>
+                          </div>
+                        )}
+                        
+                        {/* Load more button for infinite scroll */}
+                        {showMoreFriends && friendsHasMore && !friendsLoading && (
+                          <div className="text-center">
+                            <button
+                              onClick={loadMoreFriends}
+                              className="btn btn-outline btn-primary btn-sm lg:btn-md"
+                            >
+                              Load More Friends
+                            </button>
+                          </div>
+                        )}
+                        
+                        {/* See More/Less toggle */}
+                        {!showMoreFriends && friends.length > 8 && (
+                          <div className="text-center">
+                            <button
+                              onClick={() => setShowMoreFriends(true)}
+                              className="btn btn-outline btn-primary btn-sm lg:btn-md"
+                            >
+                              See All Friends ({friends.length} total)
+                            </button>
+                          </div>
+                        )}
+                        
+                        {showMoreFriends && (
+                          <div className="text-center">
+                            <button
+                              onClick={() => setShowMoreFriends(false)}
+                              className="btn btn-ghost btn-sm lg:btn-md"
+                            >
+                              Show Less
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
