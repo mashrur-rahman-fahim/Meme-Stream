@@ -2,7 +2,7 @@ import api from "../utils/axios";
 
 export const feedService = {
   // Get the user's personalized feed
-  getFeed: async (page = 1, pageSize = 20) => {
+  getFeed: async (page = 1, pageSize = 25) => {
     try {
       const response = await api.get(
         `/Post/feed?page=${page}&pageSize=${pageSize}`
