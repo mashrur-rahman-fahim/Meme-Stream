@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { VerifyContext } from "../../../context/create_verify_context";
 import { ChatContext } from "../../../context/ChatContext";
-import { Navbar } from "../Navbar";
-import connectionManager from "../../services/ConnectionManagerService";
 import axios from "axios";
-import api from "../../utils/axios";
 import { jwtDecode } from "jwt-decode";
 import {
   startSignalRConnection,
@@ -20,18 +15,9 @@ import {
 import GroupManagementSidebar from "./GroupManagementSidebar";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
-import CreateGroupPopup from "./CreateGroupPopup";
-// Enhanced Components
-import ChatMessageSearch from "./ChatMessageSearch";
-import ChatStatusIndicator from "./ChatStatusIndicator";
-import ChatMediaGallery from "./ChatMediaGallery";
-import ChatThemeSelector from "./ChatThemeSelector";
-import MessageReply, { ReplyComposer } from "./MessageReply"; 
+import CreateGroupPopup from "./CreateGroupPopup"; 
 
 const ChatLayout = () => {
-  const { isVerified, loading, logout } = useContext(VerifyContext);
-  const navigate = useNavigate();
-  const [pageReady, setPageReady] = useState(false);
   const [friends, setFriends] = useState([]);
   const [groups, setGroups] = useState([]);
   const [sidebarLoading, setSidebarLoading] = useState(true);
@@ -49,18 +35,7 @@ const ChatLayout = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [connection, setConnection] = useState(null);
   const [connectionError, setConnectionError] = useState("");
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
-
-  // Enhanced chat features state
-  const [showMessageSearch, setShowMessageSearch] = useState(false);
-  const [showMediaGallery, setShowMediaGallery] = useState(false);
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [chatTheme, setChatTheme] = useState('default');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [userPresence, setUserPresence] = useState({});
-  const [onlineUsers, setOnlineUsers] = useState([]);
-  const [typingUsers, setTypingUsers] = useState([]); 
+  const [showCreateGroup, setShowCreateGroup] = useState(false); 
 
   const token = localStorage.getItem("token");
   const { 
@@ -79,15 +54,6 @@ const ChatLayout = () => {
   const chatContainerRef = useRef(null);
   const connectionRef = useRef(null);
   const userIdRef = useRef(currentUserId);
-
-  // Route protection effect
-  useEffect(() => {
-    if (isVerified === false && !loading) {
-      navigate("/auth");
-    } else if (isVerified === true && !pageReady) {
-      setTimeout(() => setPageReady(true), 100);
-    }
-  }, [isVerified, navigate, loading, pageReady]);
   
   useEffect(() => {
     userIdRef.current = currentUserId;
@@ -97,7 +63,9 @@ const ChatLayout = () => {
   useEffect(() => {
     const getCurrentUserId = async () => {
       try {
-        const response = await api.get("/User/profile");
+        const response = await axios.get("http://localhost:5216/api/User/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         
         if (response.data.id) {
           setCurrentUserId(response.data.id);
@@ -139,15 +107,19 @@ const ChatLayout = () => {
       try {
         setSidebarLoading(true);
         
-        const friendsRes = await api.get("/friendrequest/get/friends");
+        const friendsRes = await axios.get("http://localhost:5216/api/friendrequest/get/friends", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         
         const formattedFriends = friendsRes.data.map(friend => ({
           id: friend.friendId || friend.FriendId,
           name: friend.friendName || friend.FriendName
         }));
         setFriends(formattedFriends);
-
-        const groupsRes = await api.get("/chat/my-groups");
+        
+        const groupsRes = await axios.get("http://localhost:5216/api/chat/my-groups", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setGroups(groupsRes.data);
         
       } catch (err) {
@@ -198,7 +170,9 @@ const ChatLayout = () => {
   const handleGroupUpdate = () => {
     const fetchSidebarData = async () => {
       try {
-        const groupsRes = await api.get("/chat/my-groups");
+        const groupsRes = await axios.get("http://localhost:5216/api/chat/my-groups", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setGroups(groupsRes.data);
       } catch (err) {
         console.error("Error refreshing groups:", err);
@@ -213,7 +187,11 @@ const ChatLayout = () => {
   // Function to fetch reactions for a message
   const fetchReactionsForMessage = async (messageId) => {
     try {
-      const response = await api.get(`/MessageReacton/${messageId}`);
+      const response = await axios.get(`http://localhost:5216/api/MessageReacton/${messageId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
       if (response.status === 200) {
         const reactionsData = response.data;
@@ -255,56 +233,6 @@ const ChatLayout = () => {
     }
   };
 
-  // Enhanced feature handlers
-
-  const handleReply = (message, replyText) => {
-    if (replyText) {
-      // Send reply with reference to original message
-      const replyContent = `@${message.senderName || `User ${message.senderId}`}: ${replyText}`;
-      if (chatType === "group") {
-        sendGroupMessage(`group-${currentChat}`, replyContent);
-      } else {
-        sendPrivateMessage(currentChat.toString(), replyContent);
-      }
-    } else {
-      // Just set reply mode
-      setReplyingTo(message);
-    }
-  };
-
-  const handleCancelReply = () => {
-    setReplyingTo(null);
-  };
-
-  const handleScrollToMessage = (messageId, isThread = false) => {
-    // Find message and scroll to it
-    const messageElement = document.getElementById(`message-${messageId}`);
-    if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // Highlight message briefly
-      messageElement.classList.add('highlight-message');
-      setTimeout(() => {
-        messageElement.classList.remove('highlight-message');
-      }, 2000);
-    }
-  };
-
-  const handleThemeChange = (newTheme) => {
-    setChatTheme(newTheme);
-    // Apply theme to document root
-    document.documentElement.setAttribute('data-chat-theme', newTheme);
-  };
-
-  const handleDarkModeToggle = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark', !isDarkMode);
-  };
-
-  const handleMediaSelect = (media) => {
-    // Handle media selection from gallery
-    console.log('Media selected:', media);
-  };
-
   // Chat window functionality
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -324,10 +252,13 @@ const ChatLayout = () => {
 
     const fetchHistory = async () => {
       try {
-        const res = await api.get(
+        const res = await axios.get(
           chatType === "group"
-            ? `/GroupMessage/group/${currentChat}/messages`
-            : `/PrivateMessage/private/${currentChat}`
+            ? `http://localhost:5216/api/GroupMessage/group/${currentChat}/messages`
+            : `http://localhost:5216/api/PrivateMessage/private/${currentChat}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
         const history = res.data.map((m) => ({
           id: m.id,
@@ -546,59 +477,6 @@ conn.on("ReceiveReaction", (reactionData) => {
           }));
         });
 
-        // Enhanced SignalR handlers
-        conn.on("ReceiveMediaMessage", (mediaData) => {
-          const shouldAutoScroll = isScrolledToBottom();
-
-          setChatLog((prev) => {
-            const messageExists = prev.some(m => m.id === mediaData.messageId);
-            if (messageExists) return prev;
-
-            return [
-              ...prev,
-              {
-                id: mediaData.messageId,
-                senderId: mediaData.senderId,
-                msg: `${mediaData.mediaType === 'image' ? '🖼️' : mediaData.mediaType === 'video' ? '🎥' : '📎'} ${mediaData.fileName}`,
-                sentAt: mediaData.sentAt,
-                isMediaMessage: true,
-                mediaData: mediaData
-              },
-            ];
-          });
-
-          if (shouldAutoScroll || mediaData.senderId === userIdRef.current) {
-            setTimeout(scrollToBottom, 100);
-          }
-        });
-
-        conn.on("UserPresenceUpdate", (userId, isOnline, lastSeen) => {
-          setUserPresence(prev => ({
-            ...prev,
-            [userId]: { isOnline, lastSeen }
-          }));
-
-          if (isOnline) {
-            setOnlineUsers(prev => [...new Set([...prev, userId])]);
-          } else {
-            setOnlineUsers(prev => prev.filter(id => id !== userId));
-          }
-        });
-
-        conn.on("ReceiveTypingStatus", (senderId, isTyping, senderName) => {
-          if (senderId !== userIdRef.current) {
-            setTypingUsers(prev => {
-              if (isTyping) {
-                const existing = prev.find(u => u.userId === senderId);
-                if (existing) return prev;
-                return [...prev, { userId: senderId, userName: senderName || `User ${senderId}` }];
-              } else {
-                return prev.filter(u => u.userId !== senderId);
-              }
-            });
-          }
-        });
-
         // Add connection state handlers for debugging
         conn.onclose((error) => {
           console.error("SignalR connection closed:", error);
@@ -652,9 +530,6 @@ conn.on("ReceiveReaction", (reactionData) => {
         connectionRef.current.off("ReceiveMessageEdit");
         connectionRef.current.off("ReceiveMessageDelete");
         connectionRef.current.off("ReceiveReadReceipt");
-        connectionRef.current.off("ReceiveMediaMessage");
-        connectionRef.current.off("UserPresenceUpdate");
-        connectionRef.current.off("ReceiveTypingStatus");
         connectionRef.current.off("onclose");
         connectionRef.current.off("onreconnecting");
         connectionRef.current.off("onreconnected");
@@ -722,8 +597,8 @@ conn.on("ReceiveReaction", (reactionData) => {
     if (chatType === "group") formData.append("groupId", currentChat);
 
     try {
-      const res = await api.post("/FileUpload/upload", formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const res = await axios.post("http://localhost:5216/api/FileUpload/upload", formData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       setChatLog((prev) => [
@@ -748,197 +623,48 @@ conn.on("ReceiveReaction", (reactionData) => {
 
   const totalUnread = Object.values(unreadMap).reduce((sum, count) => sum + count, 0);
 
-  // Loading and verification checks
-  if (loading || isVerified === null || (isVerified === true && !pageReady)) {
-    return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
-        <div className="text-center">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="mt-4 text-base-content">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isVerified === false) {
-    return null;
-  }
-
   return (
-    <div className={`min-h-screen bg-base-200 animate-fadeIn ${isDarkMode ? 'dark' : ''}`} data-chat-theme={chatTheme}>
-      <Navbar />
-
-      <div className="pt-16 sm:pt-18 md:pt-20 flex flex-col lg:flex-row h-[calc(100vh-4rem)] sm:h-[calc(100vh-4.5rem)] md:h-[calc(100vh-5rem)] bg-base-100">
-      {/* Mobile Chat Selector - Show when no chat selected */}
-      {!currentChat && (
-        <div className="lg:hidden flex-1 flex flex-col">
-          <div className="p-3 sm:p-4 border-b border-base-300 bg-base-200">
-            <h2 className="text-lg sm:text-xl font-semibold text-base-content">Choose a Chat</h2>
-            <p className="text-sm text-base-content/70">Select a friend or group to start messaging</p>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            <ChatSidebar
-              loading={sidebarLoading}
-              error={sidebarError}
-              friends={friends}
-              groups={groups}
-              unreadMap={unreadMap}
-              latestMessages={latestMessages}
-              totalUnread={totalUnread}
-              notifications={notifications}
-              onChatSelect={handleChatSelect}
-              onClearAllNotifications={clearAllNotifications}
-              onRemoveNotification={removeNotification}
-              onCreateGroup={() => setShowCreateGroup(true)}
-              userPresence={userPresence}
-              onlineUsers={onlineUsers}
-              isMobile={true}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Desktop Sidebar - Always visible on desktop */}
-      <div className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 border-r border-base-300 bg-base-200">
-        <ChatSidebar
-          loading={sidebarLoading}
-          error={sidebarError}
-          friends={friends}
-          groups={groups}
-          unreadMap={unreadMap}
-          latestMessages={latestMessages}
-          totalUnread={totalUnread}
-          notifications={notifications}
-          onChatSelect={handleChatSelect}
-          onClearAllNotifications={clearAllNotifications}
-          onRemoveNotification={removeNotification}
-          onCreateGroup={() => setShowCreateGroup(true)}
-          userPresence={userPresence}
-          onlineUsers={onlineUsers}
-          isMobile={false}
+    <div className="flex h-screen bg-base-100">
+      {/* Sidebar on the left */}
+      <ChatSidebar
+        loading={sidebarLoading}
+        error={sidebarError}
+        friends={friends}
+        groups={groups}
+        unreadMap={unreadMap}
+        latestMessages={latestMessages}
+        totalUnread={totalUnread}
+        notifications={notifications}
+        onChatSelect={handleChatSelect}
+        onClearAllNotifications={clearAllNotifications}
+        onRemoveNotification={removeNotification}
+        onCreateGroup={() => setShowCreateGroup(true)}
+      />
+      
+      {/* Main chat area on the right */}
+      <div className="flex-1 flex flex-col">
+        <ChatWindow
+          currentChat={currentChat}
+          currentUserId={currentUserId}
+          chatType={chatType}
+          chatName={chatName}
+          message={message}
+          chatLog={chatLog}
+          otherTyping={otherTyping}
+          reactions={reactions}
+          readMap={readMap}
+          connectionError={connectionError}
+          messagesEndRef={messagesEndRef}
+          chatContainerRef={chatContainerRef}
+          onToggleGroupManagement={toggleGroupManagement}
+          onTyping={handleTyping}
+          onSend={handleSend}
+          onFileUpload={handleFileUpload}
+          onReactToMessage={handleReactToMessage}
+          onEditMessage={handleEditMessage}
+          onDeleteMessage={handleDeleteMessage}
+          onFetchReactions={fetchReactionsForMessage}
         />
-      </div>
-
-      {/* Main chat area - Show when chat selected */}
-      <div className={`${!currentChat ? 'hidden lg:flex' : 'flex'} flex-1 flex-col min-w-0`}>
-        {/* Enhanced Chat Header */}
-        {currentChat && (
-          <div className="bg-base-200 p-3 sm:p-4 border-b border-base-300 flex justify-between items-center">
-            {/* Back button for mobile */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <button
-                onClick={() => setCurrentChat(null)}
-                className="btn btn-ghost btn-xs sm:btn-sm lg:hidden"
-                title="Back to chats"
-              >
-                ←
-              </button>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-base sm:text-lg md:text-xl font-semibold truncate">{chatName}</h2>
-                {chatType === 'private' && friends.find(f => f.id === currentChat) && (
-                  <div className="hidden sm:block">
-                    <ChatStatusIndicator
-                      userId={currentChat}
-                      isOnline={userPresence[currentChat]?.isOnline}
-                      lastSeen={userPresence[currentChat]?.lastSeen}
-                      typingUsers={typingUsers}
-                      chatType={chatType}
-                      size="small"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <button
-                onClick={() => setShowMessageSearch(true)}
-                className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm"
-                title="Search Messages"
-              >
-                <span className="hidden sm:inline">🔍</span>
-                <span className="sm:hidden">🔍</span>
-              </button>
-              <button
-                onClick={() => setShowMediaGallery(true)}
-                className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm hidden sm:inline-flex"
-                title="Media Gallery"
-              >
-                🖼️
-              </button>
-              <button
-                onClick={() => setShowThemeSelector(true)}
-                className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm hidden md:inline-flex"
-                title="Theme Settings"
-              >
-                🎨
-              </button>
-              {chatType === 'group' && (
-                <button
-                  onClick={toggleGroupManagement}
-                  className="btn btn-ghost btn-xs sm:btn-sm text-xs sm:text-sm"
-                  title="Group Settings"
-                >
-                  ⚙️
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Empty State for Desktop */}
-        {!currentChat && (
-          <div className="hidden lg:flex flex-1 items-center justify-center">
-            <div className="text-center">
-              <div className="text-4xl sm:text-5xl md:text-6xl mb-4">💬</div>
-              <h3 className="text-lg sm:text-xl font-semibold text-base-content/70 mb-2">Select a Chat</h3>
-              <p className="text-sm sm:text-base text-base-content/50">Choose a conversation from the sidebar to start messaging</p>
-            </div>
-          </div>
-        )}
-
-        {currentChat && (
-          <ChatWindow
-            currentChat={currentChat}
-            currentUserId={currentUserId}
-            chatType={chatType}
-            chatName={chatName}
-            message={message}
-            chatLog={chatLog}
-            otherTyping={otherTyping}
-            reactions={reactions}
-            readMap={readMap}
-            connectionError={connectionError}
-            messagesEndRef={messagesEndRef}
-            chatContainerRef={chatContainerRef}
-            onToggleGroupManagement={toggleGroupManagement}
-            onTyping={handleTyping}
-            onSend={handleSend}
-            onFileUpload={handleFileUpload}
-            onReactToMessage={handleReactToMessage}
-            onEditMessage={handleEditMessage}
-            onDeleteMessage={handleDeleteMessage}
-            onFetchReactions={fetchReactionsForMessage}
-            // Enhanced props
-            replyingTo={replyingTo}
-            onReply={handleReply}
-            onCancelReply={handleCancelReply}
-            onScrollToMessage={handleScrollToMessage}
-            typingUsers={typingUsers}
-            userPresence={userPresence}
-            isMobile={window?.innerWidth < 1024}
-          />
-        )}
-
-        {/* Reply Composer */}
-        {replyingTo && (
-          <ReplyComposer
-            replyingTo={replyingTo}
-            onSend={(replyText) => handleReply(replyingTo, replyText)}
-            onCancel={handleCancelReply}
-            placeholder="Type your reply..."
-          />
-        )}
       </div>
       
       {/* Group Management Sidebar */}
@@ -959,52 +685,6 @@ conn.on("ReceiveReaction", (reactionData) => {
           onClose={() => setShowCreateGroup(false)}
         />
       )}
-
-      {/* Enhanced Modal Components */}
-      {showMessageSearch && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-2xl max-h-[80vh] overflow-hidden">
-            <ChatMessageSearch
-              chatId={currentChat}
-              isGroup={chatType === 'group'}
-              onMessageSelect={handleScrollToMessage}
-              onClose={() => setShowMessageSearch(false)}
-              isMobile={window?.innerWidth < 768}
-            />
-          </div>
-        </div>
-      )}
-
-      {showMediaGallery && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] overflow-hidden">
-            <ChatMediaGallery
-              chatId={currentChat}
-              isGroup={chatType === 'group'}
-              onMediaSelect={handleMediaSelect}
-              onClose={() => setShowMediaGallery(false)}
-              isMobile={window?.innerWidth < 768}
-            />
-          </div>
-        </div>
-      )}
-
-      {showThemeSelector && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-xs sm:max-w-sm md:max-w-md max-h-[90vh] overflow-hidden">
-            <ChatThemeSelector
-              currentTheme={chatTheme}
-              isDarkMode={isDarkMode}
-              onThemeChange={handleThemeChange}
-              onDarkModeToggle={handleDarkModeToggle}
-              onClose={() => setShowThemeSelector(false)}
-              isMobile={window?.innerWidth < 768}
-            />
-          </div>
-        </div>
-      )}
-
-      </div>
     </div>
   );
 }

@@ -14,12 +14,7 @@ const MessageList = ({
   onEditMessage,
   onDeleteMessage,
   currentChat,
-  onFetchReactions,
-  // Enhanced props
-  onReply,
-  onScrollToMessage,
-  replyingTo,
-  userPresence
+  onFetchReactions
 }) => {
   // Get API base URL and remove /api suffix for file downloads
   const API_BASE_URL = getApiBaseUrl().replace("/api", "");
@@ -27,6 +22,9 @@ const MessageList = ({
   const [animatingReactions, setAnimatingReactions] = useState(new Set());
   const [showReactionMenu, setShowReactionMenu] = useState(null);
   const [localReactions, setLocalReactions] = useState({});
+  const [showEditModal, setShowEditModal] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(null);
 
   // Debug logging
   useEffect(() => {
@@ -145,16 +143,34 @@ const MessageList = ({
   };
 
   const handleEditClick = (entry) => {
-    const newContent = prompt("Edit message:", entry.msg);
-    if (newContent && newContent.trim() !== entry.msg) {
-      onEditMessage(entry.id, newContent.trim());
+    setEditText(entry.msg);
+    setShowEditModal(entry.id);
+  };
+
+  const handleEditSubmit = (messageId) => {
+    if (editText && editText.trim() !== "") {
+      onEditMessage(messageId, editText.trim());
     }
+    setShowEditModal(null);
+    setEditText("");
+  };
+
+  const handleEditCancel = () => {
+    setShowEditModal(null);
+    setEditText("");
   };
 
   const handleDeleteClick = (messageId) => {
-    if (window.confirm("Are you sure you want to delete this message?")) {
-      onDeleteMessage(messageId);
-    }
+    setShowDeleteModal(messageId);
+  };
+
+  const handleDeleteConfirm = (messageId) => {
+    onDeleteMessage(messageId);
+    setShowDeleteModal(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(null);
   };
 
   // Fetch reactions when a message becomes visible
@@ -234,6 +250,17 @@ const MessageList = ({
           to { 
             opacity: 1; 
             transform: scale(1) translateY(0); 
+          }
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
           }
         }
         
@@ -340,6 +367,157 @@ const MessageList = ({
           0%, 60%, 100% { transform: translateY(0); }
           30% { transform: translateY(-10px); }
         }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          animation: modalSlideIn 0.3s ease-out;
+        }
+
+        .modal-content {
+          background: linear-gradient(135deg, #1f2937, #111827);
+          border: 1px solid #374151;
+          border-radius: 16px;
+          padding: 24px;
+          max-width: 400px;
+          width: 90%;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+          animation: modalSlideIn 0.3s ease-out;
+        }
+
+        .modal-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 20px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #374151;
+        }
+
+        .modal-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        }
+
+        .modal-icon.delete {
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .modal-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #f9fafb;
+          margin: 0;
+        }
+
+        .modal-textarea {
+          width: 100%;
+          min-height: 80px;
+          background: #374151;
+          border: 1px solid #4b5563;
+          border-radius: 8px;
+          padding: 12px;
+          color: #f9fafb;
+          font-size: 14px;
+          resize: vertical;
+          margin-bottom: 20px;
+          font-family: inherit;
+        }
+
+        .modal-textarea:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .modal-textarea::placeholder {
+          color: #9ca3af;
+        }
+
+        .modal-message {
+          color: #d1d5db;
+          font-size: 14px;
+          line-height: 1.5;
+          margin-bottom: 20px;
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+        }
+
+        .modal-button {
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: none;
+          min-width: 70px;
+        }
+
+        .modal-button.primary {
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          color: white;
+        }
+
+        .modal-button.primary:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .modal-button.danger {
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: white;
+        }
+
+        .modal-button.danger:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .modal-button.secondary {
+          background: #374151;
+          color: #d1d5db;
+          border: 1px solid #4b5563;
+        }
+
+        .modal-button.secondary:hover {
+          background: #4b5563;
+          color: #f9fafb;
+        }
+
+        .char-counter {
+          text-align: right;
+          font-size: 12px;
+          color: #9ca3af;
+          margin-top: -16px;
+          margin-bottom: 16px;
+        }
+
+        .char-counter.warning {
+          color: #f59e0b;
+        }
+
+        .char-counter.danger {
+          color: #ef4444;
+        }
       `}</style>
       
       {chatLog.map((entry, idx) => {
@@ -348,38 +526,12 @@ const MessageList = ({
         const userHasReacted = groupedReactions.some(r => r.userReacted);
         
         return (
-          <div
-            key={entry.id || idx}
-            id={`message-${entry.id}`}
-            className={`flex ${isSender ? "justify-end" : "justify-start"} mb-2 ${replyingTo?.id === entry.id ? 'bg-yellow-100 rounded-lg p-2' : ''}`}
-          >
-            {/* User Presence Indicator for non-sender messages */}
-            {!isSender && userPresence && userPresence[entry.senderId] && (
-              <div
-                className={`w-2 h-2 rounded-full mr-2 mt-4 ${
-                  userPresence[entry.senderId].isOnline ? 'bg-green-500' : 'bg-gray-400'
-                }`}
-                title={userPresence[entry.senderId].isOnline ? 'Online' : 'Offline'}
-              />
-            )}
-
+          <div key={entry.id || idx} className={`flex ${isSender ? "justify-end" : "justify-start"} mb-2`}>
             <div
               className={`max-w-xs px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                 isSender ? "bg-blue-500 text-white" : "bg-gray-200 text-black"
               }`}
             >
-              {/* Reply indicator if this message is replying to another */}
-              {entry.replyTo && (
-                <div className="mb-2 p-2 bg-black bg-opacity-10 rounded border-l-2 border-blue-300">
-                  <div className="text-xs font-semibold opacity-80">
-                    Replying to {entry.replyTo.senderName || `User ${entry.replyTo.senderId}`}
-                  </div>
-                  <div className="text-xs opacity-70 truncate">
-                    {entry.replyTo.content || entry.replyTo.msg}
-                  </div>
-                </div>
-              )}
-
               {entry.msg && !entry.isDeleted && <div>{entry.msg}</div>}
               
               {entry.isDeleted && (
@@ -441,20 +593,8 @@ const MessageList = ({
 
               {!entry.isDeleted && (
                 <div className="message-actions">
-                  {/* Reply Button */}
-                  <div
-                    className="action-button"
-                    onClick={() => onReply && onReply(entry)}
-                    title="Reply to message"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 20h4l10.5-10.5a1.5 1.5 0 0 0-4-4L3 16v4z"/>
-                      <path d="m14.5 5.5 4 4"/>
-                    </svg>
-                  </div>
-
                   {/* Add Reaction Button */}
-                  <div
+                  <div 
                     className="action-button"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -537,6 +677,88 @@ const MessageList = ({
           <span className="typing-animation">💭</span>
           {" "}
           {typeof otherTyping === 'string' ? otherTyping : 'Typing...'}
+        </div>
+      )}
+
+      {/* Edit Message Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={handleEditCancel}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="m18.5 2.5 a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </div>
+              <h3 className="modal-title">Edit Message</h3>
+            </div>
+            
+            <textarea
+              className="modal-textarea"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              placeholder="Enter your updated message..."
+              autoFocus
+              maxLength={1000}
+            />
+            
+            <div className={`char-counter ${editText.length > 800 ? 'warning' : ''} ${editText.length > 950 ? 'danger' : ''}`}>
+              {editText.length}/1000
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="modal-button secondary" 
+                onClick={handleEditCancel}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-button primary" 
+                onClick={() => handleEditSubmit(showEditModal)}
+                disabled={!editText.trim() || editText.length > 1000}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Message Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={handleDeleteCancel}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-icon delete">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3,6 5,6 21,6"/>
+                  <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
+                </svg>
+              </div>
+              <h3 className="modal-title">Delete Message</h3>
+            </div>
+            
+            <p className="modal-message">
+              Are you sure you want to delete this message? This action cannot be undone and the message will be removed for everyone in the chat.
+            </p>
+            
+            <div className="modal-actions">
+              <button 
+                className="modal-button secondary" 
+                onClick={handleDeleteCancel}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-button danger" 
+                onClick={() => handleDeleteConfirm(showDeleteModal)}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
